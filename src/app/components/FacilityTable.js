@@ -31,15 +31,12 @@
 //   );
 // }
 
-
-
-
-"use client"
+"use client";
 import { useRouter } from "next/navigation";
 import { useLocalStorageCRUD } from "../hooks/useLocalStorageCRUD";
 import { useState } from "react";
 
-export default function FacilityTable({ data, deleteFacility ,loading}) {
+export default function FacilityTable({ data, deleteFacility, loading }) {
   const router = useRouter();
   const [deleteId, setDeleteId] = useState(null);
 
@@ -55,32 +52,40 @@ export default function FacilityTable({ data, deleteFacility ,loading}) {
         <thead>
           <tr>
             <th className="border px-4 py-2 text-black">Name</th>
-            <th className="border px-4 py-2 text-black">Address</th>
             <th className="border px-4 py-2 text-black">Number</th>
+            <th className="border px-4 py-2 text-black">City</th>
+            <th className="border px-4 py-2 text-black">Address</th>
             <th className="border px-4 py-2 text-black">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {data?.map((facility) => (
-            <tr key={facility.id}>
-              <td className="border px-4 py-2 text-black">{facility.name}</td>
-              <td className="border px-4 py-2 text-black">{facility.number}</td>
-              <td className="border px-4 py-2 text-black">{facility.address}</td>
+          {[...data]?.reverse()?.map((facility) => (
+            <tr key={facility?.id}>
+              <td className="border px-4 py-2 text-black">{facility?.name}</td>
+              <td className="border px-4 py-2 text-black">
+                {facility?.number}
+              </td>
+              <td className="border px-4 py-2 text-black">
+                {facility?.city}
+              </td>
+              <td className="border px-4 py-2 w-[30%] text-black">
+                {facility?.address}
+              </td>
               <td className="border px-4 py-2 space-x-2 text-black">
                 <button
-                  onClick={() => router.push(`/admin/facility/${facility.id}`)}
+                  onClick={() => router.push(`/admin/facility/${facility?.id}`)}
                   className="bg-blue-500 text-white px-2 py-1 rounded"
                 >
                   Edit
                 </button>
                 <button
-               onClick={() => setDeleteId(facility.id)}
+                  onClick={() => setDeleteId(facility?.id)}
                   className="bg-red-500 text-white px-2 py-1 rounded"
                 >
                   Delete
                 </button>
                 <button
-                  onClick={() => router.push(`/admin/edit-car?id=${car.id}`)}
+                  onClick={() => router.push(`/admin/facility/view/${facility.id}`)}
                   className="bg-green-500  text-white px-2 py-1 rounded"
                 >
                   View
@@ -97,7 +102,7 @@ export default function FacilityTable({ data, deleteFacility ,loading}) {
             <p className="text-black">Are you sure you want to delete?</p>
             <div className="space-x-40 mt-4">
               <button
-                 onClick={() => deleteFacility(facility.id)}
+                onClick={() => deleteFacility(deleteId)}
                 className="bg-red-500 text-white px-4 py-2 rounded"
               >
                 Yes
@@ -115,4 +120,3 @@ export default function FacilityTable({ data, deleteFacility ,loading}) {
     </div>
   );
 }
-
