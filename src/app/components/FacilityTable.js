@@ -36,10 +36,20 @@ import { useRouter } from "next/navigation";
 import { useLocalStorageCRUD } from "../hooks/useLocalStorageCRUD";
 import { useState } from "react";
 
-export default function FacilityTable({ data, deleteFacility, loading }) {
+export default function FacilityTable({
+  data,
+  deleteFacility,
+  searchQuery,
+  loading,
+}) {
   const router = useRouter();
   const [deleteId, setDeleteId] = useState(null);
-
+  const filteredData = data?.filter((facility) =>
+    [facility.name, facility.number, facility.city, facility.address].some(
+      (field) =>
+        field?.toString().toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  );
   return (
     <div>
       <button
@@ -58,42 +68,60 @@ export default function FacilityTable({ data, deleteFacility, loading }) {
             <th className="border px-4 py-2 text-black">Actions</th>
           </tr>
         </thead>
-        <tbody>
-          {[...data]?.reverse()?.map((facility) => (
-            <tr key={facility?.id}>
-              <td className="border px-4 py-2 text-black">{facility?.name}</td>
-              <td className="border px-4 py-2 text-black">
-                {facility?.number}
-              </td>
-              <td className="border px-4 py-2 text-black">
-                {facility?.city}
-              </td>
-              <td className="border px-4 py-2 w-[30%] text-black">
-                {facility?.address}
-              </td>
-              <td className="border px-4 py-2 space-x-2 text-black">
-                <button
-                  onClick={() => router.push(`/admin/facility/${facility?.id}`)}
-                  className="bg-blue-500 text-white px-2 py-1 rounded"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => setDeleteId(facility?.id)}
-                  className="bg-red-500 text-white px-2 py-1 rounded"
-                >
-                  Delete
-                </button>
-                <button
-                  onClick={() => router.push(`/admin/facility/view/${facility.id}`)}
-                  className="bg-green-500  text-white px-2 py-1 rounded"
-                >
-                  View
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
+        {filteredData?.length > 0 ? (
+          <tbody>
+            {[...filteredData]?.reverse()?.map((facility) => (
+              <tr key={facility?.id}>
+                <td className="border px-4 py-2 text-black">
+                  {facility?.name}
+                </td>
+                <td className="border px-4 py-2 text-black">
+                  {facility?.number}
+                </td>
+                <td className="border px-4 py-2 text-black">
+                  {facility?.city}
+                </td>
+                <td className="border px-4 py-2 w-[30%] text-black">
+                  {facility?.address}
+                </td>
+                <td className="border px-4 py-2 space-x-2 text-black">
+                  <button
+                    onClick={() => {
+                      const query = new URLSearchParams({
+                        id: facility.id,
+                        name: facility.name,
+                        address: facility.address,
+                        // add more if needed
+                      }).toString();
+                      router.push(`/admin/facility/view/${facility.id}`);
+                    }}
+                    className="bg-green-500 text-white px-2 py-1 rounded"
+                  >
+                    View
+                  </button>
+                  <button
+                    onClick={() =>
+                      router.push(`/admin/facility/${facility?.id}`)
+                    }
+                    className="bg-blue-500 text-white px-2 py-1 rounded"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => setDeleteId(facility?.id)}
+                    className="bg-red-500 text-white px-2 py-1 rounded"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        ) : (
+          <h2 className="font-bold mb-2 text-black self-center">
+            No results found:
+          </h2>
+        )}
       </table>
 
       {deleteId && (
