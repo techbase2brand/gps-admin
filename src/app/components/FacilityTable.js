@@ -35,6 +35,9 @@
 import { useRouter } from "next/navigation";
 import { useLocalStorageCRUD } from "../hooks/useLocalStorageCRUD";
 import { useState } from "react";
+import { IoEyeOutline } from "react-icons/io5";
+import { FiEdit } from "react-icons/fi";
+import { MdDeleteOutline } from "react-icons/md";
 
 export default function FacilityTable({
   data,
@@ -54,37 +57,37 @@ export default function FacilityTable({
     <div>
       <button
         onClick={() => router.push("/admin/facility/add")}
-        className="bg-green-500 text-white px-4 py-2 rounded mb-4"
+        className="bg-[#613EEA] text-white px-4 py-2 rounded-full mt-10  mb-10"
       >
-        Add Facility
+        + Add Facility
       </button>
-      <table className="min-w-full bg-white border">
+      <table className="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
         <thead>
-          <tr>
-            <th className="border px-4 py-2 text-black">Name</th>
-            <th className="border px-4 py-2 text-black">Number</th>
-            <th className="border px-4 py-2 text-black">City</th>
-            <th className="border px-4 py-2 text-black">Address</th>
-            <th className="border px-4 py-2 text-black">Actions</th>
+          <tr className="text-left border-b bg-gray-300">
+            <th className="px-4 text-start  py-2 text-black">Name</th>
+            <th className=" px-4 text-start py-2 text-black">Number</th>
+            <th className="px-4 text-start  py-2 text-black">City</th>
+            <th className="px-4 text-start  py-2 text-black">Address</th>
+            <th className="px-4 text-start  py-2 text-black">Actions</th>
           </tr>
         </thead>
         {filteredData?.length > 0 ? (
           <tbody>
             {[...filteredData]?.reverse()?.map((facility) => (
-              <tr key={facility?.id}>
-                <td className="border px-4 py-2 text-black">
+              <tr key={facility?.id} className="border-b border-gray-300">
+                <td className=" px-4 py-2 text-black">
                   {facility?.name}
                 </td>
-                <td className="border px-4 py-2 text-black">
+                <td className=" px-4 py-2 text-black">
                   {facility?.number}
                 </td>
-                <td className="border px-4 py-2 text-black">
+                <td className=" px-4 py-2 text-black">
                   {facility?.city}
                 </td>
-                <td className="border px-4 py-2 w-[30%] text-black">
+                <td className=" px-4 py-2 w-[30%] text-black">
                   {facility?.address}
                 </td>
-                <td className="border px-4 py-2 space-x-2 text-black">
+                <td className=" px-4 py-2 space-x-2 text-black">
                   <button
                     onClick={() => {
                       const query = new URLSearchParams({
@@ -95,23 +98,23 @@ export default function FacilityTable({
                       }).toString();
                       router.push(`/admin/facility/view/${facility.id}`);
                     }}
-                    className="bg-green-500 text-white px-2 py-1 rounded"
+                    className=" px-2 py-2 rounded"
                   >
-                    View
+                    <IoEyeOutline size={20} className="text-black" />
                   </button>
                   <button
                     onClick={() =>
                       router.push(`/admin/facility/${facility?.id}`)
                     }
-                    className="bg-blue-500 text-white px-2 py-1 rounded"
+                    className=" px-2 py-2 rounded"
                   >
-                    Edit
+                    <FiEdit size={16} className="text-green-500" />
                   </button>
                   <button
                     onClick={() => setDeleteId(facility?.id)}
-                    className="bg-red-500 text-white px-2 py-1 rounded"
+                    className=" px-2 py-2 rounded"
                   >
-                    Delete
+                    <MdDeleteOutline size={20} className="text-red-500" />
                   </button>
                 </td>
               </tr>
@@ -125,7 +128,7 @@ export default function FacilityTable({
       </table>
 
       {deleteId && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-100">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50">
           <div className="bg-white p-4 rounded">
             <p className="text-black">Are you sure you want to delete?</p>
             <div className="space-x-40 mt-4">

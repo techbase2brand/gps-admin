@@ -29,7 +29,7 @@ export default function FacilityForm({ defaultValues, addItem, updateItem }) {
       await updateItem({ id: Number(defaultValues?.id), ...form });
     }
 
-    router.push("/admin/dashboard"); // Navigate after submit
+    router.push("/admin/facility"); // Navigate after submit
   };
 
   return (

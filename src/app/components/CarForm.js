@@ -82,6 +82,7 @@ export default function CarForm({ defaultValues, addItem, updateItem }) {
 
   const [car, setCar] = useState({
     vin: "" || defaultValues?.vin,
+    chip: "" || defaultValues?.chip,
     yardNo: "" || defaultValues?.yardNo,
     slotNo: "" || defaultValues?.slotNo,
     trackerNo: "" || defaultValues?.trackerNo,
@@ -121,6 +122,13 @@ console.log("carss",car,defaultValues);
           className="border p-2 w-full text-black"
           value={car.vin}
           onChange={(e) => setCar({ ...car, vin: e.target.value })}
+        />
+        <input
+          type="text"
+          placeholder="Chip"
+          className="border p-2 w-full text-black"
+          value={car.chip}
+          onChange={(e) => setCar({ ...car, chip: e.target.value })}
         />
 
         {/* <input
