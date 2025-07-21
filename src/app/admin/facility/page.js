@@ -26,7 +26,7 @@ import useCarsCRUD from "../../hooks/useCarsCRUD";
 import Navbar from "../../components/Layout/Navbar";
 
 export default function Home() {
-  const { data, addItem, deleteItem, loading } = useCRUD("/api/facilities");
+  const { data, addItem, deleteItem,updateItem, loading } = useCRUD("/api/facilities");
   const { carData } = useCarsCRUD("/api/cars");
   const [searchQuery, setSearchQuery] = useState("");
   console.log("data1data1data1", carData);
@@ -42,7 +42,9 @@ export default function Home() {
             <FacilityTable
               data={data}
               deleteFacility={deleteItem}
+              addItem={addItem}
               loading={loading}
+              updateItem={updateItem}
               searchQuery={searchQuery}
             />
           )}

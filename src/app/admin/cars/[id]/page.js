@@ -19,26 +19,21 @@ export default function CarsAddEditPage() {
     }
   }, [data, id]);
 
-  
-
   if (id !== "add" && !facility) return <p>Loading...</p>;
 
   return (
     <div className="flex bg-[#f7f8fb]">
-        <Sidebar/>
-        <div className=" p-4">
+      <Sidebar />
+      <div className=" p-4">
         <h1 className="text-2xl font-bold mb-4 text-black">
-        {id === "add" ? "Add Facility" : "Edit Facility"}
+          {id === "add" ? "Add Facility" : "Edit Facility"}
         </h1>
-        </div>
-        <CarForm defaultValues={id == "add" ? "add" : facility}
-        addItem={addItem}
-        updateItem={updateItem}/>
-      {/* <FacilityForm
+      </div>
+      <CarForm
         defaultValues={id == "add" ? "add" : facility}
         addItem={addItem}
         updateItem={updateItem}
-      /> */}
+      />
     </div>
   );
 }

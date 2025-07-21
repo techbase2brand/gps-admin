@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function FacilityForm({ defaultValues, addItem, updateItem }) {
+export default function FacilityForm({ defaultValues, addItem, updateItem, closeModal }) {
   const router = useRouter();
   console.log("defaultValuesdefaultValuesdefaultValues", defaultValues);
   const [form, setForm] = useState({
@@ -33,10 +33,10 @@ export default function FacilityForm({ defaultValues, addItem, updateItem }) {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-8 rounded shadow w-96 space-y-4"
+        className="bg-white  rounded  w-96 space-y-4"
       >
         <input
           name="name"
@@ -66,13 +66,27 @@ export default function FacilityForm({ defaultValues, addItem, updateItem }) {
           value={form.address}
           onChange={handleChange}
         />
-
-        <button
+        <div className="fixed bottom-0 left-0 w-full max-w-md bg-white p-4 border-t flex justify-between gap-4">
+          <button
+            type="button"
+            onClick={closeModal}
+            className="bg-gray-500 text-white px-4 py-2 w-[50%] rounded hover:bg-gray-600"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="bg-[#613EEA] text-white px-4 py-2 w-[50%] rounded hover:bg-[#613EEA]"
+          >
+            {defaultValues == "add" ? "Add Facility" : " Edit Facility"}
+          </button>
+        </div>
+        {/* <button
           type="submit"
           className="bg-blue-500 text-white p-2 w-full rounded"
         >
           {defaultValues == "add" ? "Add Facility" : " Edit Facility"}
-        </button>
+        </button> */}
       </form>
     </div>
   );

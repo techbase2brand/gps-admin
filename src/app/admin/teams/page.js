@@ -8,224 +8,122 @@ import "react-toastify/dist/ReactToastify.css";
 import { IoEyeOutline } from "react-icons/io5";
 import { FiEdit } from "react-icons/fi";
 import { MdDeleteOutline } from "react-icons/md";
+import useStaffForm from "../../hooks/useStaffForm";
 
 function page() {
-  const [staffData, setStaffData] = useState([
-    {
-      id: 1,
-      name: "Mark",
-      email: "mark@gmail.com",
-      contact: "0988765454",
-      joiningDate: "18 Jul, 2025",
-      role: "Cashier",
-      status: "Active",
-      published: true,
-    },
-    {
-      id: 2,
-      name: "Lorem",
-      email: "lorem@gmail.com",
-      contact: "09971765302",
-      joiningDate: "18 Jul, 2025",
-      role: "Admin",
-      status: "Active",
-      published: true,
-    },
-    {
-      id: 3,
-      name: "Admin",
-      email: "admin@gmail.com",
-      contact: "360-943-7332",
-      joiningDate: "16 Jul, 2025",
-      role: "Super Admin",
-      status: "Active",
-      published: true,
-    },
-    {
-      id: 4,
-      name: "Marion V. Parker",
-      email: "marion@gmail.com",
-      contact: "713-675-8813",
-      joiningDate: "16 Jul, 2025",
-      role: "Admin",
-      status: "Inactive",
-      published: false,
-    },
-    {
-      id: 5,
-      name: "Stacey J. Meikle",
-      email: "stacey@gmail.com",
-      contact: "616-738-0407",
-      joiningDate: "16 Jul, 2025",
-      role: "CEO",
-      status: "Inactive",
-      published: false,
-    },
-    {
-      id: 6,
-      name: "Shawn E. Palmer",
-      email: "shawn@gmail.com",
-      contact: "949-202-2913",
-      joiningDate: "16 Jul, 2025",
-      role: "Manager",
-      status: "Active",
-      published: true,
-    },
-    {
-      id: 7,
-      name: "Corrie H. Cates",
-      email: "corrie@gmail.com",
-      contact: "914-623-6873",
-      joiningDate: "16 Jul, 2025",
-      role: "Accountant",
-      status: "Active",
-      published: true,
-    },
-    {
-      id: 8,
-      name: "Alice B. Porter",
-      email: "alice@gmail.com",
-      contact: "708-488-9728",
-      joiningDate: "16 Jul, 2025",
-      role: "Cashier",
-      status: "Active",
-      published: true,
-    },
-    {
-      id: 9,
-      name: "Dorothy R. Brown",
-      email: "dorothy@gmail.com",
-      contact: "708-628-3122",
-      joiningDate: "16 Jul, 2025",
-      role: "Security Guard",
-      status: "Active",
-      published: true,
-    },
-  ]);
+  const {
+    staffData,
+    addStaff,
+    editStaff,
+    deleteStaff,
+    togglePublished,
+    filterRole,
+    setFilterRole,
+    searchQuery,
+    setSearchQuery,
+    handleFilter,
+    handleReset,
+  } = useStaffForm();
 
-  const [filterRole, setFilterRole] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const allPermissions = [
+    "Dashboard",
+    "Facility",
+    "Vehicles",
+    "Reports",
+    "Settings",
+  ];
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [staffToDelete, setStaffToDelete] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [editingStaff, setEditingStaff] = useState(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    contact: "",
+    joiningDate: "",
+    role: "",
+    permissions: [],
+  });
 
-  const handleStatusChange = (id) => {
-    const updatedData = staffData.map((staff) => {
-      if (staff.id === id) {
-        staff.status = staff.status === "Active" ? "Inactive" : "Active";
-        toast.success(`User is now ${staff.status}!`);
+  const openModal = (staff = null) => {
+    console.log("workignng", staff);
+
+    setEditingStaff(staff);
+    if (staff) {
+      setFormData({
+        name: staff.name,
+        email: staff.email,
+        contact: staff.contact,
+        joiningDate: staff.joiningDate,
+        role: staff.role,
+        permissions: staff.permissions || [],
+      });
+    } else {
+      setFormData({
+        name: "",
+        email: "",
+        contact: "",
+        joiningDate: "",
+        role: "",
+        permissions: [],
+      });
+    }
+    setIsOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsOpen(false);
+    setEditingStaff(null);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handlePermissionChange = (perm) => {
+    if (perm === "All") {
+      if (formData.permissions.length === allPermissions.length) {
+        setFormData((prev) => ({ ...prev, permissions: [] }));
+      } else {
+        setFormData((prev) => ({ ...prev, permissions: allPermissions }));
       }
-      return staff;
-    });
-    setStaffData(updatedData);
+    } else {
+      if (formData.permissions.includes(perm)) {
+        setFormData((prev) => ({
+          ...prev,
+          permissions: prev.permissions.filter((p) => p !== perm),
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          permissions: [...prev.permissions, perm],
+        }));
+      }
+    }
   };
 
-  const handleAddStaff = () => {
-    toast.info("Add staff functionality is under development.");
+  const confirmDelete = (id) => {
+    setStaffToDelete(id);
+    setShowDeleteModal(true);
   };
 
-  const handleFilter = () => {
-    // Filter staff based on role
-    const filteredData = staffData.filter(
-      (staff) =>
-        (staff.role.toLowerCase().includes(filterRole.toLowerCase()) ||
-          filterRole === "") &&
-        (staff.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          staff.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-    setStaffData(filteredData);
+  const handleDelete = () => {
+    deleteStaff(staffToDelete);
+    setShowDeleteModal(false);
+    setStaffToDelete(null);
   };
-
-  const handleReset = () => {
-    setStaffData([
-      {
-        id: 1,
-        name: "Mark",
-        email: "mark@gmail.com",
-        contact: "0988765454",
-        joiningDate: "18 Jul, 2025",
-        role: "Cashier",
-        status: "Active",
-        published: true,
-      },
-      {
-        id: 2,
-        name: "Lorem",
-        email: "lorem@gmail.com",
-        contact: "09971765302",
-        joiningDate: "18 Jul, 2025",
-        role: "Admin",
-        status: "Active",
-        published: true,
-      },
-      {
-        id: 3,
-        name: "Admin",
-        email: "admin@gmail.com",
-        contact: "360-943-7332",
-        joiningDate: "16 Jul, 2025",
-        role: "Admin",
-        status: "Active",
-        published: true,
-      },
-      {
-        id: 4,
-        name: "Marion V. Parker",
-        email: "marion@gmail.com",
-        contact: "713-675-8813",
-        joiningDate: "16 Jul, 2025",
-        role: "Staff",
-        status: "Inactive",
-        published: false,
-      },
-      {
-        id: 5,
-        name: "Stacey J. Meikle",
-        email: "stacey@gmail.com",
-        contact: "616-738-0407",
-        joiningDate: "16 Jul, 2025",
-        role: "Staff",
-        status: "Inactive",
-        published: false,
-      },
-      {
-        id: 6,
-        name: "Shawn E. Palmer",
-        email: "shawn@gmail.com",
-        contact: "949-202-2913",
-        joiningDate: "16 Jul, 2025",
-        role: "Staff",
-        status: "Active",
-        published: true,
-      },
-      {
-        id: 7,
-        name: "Corrie H. Cates",
-        email: "corrie@gmail.com",
-        contact: "914-623-6873",
-        joiningDate: "16 Jul, 2025",
-        role: "Admin",
-        status: "Active",
-        published: true,
-      },
-      {
-        id: 8,
-        name: "Alice B. Porter",
-        email: "alice@gmail.com",
-        contact: "708-488-9728",
-        joiningDate: "16 Jul, 2025",
-        role: "Staff",
-        status: "Active",
-        published: true,
-      },
-      {
-        id: 9,
-        name: "Dorothy R. Brown",
-        email: "dorothy@gmail.com",
-        contact: "708-628-3122",
-        joiningDate: "16 Jul, 2025",
-        role: "Admin",
-        status: "Active",
-        published: true,
-      },
-    ]);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const finalData = {
+      ...formData,
+    };
+    if (editingStaff) {
+      editStaff(editingStaff.id, finalData);
+    } else {
+      addStaff(finalData);
+    }
+    closeModal();
   };
 
   return (
@@ -240,7 +138,7 @@ function page() {
               <ToastContainer />
 
               {/* Filter, Add Staff, Reset Buttons */}
-              <div className="mb-4 flex justify-between items-center mb-10">
+              <div className="mb-4 flex justify-between items-center mt-10 mb-10">
                 <div className="flex space-x-4">
                   <div className="flex space-x-2">
                     <input
@@ -262,7 +160,7 @@ function page() {
                       <option value="Staff">Staff</option>
                     </select>
                     <button
-                      onClick={handleAddStaff}
+                      onClick={() => openModal()}
                       className="px-4 py-2 bg-[#613EEA] text-white rounded-lg shadow-md hover:bg-blue-600"
                     >
                       + Add Staff
@@ -283,6 +181,128 @@ function page() {
                 </div>
               </div>
 
+              {/* Side Modal */}
+              {isOpen && (
+                <div className="fixed inset-0 flex justify-end bg-black/50 z-999999">
+                  <div className="bg-white w-full max-w-md h-full overflow-y-auto shadow p-6 relative transition-transform translate-x-0">
+                    <button
+                      onClick={closeModal}
+                      className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
+                    >
+                      ✕
+                    </button>
+
+                    <h2 className="text-xl text-black font-semibold mb-4">
+                      {editingStaff ? "Edit" : "Add"} Staff
+                    </h2>
+
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <input
+                        name="name"
+                        placeholder="Name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        className="w-full border px-3 py-2 rounded text-black placeholder-gray-400"
+                        required
+                      />
+
+                      <input
+                        name="email"
+                        placeholder="Email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="w-full border px-3 py-2 rounded text-black placeholder-gray-400"
+                        required
+                      />
+
+                      <input
+                        name="contact"
+                        placeholder="Contact Number"
+                        value={formData.contact}
+                        onChange={handleChange}
+                        className="w-full border px-3 py-2 rounded text-black placeholder-gray-400"
+                        required
+                      />
+
+                      <input
+                        name="joiningDate"
+                        type="date"
+                        value={formData.joiningDate}
+                        onChange={handleChange}
+                        className="w-full border px-3 py-2 rounded text-black placeholder-gray-400"
+                        required
+                      />
+
+                      {/* Role Select */}
+                      <select
+                        name="role"
+                        value={formData.role}
+                        onChange={handleChange}
+                        className="w-full border px-3 py-2 rounded text-black"
+                        required
+                      >
+                        <option value="">Select Role</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Staff">Staff</option>
+                      </select>
+
+                      {/* Permissions */}
+                      <div>
+                        <p className="font-bold mb-1 text-black">Permissions</p>
+                        <div className="flex flex-col gap-2">
+                          <label className="flex items-center gap-2 text-black">
+                            <input
+                              type="checkbox"
+                              checked={
+                                formData.permissions.length ===
+                                allPermissions.length
+                              }
+                              onChange={() => handlePermissionChange("All")}
+                            />
+                            <p> Select All</p>
+                          </label>
+                          {allPermissions?.map((perm) => (
+                            <label
+                              key={perm}
+                              className="flex items-center gap-2 text-black"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={formData.permissions.includes(perm)}
+                                onChange={() => handlePermissionChange(perm)}
+                              />
+                              <p> {perm} </p>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* <button
+                        type="submit"
+                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                      >
+                        {editingStaff ? "Update" : "Save"}
+                      </button> */}
+                      <div className="fixed bottom-0 left-0 w-full max-w-md bg-white p-4 border-t flex justify-between gap-4">
+                        <button
+                          type="button"
+                          onClick={closeModal}
+                          className="bg-gray-500 text-white px-4 py-2 w-[50%] rounded hover:bg-gray-600"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="bg-[#613EEA] text-white px-4 py-2 w-[50%] rounded hover:bg-[#613EEA]"
+                        >
+                          {editingStaff ? "Update" : "Submit"}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
               {/* Staff Table */}
               <table className="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
                 <thead>
@@ -298,7 +318,7 @@ function page() {
                   </tr>
                 </thead>
                 <tbody>
-                  {staffData.map((staff) => (
+                  {staffData?.map((staff) => (
                     <tr key={staff.id} className="border-b">
                       <td className="p-2 text-black">{staff.name}</td>
                       <td className="p-2 text-black">{staff.email}</td>
@@ -307,7 +327,8 @@ function page() {
                       <td className="p-2 text-black">{staff.role}</td>
                       <td className="p-2 text-black">
                         <button
-                          onClick={() => handleStatusChange(staff.id)}
+                          onClick={() => togglePublished(staff.id)}
+                          // onClick={() => handleStatusChange(staff.id)}
                           className={`px-4 py-1 rounded-full  ${
                             staff.status === "Active"
                               ? "bg-green-100  text-green-500"
@@ -322,7 +343,7 @@ function page() {
                           <input
                             type="checkbox"
                             checked={staff.status === "Active"}
-                            onChange={() => handleStatusChange(staff.id)}
+                            onClick={() => togglePublished(staff.id)}
                             className="sr-only"
                           />
                           <span className="w-11 h-6 bg-gray-200 rounded-full inline-block"></span>
@@ -336,20 +357,53 @@ function page() {
                         </label>
                       </td>
                       <td className="p-2">
-                        <button className="text-blue-500">
+                        {/* <button className="text-blue-500">
                           {" "}
                           <IoEyeOutline size={20} className="text-black" />
-                        </button>
-                        <button className="ml-4 text-red-500">
+                        </button> */}
+                        <button
+                          className="ml-4 text-red-500"
+                          onClick={() => openModal(staff)}
+                        >
                           {" "}
                           <FiEdit size={16} className="text-green-500" />
                         </button>
-                        <button className="ml-4 text-red-500">
+                        <button
+                          className="ml-4 text-red-500"
+                          onClick={() => confirmDelete(staff.id)}
+                        >
                           <MdDeleteOutline size={20} className="text-Red-500" />
                         </button>
                       </td>
                     </tr>
                   ))}
+                  {/* Delete Confirmation Modal */}
+                  {showDeleteModal && (
+                    <div className="fixed inset-0 bg-black/50  flex justify-center items-center z-50">
+                      <div className="bg-white p-6 rounded shadow-md w-full max-w-sm">
+                        {/* <h3 className="text-lg text-black font-semibold mb-4">
+                          Confirm Delete
+                        </h3> */}
+                        <p className="mb-6 text-black">
+                          Are you sure you want to delete this staff member?
+                        </p>
+                        <div className="flex justify-end gap-4">
+                          <button
+                            onClick={() => setShowDeleteModal(false)}
+                            className="px-4 py-2 bg-green-500 rounded"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleDelete}
+                            className="px-4 py-2 bg-red-500 text-white rounded"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </tbody>
               </table>
             </div>

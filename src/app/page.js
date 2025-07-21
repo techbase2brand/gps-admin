@@ -94,7 +94,7 @@ export default function LoginPage() {
       setTimeout(() => {
         setLoading(false);
         router.push("/admin/dashboard");
-      }, 4000); // 4 seconds delay
+      }, 2000); // 4 seconds delay
     }
   };
 
@@ -113,7 +113,7 @@ export default function LoginPage() {
       <motion.div
         animate={{ x: isLogin ? "100%" : "0%" }}
         transition={{ duration: 1 }}
-        className="flex w-1/2 flex-col items-center justify-center bg-[#613EEA] text-white z-10 p-8"
+        className="flex w-1/2 flex-col items-center justify-center bg-[#613EEA] text-white z-99999 p-8"
       >
         <motion.h1
           key={isLogin ? "Hello!" : "Welcome back!"}
@@ -217,7 +217,7 @@ export default function LoginPage() {
             <Lottie
               animationData={loadingAnimation}
               loop={true}
-              className="w-16"
+              className="w-12"
             />
           ) : isLogin ? (
             "Sign In"

@@ -108,14 +108,38 @@ import useCarsCRUD from "../hooks/useCarsCRUD";
 import { IoEyeOutline } from "react-icons/io5";
 import { FiEdit } from "react-icons/fi";
 import { MdDeleteOutline } from "react-icons/md";
+import CarForm from "./CarForm";
 
 export default function CarsTable({ searchQuery, assignview }) {
-  const { carData, deleteItem, updateTrackerAndStatus } =
-    useCarsCRUD("/api/cars");
+  const {
+    carData,
+    deleteItem,
+    fetchAll,
+    updateItem,
+    addItem,
+    updateTrackerAndStatus,
+  } = useCarsCRUD("/api/cars");
   const router = useRouter();
   const [deleteId, setDeleteId] = useState(null);
   const [trackerInput, setTrackerInput] = useState("");
   const [selectedCarId, setSelectedCarId] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCar, setEditingCar] = useState(null);
+
+  const openAddModal = () => {
+    setEditingCar(null);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (car) => {
+    setEditingCar(car);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setEditingCar(null);
+    setIsModalOpen(false);
+  };
 
   const selectedCar = carData?.find((car) => car.id === selectedCarId);
   const filteredData = carData?.filter((car) =>
@@ -140,11 +164,36 @@ export default function CarsTable({ searchQuery, assignview }) {
   return (
     <div>
       <button
-        onClick={() => router.push("/admin/cars/add")}
+        onClick={openAddModal}
+        // onClick={() => router.push("/admin/cars/add")}
         className="bg-[#613EEA] text-white px-4 py-2 mt-10 rounded-full mb-10"
       >
         + Add vehicle
       </button>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 flex justify-end bg-black/50 z-999999">
+          <div className="bg-white w-full max-w-md h-full overflow-y-auto shadow p-6 relative transition-transform translate-x-0">
+            <button
+              onClick={closeModal}
+              className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
+            >
+              ✕
+            </button>
+            <h2 className="text-xl text-black font-semibold mb-4">
+              {editingCar ? "Edit Vehicle" : "Add Vehicle"}
+            </h2>
+            <CarForm
+              defaultValues={editingCar || "add"}
+              closeModal={closeModal}
+              addItem={addItem}
+              updateItem={updateItem}
+              fetchAll={fetchAll}
+            />
+          </div>
+        </div>
+      )}
 
       {/* VIN selection and car details */}
       {assignview && (
@@ -251,13 +300,20 @@ export default function CarsTable({ searchQuery, assignview }) {
                 </td>
                 <td className=" px-4 py-2 space-x-2 text-black">
                   <button
-                    onClick={() => router.push(`/admin/cars/${car?.id}`)}
+                   onClick={() => {
+                      const query = new URLSearchParams({
+                        id: car.id,
+                      }).toString();
+                      router.push(`/admin/cars/view/${car.id}`);
+                    }}
+                    // onClick={() => router.push(`/admin/cars/${car?.id}`)}
                     className=" px-2 py-2 rounded"
                   >
                     <IoEyeOutline size={20} className="text-black" />
                   </button>
                   <button
-                    onClick={() => router.push(`/admin/cars/${car?.id}`)}
+                    onClick={() => openEditModal(car)}
+                    // onClick={() => router.push(`/admin/cars/${car?.id}`)}
                     className="px-2 py-2 rounded"
                   >
                     <FiEdit size={16} className="text-green-500" />
@@ -273,31 +329,34 @@ export default function CarsTable({ searchQuery, assignview }) {
             ))}
           </tbody>
         ) : (
-          <h2 className="font-bold mb-2 text-black self-center">
+          <span className="font-bold mb-2 text-black self-center">
             No results found:
-          </h2>
+          </span>
         )}
       </table>
 
       {deleteId && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 bg-opacity-0.5">
-          <div className="bg-white p-4 rounded">
-            <p className="text-black">Are you sure you want to delete?</p>
-            <div className="space-x-40 mt-4">
+        <div className="fixed inset-0 bg-black/50  flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded shadow-md w-full max-w-sm">
+            {/* <h3 className="text-lg text-black font-semibold mb-4">
+                          Confirm Delete
+                        </h3> */}
+            <p className="mb-6 text-black">Are you sure you want to delete?</p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setDeleteId(null)}
+                className="px-4 py-2 bg-green-500 rounded"
+              >
+                Cancel
+              </button>
               <button
                 onClick={() => {
                   deleteItem(deleteId);
                   setDeleteId(null);
                 }}
-                className="bg-red-500 text-white px-4 py-2 rounded"
+                className="px-4 py-2 bg-red-500 text-white rounded"
               >
-                Yes
-              </button>
-              <button
-                onClick={() => setDeleteId(null)}
-                className="bg-green-500 px-4 py-2 rounded"
-              >
-                No
+                Delete
               </button>
             </div>
           </div>

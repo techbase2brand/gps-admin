@@ -42,7 +42,6 @@ export default function Home() {
   const { data, addItem, deleteItem, loading } = useCRUD("/api/facilities");
   const { carData } = useCarsCRUD("/api/cars");
   const [searchQuery, setSearchQuery] = useState("");
-  console.log("data1data1data1", carData);
   return (
     <div className="flex bg-[#fff]">
       <Sidebar />
@@ -71,19 +70,19 @@ export default function Home() {
             />
             <DashboardCard
               title="Assigned Trackers"
-              count={4048}
+              count={carData?.filter(car => car?.status === "Assigned")?.length}
               iconSrc={<FaMicrochip size={24} className="text-green-500" />}
               progressColor="bg-green-500"
             />
             <DashboardCard
               title="Unassigned Trackers"
-              count={1048}
+              count={carData?.filter(car => car?.status === "Unassigned")?.length}
               iconSrc={<FaMicrochip size={24} className="text-red-500" />}
               progressColor="bg-orange-500"
             />
             <DashboardCard
               title="Facilities by Cities"
-              count={500}
+              count={data?.length}
               iconSrc={<FaParking size={24} className="text-blue-600" />}
               progressColor="bg-blue-500"
             />

@@ -75,8 +75,15 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import useCRUD from "../hooks/useCRUD";
+import useCarsCRUD from "../hooks/useCarsCRUD";
 
-export default function CarForm({ defaultValues, addItem, updateItem }) {
+export default function CarForm({
+  defaultValues,
+  fetchAll,
+  updateItem,
+  addItem,
+  closeModal,
+}) {
   const router = useRouter();
   const isEdit = defaultValues !== "add";
 
@@ -87,33 +94,33 @@ export default function CarForm({ defaultValues, addItem, updateItem }) {
     slotNo: "" || defaultValues?.slotNo,
     trackerNo: "" || defaultValues?.trackerNo,
     facilityId: "" || defaultValues?.facilityId,
-    model:"" || defaultValues?.model,
-    color:"" || defaultValues?.color,
-
+    model: "" || defaultValues?.model,
+    color: "" || defaultValues?.color,
   });
-console.log("carss",car,defaultValues);
+  console.log("carss", car, defaultValues);
   const { data: facilities } = useCRUD("/api/facilities");
+  // const { addItem, updateItem, fetchAll } = useCarsCRUD("/api/cars");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isEdit) {
-      console.log("ediit");
       await updateItem({ id: Number(defaultValues?.id), ...car });
+      closeModal();
+      fetchAll();
       // await updateItem(defaultValues?.id, car);
     } else {
       await addItem(car);
+      closeModal();
     }
-    router.push("/admin/cars");
+    await fetchAll(); // this will now refresh parent carData
+    closeModal();
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-8 rounded shadow w-96 space-y-4"
-      >
+    <div className="flex">
+      <form onSubmit={handleSubmit} className=" rounded   space-y-4">
         <h1 className="text-xl font-bold text-black">
-          {isEdit ? "Edit Car" : "Add Car"}
+          {/* {isEdit ? "Edit Car" : "Add Car"} */}
         </h1>
 
         <input
@@ -154,7 +161,7 @@ console.log("carss",car,defaultValues);
           value={car.model}
           onChange={(e) => setCar({ ...car, model: e.target.value })}
         />
-         <input
+        <input
           type="text"
           placeholder="Color"
           className="border p-2 w-full text-black"
@@ -174,13 +181,28 @@ console.log("carss",car,defaultValues);
             </option>
           ))}
         </select>
-
-        <button
+        <div className="fixed bottom-0 left-0 w-full max-w-md bg-white p-4 border-t flex justify-between gap-4">
+          <button
+            type="button"
+            onClick={closeModal}
+            className="bg-gray-500 text-white px-10 py-2 w-[48%] rounded hover:bg-gray-600 mr-4"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            onClick={handleSubmit}
+            className="bg-[#613EEA] text-white px-4 py-2 w-[48%] rounded hover:bg-[#613EEA]"
+          >
+            {isEdit ? "Update" : "Submit"}
+          </button>
+        </div>
+        {/* <button
           type="submit"
           className="bg-blue-500 text-white p-2 w-full rounded"
         >
           {isEdit ? "Update" : "Add"}
-        </button>
+        </button> */}
       </form>
     </div>
   );

@@ -57,7 +57,7 @@ export async function GET(req) {
  */
 export async function POST(req) {
   const body = await req.json();
-  const newCar = { id: Date.now(), ...body, assignedDate: null, status: "Unassigned" };
+  const newCar = { id: Date.now(), ...body, assignedDate: null, status: "Assigned" };
   cars.push(newCar);
   return NextResponse.json(newCar);
 }
