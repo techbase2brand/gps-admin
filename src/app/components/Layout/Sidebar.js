@@ -209,13 +209,13 @@ export default function Sidebar() {
       {/* Bottom Menu */}
       <ul className="space-y-2 mb-4">
         <li>
-          <Link
-            href="/admin/settings"
+          {/* <Link
+            // href="/admin/settings"
             className="flex items-center gap-3 text-[16px] font-medium px-4 py-2 text-gray-800 hover:text-blue-600"
-          >
-            <FiSettings size={20} className="hover:animate-spin" />
-            <span className="font-bold">Settings</span>
-          </Link>
+          > */}
+            {/* <FiSettings size={20} className="hover:animate-spin" />
+            <span className="font-bold">Settings</span> */}
+          {/* </Link> */}
         </li>
         <li>
           <Link
