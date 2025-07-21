@@ -3,7 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function FacilityForm({ defaultValues, addItem, updateItem, closeModal }) {
+export default function FacilityForm({
+  defaultValues,
+  addItem,
+  updateItem,
+  closeModal,
+}) {
   const router = useRouter();
   console.log("defaultValuesdefaultValuesdefaultValues", defaultValues);
   const [form, setForm] = useState({
@@ -25,10 +30,15 @@ export default function FacilityForm({ defaultValues, addItem, updateItem, close
 
     if (defaultValues == "add") {
       await addItem(form);
+      closeModal();
+      // fetchAll();
     } else {
       await updateItem({ id: Number(defaultValues?.id), ...form });
+      closeModal();
+      // fetchAll();
     }
-
+    closeModal();
+    // fetchAll();
     router.push("/admin/facility"); // Navigate after submit
   };
 

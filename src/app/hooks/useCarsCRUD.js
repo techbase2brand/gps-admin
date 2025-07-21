@@ -1,3 +1,4 @@
+
 // "use client";
 
 // import { useState, useEffect } from "react";
@@ -47,6 +48,20 @@
 //     }
 //   };
 
+//   const updateTrackerAndStatus = async (id, trackerNo, status) => {
+//     try {
+//       const res = await fetch(apiUrl, {
+//         method: "PATCH",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({ id, trackerNo, status, assignedDate: new Date().toISOString() }),
+//       });
+//       await fetchAll();
+//       return await res.json();
+//     } catch (err) {
+//       console.error("Update tracker and status error:", err);
+//     }
+//   };
+
 //   const deleteItem = async (id) => {
 //     try {
 //       const res = await fetch(apiUrl, {
@@ -65,22 +80,22 @@
 //     fetchAll();
 //   }, [apiUrl]);
 
-//   return { carData, loading, addItem, updateItem, deleteItem };
+//   return { carData, loading, addItem, updateItem, deleteItem, updateTrackerAndStatus };
 // }
+
 "use client";
 
 import { useState, useEffect } from "react";
 
-export default function useCarsCRUD(apiUrl) {
+export default function useCarsCRUD(storageKey) {
   const [carData, setcarData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchAll = async () => {
     try {
       setLoading(true);
-      const res = await fetch(apiUrl);
-      const json = await res.json();
-      setcarData(json);
+      const storedData = localStorage.getItem(storageKey);
+      setcarData(storedData ? JSON.parse(storedData) : []);
     } catch (err) {
       console.error("Fetch all error:", err);
     } finally {
@@ -90,13 +105,18 @@ export default function useCarsCRUD(apiUrl) {
 
   const addItem = async (item) => {
     try {
-      const res = await fetch(apiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(item),
-      });
-      await fetchAll();
-      return await res.json();
+      const storedData = localStorage.getItem(storageKey);
+      const currentData = storedData ? JSON.parse(storedData) : [];
+      const newItem = {
+        id: Date.now(),
+        ...item,
+        assignedDate: null,
+        status: "Assigned",
+      };
+      const updatedData = [...currentData, newItem];
+      localStorage.setItem(storageKey, JSON.stringify(updatedData));
+      setcarData(updatedData);
+      return newItem;
     } catch (err) {
       console.error("Add item error:", err);
     }
@@ -104,13 +124,14 @@ export default function useCarsCRUD(apiUrl) {
 
   const updateItem = async (item) => {
     try {
-      const res = await fetch(apiUrl, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(item),
-      });
-      await fetchAll();
-      return await res.json();
+      const storedData = localStorage.getItem(storageKey);
+      const currentData = storedData ? JSON.parse(storedData) : [];
+      const updatedData = currentData.map((d) =>
+        d.id === item.id ? { ...d, ...item } : d
+      );
+      localStorage.setItem(storageKey, JSON.stringify(updatedData));
+      setcarData(updatedData);
+      return item;
     } catch (err) {
       console.error("Update item error:", err);
     }
@@ -118,13 +139,16 @@ export default function useCarsCRUD(apiUrl) {
 
   const updateTrackerAndStatus = async (id, trackerNo, status) => {
     try {
-      const res = await fetch(apiUrl, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, trackerNo, status, assignedDate: new Date().toISOString() }),
-      });
-      await fetchAll();
-      return await res.json();
+      const storedData = localStorage.getItem(storageKey);
+      const currentData = storedData ? JSON.parse(storedData) : [];
+      const updatedData = currentData.map((d) =>
+        d.id === id
+          ? { ...d, trackerNo, status, assignedDate: new Date().toISOString() }
+          : d
+      );
+      localStorage.setItem(storageKey, JSON.stringify(updatedData));
+      setcarData(updatedData);
+      return { message: "Tracker and status updated", id };
     } catch (err) {
       console.error("Update tracker and status error:", err);
     }
@@ -132,13 +156,12 @@ export default function useCarsCRUD(apiUrl) {
 
   const deleteItem = async (id) => {
     try {
-      const res = await fetch(apiUrl, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      await fetchAll();
-      return await res.json();
+      const storedData = localStorage.getItem(storageKey);
+      const currentData = storedData ? JSON.parse(storedData) : [];
+      const updatedData = currentData.filter((d) => d.id !== id);
+      localStorage.setItem(storageKey, JSON.stringify(updatedData));
+      setcarData(updatedData);
+      return { message: "Deleted", id };
     } catch (err) {
       console.error("Delete item error:", err);
     }
@@ -146,7 +169,7 @@ export default function useCarsCRUD(apiUrl) {
 
   useEffect(() => {
     fetchAll();
-  }, [apiUrl]);
+  }, [storageKey]);
 
   return { carData, loading, addItem, updateItem, deleteItem, updateTrackerAndStatus };
 }

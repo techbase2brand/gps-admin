@@ -101,6 +101,8 @@ export default function FacilityTable({
               defaultValues={editingFacility || "add"}
               addItem={addItem}
               updateItem={updateItem}
+              
+              closeModal={closeModal}
             />
           </div>
         </div>
@@ -181,7 +183,7 @@ export default function FacilityTable({
                 Cancel
               </button>
               <button
-                onClick={() => deleteFacility(deleteId)}
+                onClick={() => {deleteFacility(deleteId),setDeleteId(null)}}
                 className="px-4 py-2 bg-red-500 text-white rounded"
               >
                 Delete
