@@ -29,8 +29,8 @@ const borderCoordinates = [
 
 export default function ViewFacilityPage() {
   const { id } = useParams();
-  const { data } = useCRUD("/api/facilities");
-  const { carData } = useCarsCRUD("/api/cars");
+  const { data } = useCRUD("facility");
+  const { carData } = useCarsCRUD("cars");
 
   const [facility, setFacility] = useState(null);
   const [coordinates, setCoordinates] = useState({ lat: 0, lng: 0 });

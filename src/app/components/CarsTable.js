@@ -118,7 +118,7 @@ export default function CarsTable({ searchQuery, assignview }) {
     updateItem,
     addItem,
     updateTrackerAndStatus,
-  } = useCarsCRUD("/api/cars");
+  } = useCarsCRUD("cars");
   const router = useRouter();
   const [deleteId, setDeleteId] = useState(null);
   const [trackerInput, setTrackerInput] = useState("");

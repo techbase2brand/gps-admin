@@ -39,8 +39,8 @@ const todos = [
 ];
 
 export default function Home() {
-  const { data, addItem, deleteItem, loading } = useCRUD("/api/facilities");
-  const { carData } = useCarsCRUD("/api/cars");
+  const { data, addItem, deleteItem, loading } = useCRUD("facility");
+  const { carData } = useCarsCRUD("cars");
   const [searchQuery, setSearchQuery] = useState("");
   return (
     <div className="flex bg-[#fff]">
@@ -99,8 +99,8 @@ export default function Home() {
                       Recent added Facility
                     </h2>
                     <div className="flex items-center gap-4">
-                      <FiSearch className="text-gray-500" />
-                      <FiFilter className="text-gray-500" />
+                      {/* <FiSearch className="text-gray-500" />
+                      <FiFilter className="text-gray-500" /> */}
                     </div>
                   </div>
                   {/* <button className="flex items-center gap-2 bg-[#613EEA] text-white font-600 px-4 py-2 rounded-full mb-4">
@@ -146,8 +146,8 @@ export default function Home() {
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-bold text-black">Vehicles</h2>
                     <div className="flex items-center gap-4">
-                      <FiPlus className="text-gray-500" />
-                      <FiFilter className="text-gray-500" />
+                      {/* <FiPlus className="text-gray-500" />
+                      <FiFilter className="text-gray-500" /> */}
                     </div>
                   </div>
                   <table className="w-full text-left">

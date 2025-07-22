@@ -130,7 +130,7 @@ const borderCoordinates = [
 
 export default function ViewFacilityPage() {
   const { id } = useParams();
-  const { data } = useCRUD("/api/facilities");
+  const { data } = useCRUD("facility");
   const [facility, setFacility] = useState(null);
   const [coordinates, setCoordinates] = useState({ lat: 0, lng: 0 });
   const [showTooltip, setShowTooltip] = useState(false);

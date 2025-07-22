@@ -83,9 +83,100 @@
 //   return { carData, loading, addItem, updateItem, deleteItem, updateTrackerAndStatus };
 // }
 
+// "use client";
+
+// import { useState, useEffect } from "react";
+
+// export default function useCarsCRUD(storageKey) {
+//   const [carData, setcarData] = useState([]);
+//   const [loading, setLoading] = useState(true);
+
+//   const fetchAll = async () => {
+//     try {
+//       setLoading(true);
+//       const storedData = localStorage.getItem(storageKey);
+//       setcarData(storedData ? JSON.parse(storedData) : []);
+//     } catch (err) {
+//       console.error("Fetch all error:", err);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const addItem = async (item) => {
+//     try {
+//       const storedData = localStorage.getItem(storageKey);
+//       const currentData = storedData ? JSON.parse(storedData) : [];
+//       const newItem = {
+//         id: Date.now(),
+//         ...item,
+//         assignedDate: null,
+//         status: "Assigned",
+//       };
+//       const updatedData = [...currentData, newItem];
+//       localStorage.setItem(storageKey, JSON.stringify(updatedData));
+//       setcarData(updatedData);
+//       return newItem;
+//     } catch (err) {
+//       console.error("Add item error:", err);
+//     }
+//   };
+
+//   const updateItem = async (item) => {
+//     try {
+//       const storedData = localStorage.getItem(storageKey);
+//       const currentData = storedData ? JSON.parse(storedData) : [];
+//       const updatedData = currentData.map((d) =>
+//         d.id === item.id ? { ...d, ...item } : d
+//       );
+//       localStorage.setItem(storageKey, JSON.stringify(updatedData));
+//       setcarData(updatedData);
+//       return item;
+//     } catch (err) {
+//       console.error("Update item error:", err);
+//     }
+//   };
+
+//   const updateTrackerAndStatus = async (id, trackerNo, status) => {
+//     try {
+//       const storedData = localStorage.getItem(storageKey);
+//       const currentData = storedData ? JSON.parse(storedData) : [];
+//       const updatedData = currentData.map((d) =>
+//         d.id === id
+//           ? { ...d, trackerNo, status, assignedDate: new Date().toISOString() }
+//           : d
+//       );
+//       localStorage.setItem(storageKey, JSON.stringify(updatedData));
+//       setcarData(updatedData);
+//       return { message: "Tracker and status updated", id };
+//     } catch (err) {
+//       console.error("Update tracker and status error:", err);
+//     }
+//   };
+
+//   const deleteItem = async (id) => {
+//     try {
+//       const storedData = localStorage.getItem(storageKey);
+//       const currentData = storedData ? JSON.parse(storedData) : [];
+//       const updatedData = currentData.filter((d) => d.id !== id);
+//       localStorage.setItem(storageKey, JSON.stringify(updatedData));
+//       setcarData(updatedData);
+//       return { message: "Deleted", id };
+//     } catch (err) {
+//       console.error("Delete item error:", err);
+//     }
+//   };
+
+//   useEffect(() => {
+//     fetchAll();
+//   }, [storageKey]);
+
+//   return { carData, loading, addItem, updateItem, deleteItem, updateTrackerAndStatus };
+// }
 "use client";
 
 import { useState, useEffect } from "react";
+import client from "../api/client"; // adjust path as per your project
 
 export default function useCarsCRUD(storageKey) {
   const [carData, setcarData] = useState([]);
@@ -94,10 +185,15 @@ export default function useCarsCRUD(storageKey) {
   const fetchAll = async () => {
     try {
       setLoading(true);
-      const storedData = localStorage.getItem(storageKey);
-      setcarData(storedData ? JSON.parse(storedData) : []);
+      const { data, error } = await client
+        .from(storageKey)
+        .select("*")
+        .order("id", { ascending: true });
+
+      if (error) throw error;
+      setcarData(data);
     } catch (err) {
-      console.error("Fetch all error:", err);
+      console.error("Fetch all error:", err.message);
     } finally {
       setLoading(false);
     }
@@ -105,65 +201,85 @@ export default function useCarsCRUD(storageKey) {
 
   const addItem = async (item) => {
     try {
-      const storedData = localStorage.getItem(storageKey);
-      const currentData = storedData ? JSON.parse(storedData) : [];
       const newItem = {
-        id: Date.now(),
+        id: Date.now(), // keep same id logic
         ...item,
-        assignedDate: null,
         status: "Assigned",
       };
-      const updatedData = [...currentData, newItem];
-      localStorage.setItem(storageKey, JSON.stringify(updatedData));
-      setcarData(updatedData);
+
+      const { data, error } = await client
+        .from(storageKey)
+        .insert([newItem])
+        .select();
+
+      if (error) throw error;
+
+      setcarData((prev) => [...prev, newItem]);
       return newItem;
     } catch (err) {
-      console.error("Add item error:", err);
+      console.error("Add item error:", err.message);
     }
   };
 
   const updateItem = async (item) => {
     try {
-      const storedData = localStorage.getItem(storageKey);
-      const currentData = storedData ? JSON.parse(storedData) : [];
-      const updatedData = currentData.map((d) =>
-        d.id === item.id ? { ...d, ...item } : d
+      const { data, error } = await client
+        .from(storageKey)
+        .update(item)
+        .eq("id", item.id)
+        .select();
+
+      if (error) throw error;
+
+      setcarData((prev) =>
+        prev.map((d) => (d.id === item.id ? { ...d, ...item } : d))
       );
-      localStorage.setItem(storageKey, JSON.stringify(updatedData));
-      setcarData(updatedData);
       return item;
     } catch (err) {
-      console.error("Update item error:", err);
+      console.error("Update item error:", err.message);
     }
   };
 
   const updateTrackerAndStatus = async (id, trackerNo, status) => {
     try {
-      const storedData = localStorage.getItem(storageKey);
-      const currentData = storedData ? JSON.parse(storedData) : [];
-      const updatedData = currentData.map((d) =>
-        d.id === id
-          ? { ...d, trackerNo, status, assignedDate: new Date().toISOString() }
-          : d
+      const updates = {
+        trackerNo,
+        status,
+        assignedDate: new Date().toISOString(),
+      };
+
+      const { data, error } = await client
+        .from(storageKey)
+        .update(updates)
+        .eq("id", id)
+        .select();
+
+      if (error) throw error;
+
+      setcarData((prev) =>
+        prev.map((d) =>
+          d.id === id ? { ...d, trackerNo, status, assignedDate: updates.assignedDate } : d
+        )
       );
-      localStorage.setItem(storageKey, JSON.stringify(updatedData));
-      setcarData(updatedData);
       return { message: "Tracker and status updated", id };
     } catch (err) {
-      console.error("Update tracker and status error:", err);
+      console.error("Update tracker and status error:", err.message);
     }
   };
 
   const deleteItem = async (id) => {
     try {
-      const storedData = localStorage.getItem(storageKey);
-      const currentData = storedData ? JSON.parse(storedData) : [];
-      const updatedData = currentData.filter((d) => d.id !== id);
-      localStorage.setItem(storageKey, JSON.stringify(updatedData));
-      setcarData(updatedData);
+      const { error } = await client
+        .from(storageKey)
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      setcarData((prev) => prev.filter((d) => d.id !== id));
       return { message: "Deleted", id };
     } catch (err) {
-      console.error("Delete item error:", err);
+      console.error("Delete item error:", err.message);
     }
   };
 
@@ -171,5 +287,12 @@ export default function useCarsCRUD(storageKey) {
     fetchAll();
   }, [storageKey]);
 
-  return { carData, loading, addItem, updateItem, deleteItem, updateTrackerAndStatus };
+  return {
+    carData,
+    loading,
+    addItem,
+    updateItem,
+    deleteItem,
+    updateTrackerAndStatus,
+  };
 }

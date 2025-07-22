@@ -53,8 +53,101 @@
 
 //   return { staffList, addStaff, editStaff, deleteStaff, togglePublished };
 // }
+// "use client";
+// import { useState, useEffect } from "react";
+
+// export default function useStaffForm() {
+//   const [staffList, setStaffList] = useState([]);
+//   const [staffData, setStaffData] = useState([]);
+//   const [filterRole, setFilterRole] = useState("");
+//   const [searchQuery, setSearchQuery] = useState("");
+
+//   useEffect(() => {
+//     const storedStaff = JSON.parse(localStorage.getItem("staffList")) || [];
+//     setStaffList(storedStaff);
+//     setStaffData(storedStaff);
+//   }, []);
+
+//   const saveToLocalStorage = (data) => {
+//     localStorage.setItem("staffList", JSON.stringify(data));
+//   };
+
+//   const addStaff = (staff) => {
+//     const newStaff = { ...staff, id: Date.now(), status: "Active", published: true };
+//     const updatedList = [...staffList, newStaff];
+//     setStaffList(updatedList);
+//     setStaffData(updatedList);
+//     saveToLocalStorage(updatedList);
+//   };
+
+//   const editStaff = (id, updatedStaff) => {
+//     const updatedList = staffList.map((s) =>
+//       s.id === id ? { ...s, ...updatedStaff, id } : s
+//     );
+//     setStaffList(updatedList);
+//     setStaffData(updatedList);
+//     saveToLocalStorage(updatedList);
+//   };
+
+//   const deleteStaff = (id) => {
+//     const updatedList = staffList.filter((s) => s.id !== id);
+//     setStaffList(updatedList);
+//     setStaffData(updatedList);
+//     saveToLocalStorage(updatedList);
+//   };
+
+//   const togglePublished = (id) => {
+//     const updatedList = staffList.map((s) =>
+//       s.id === id
+//         ? {
+//             ...s,
+//             published: !s.published,
+//             status: s.published ? "Inactive" : "Active",
+//           }
+//         : s
+//     );
+//     setStaffList(updatedList);
+//     setStaffData(updatedList);
+//     saveToLocalStorage(updatedList);
+//   };
+
+//   const handleFilter = () => {
+//     const filteredData = staffList.filter(
+//       (staff) =>
+//         (staff.role.toLowerCase().includes(filterRole.toLowerCase()) ||
+//           filterRole === "") &&
+//         (staff.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+//           staff.name.toLowerCase().includes(searchQuery.toLowerCase()))
+//     );
+//     setStaffData(filteredData);
+//   };
+
+//   const handleReset = () => {
+//     setFilterRole("");
+//     setSearchQuery("");
+//     setStaffData(staffList);
+//   };
+
+//   return {
+//     staffList,
+//     staffData,
+//     addStaff,
+//     editStaff,
+//     deleteStaff,
+//     togglePublished,
+//     filterRole,
+//     setFilterRole,
+//     searchQuery,
+//     setSearchQuery,
+//     handleFilter,
+//     handleReset,
+//   };
+// }
+
+
 "use client";
 import { useState, useEffect } from "react";
+import client from "../api/client"; // adjust path as per your project setup
 
 export default function useStaffForm() {
   const [staffList, setStaffList] = useState([]);
@@ -62,53 +155,110 @@ export default function useStaffForm() {
   const [filterRole, setFilterRole] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Fetch all staff from Supabase
+  const fetchAllStaff = async () => {
+    const { data, error } = await client
+      .from("staff")
+      .select("*")
+      .order("id", { ascending: true });
+
+    if (error) {
+      console.error("Fetch staff error:", error.message);
+    } else {
+      setStaffList(data);
+      setStaffData(data);
+    }
+  };
+
   useEffect(() => {
-    const storedStaff = JSON.parse(localStorage.getItem("staffList")) || [];
-    setStaffList(storedStaff);
-    setStaffData(storedStaff);
+    fetchAllStaff();
   }, []);
 
-  const saveToLocalStorage = (data) => {
-    localStorage.setItem("staffList", JSON.stringify(data));
+  const addStaff = async (staff) => {
+    const newStaff = {
+      id: Date.now(),
+      ...staff,
+      status: "Active",
+      published: true,
+    };
+
+    const { data, error } = await client
+      .from("staff")
+      .insert([newStaff])
+      .select();
+
+    if (error) {
+      console.error("Add staff error:", error.message);
+    } else {
+      setStaffList((prev) => [...prev, newStaff]);
+      setStaffData((prev) => [...prev, newStaff]);
+    }
   };
 
-  const addStaff = (staff) => {
-    const newStaff = { ...staff, id: Date.now(), status: "Active", published: true };
-    const updatedList = [...staffList, newStaff];
-    setStaffList(updatedList);
-    setStaffData(updatedList);
-    saveToLocalStorage(updatedList);
+  const editStaff = async (id, updatedStaff) => {
+    const { data, error } = await client
+      .from("staff")
+      .update(updatedStaff)
+      .eq("id", id)
+      .select();
+
+    if (error) {
+      console.error("Edit staff error:", error.message);
+    } else {
+      setStaffList((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, ...updatedStaff } : s))
+      );
+      setStaffData((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, ...updatedStaff } : s))
+      );
+    }
   };
 
-  const editStaff = (id, updatedStaff) => {
-    const updatedList = staffList.map((s) =>
-      s.id === id ? { ...s, ...updatedStaff, id } : s
-    );
-    setStaffList(updatedList);
-    setStaffData(updatedList);
-    saveToLocalStorage(updatedList);
+  const deleteStaff = async (id) => {
+    const { error } = await client
+      .from("staff")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Delete staff error:", error.message);
+    } else {
+      setStaffList((prev) => prev.filter((s) => s.id !== id));
+      setStaffData((prev) => prev.filter((s) => s.id !== id));
+    }
   };
 
-  const deleteStaff = (id) => {
-    const updatedList = staffList.filter((s) => s.id !== id);
-    setStaffList(updatedList);
-    setStaffData(updatedList);
-    saveToLocalStorage(updatedList);
-  };
+  const togglePublished = async (id) => {
+    const staffToUpdate = staffList.find((s) => s.id === id);
+    const updatedStaff = {
+      published: !staffToUpdate.published,
+      status: staffToUpdate.published ? "Inactive" : "Active",
+    };
 
-  const togglePublished = (id) => {
-    const updatedList = staffList.map((s) =>
-      s.id === id
-        ? {
-            ...s,
-            published: !s.published,
-            status: s.published ? "Inactive" : "Active",
-          }
-        : s
-    );
-    setStaffList(updatedList);
-    setStaffData(updatedList);
-    saveToLocalStorage(updatedList);
+    const { data, error } = await client
+      .from("staff")
+      .update(updatedStaff)
+      .eq("id", id)
+      .select();
+
+    if (error) {
+      console.error("Toggle published error:", error.message);
+    } else {
+      setStaffList((prev) =>
+        prev.map((s) =>
+          s.id === id
+            ? { ...s, published: updatedStaff.published, status: updatedStaff.status }
+            : s
+        )
+      );
+      setStaffData((prev) =>
+        prev.map((s) =>
+          s.id === id
+            ? { ...s, published: updatedStaff.published, status: updatedStaff.status }
+            : s
+        )
+      );
+    }
   };
 
   const handleFilter = () => {

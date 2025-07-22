@@ -10,7 +10,6 @@ export default function FacilityForm({
   closeModal,
 }) {
   const router = useRouter();
-  console.log("defaultValuesdefaultValuesdefaultValues", defaultValues);
   const [form, setForm] = useState({
     name: "" || defaultValues?.name,
     number: "" || defaultValues?.number,
@@ -31,14 +30,11 @@ export default function FacilityForm({
     if (defaultValues == "add") {
       await addItem(form);
       closeModal();
-      // fetchAll();
     } else {
       await updateItem({ id: Number(defaultValues?.id), ...form });
       closeModal();
-      // fetchAll();
     }
     closeModal();
-    // fetchAll();
     router.push("/admin/facility"); // Navigate after submit
   };
 
@@ -91,12 +87,6 @@ export default function FacilityForm({
             {defaultValues == "add" ? "Add Facility" : " Edit Facility"}
           </button>
         </div>
-        {/* <button
-          type="submit"
-          className="bg-blue-500 text-white p-2 w-full rounded"
-        >
-          {defaultValues == "add" ? "Add Facility" : " Edit Facility"}
-        </button> */}
       </form>
     </div>
   );

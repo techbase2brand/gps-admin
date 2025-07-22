@@ -46,7 +46,7 @@ function page() {
   });
 
   const openModal = (staff = null) => {
-    console.log("workignng", staff);
+ 
 
     setEditingStaff(staff);
     if (staff) {

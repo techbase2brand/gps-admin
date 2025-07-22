@@ -173,9 +173,9 @@ export default function Sidebar() {
 
         {/* Top Menu */}
         <ul className="mt-12 space-y-2">
-          {links.map((link) => {
+          {links?.map((link) => {
             const isActive =
-              pathname === link.href || pathname.startsWith(link.href + "/");
+              pathname === link?.href || pathname?.startsWith(link.href + "/");
             return (
               <li
                 key={link.href}

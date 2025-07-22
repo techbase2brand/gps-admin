@@ -90,7 +90,6 @@ export default function CarForm({
   const [car, setCar] = useState({
     vin: "" || defaultValues?.vin,
     chip: "" || defaultValues?.chip,
-    yardNo: "" || defaultValues?.yardNo,
     slotNo: "" || defaultValues?.slotNo,
     trackerNo: "" || defaultValues?.trackerNo,
     facilityId: "" || defaultValues?.facilityId,
@@ -98,7 +97,7 @@ export default function CarForm({
     color: "" || defaultValues?.color,
   });
   console.log("carss", car, defaultValues);
-  const { data: facilities } = useCRUD("/api/facilities");
+  const { data: facilities } = useCRUD("facility");
   // const { addItem, updateItem, fetchAll } = useCarsCRUD("/api/cars");
 
   const handleSubmit = async (e) => {
@@ -106,23 +105,16 @@ export default function CarForm({
     if (isEdit) {
       await updateItem({ id: Number(defaultValues?.id), ...car });
       closeModal();
-      fetchAll();
-      // await updateItem(defaultValues?.id, car);
     } else {
       await addItem(car);
       closeModal();
     }
-    await fetchAll(); // this will now refresh parent carData
     closeModal();
   };
 
   return (
     <div className="flex">
       <form onSubmit={handleSubmit} className=" rounded   space-y-4">
-        <h1 className="text-xl font-bold text-black">
-          {/* {isEdit ? "Edit Car" : "Add Car"} */}
-        </h1>
-
         <input
           type="text"
           placeholder="VIN"
@@ -137,15 +129,6 @@ export default function CarForm({
           value={car.chip}
           onChange={(e) => setCar({ ...car, chip: e.target.value })}
         />
-
-        {/* <input
-          type="text"
-          placeholder="Owner"
-          className="border p-2 w-full text-black"
-          value={car.yardNo}
-          onChange={(e) => setCar({ ...car, yardNo: e.target.value })}
-        /> */}
-
         <input
           type="text"
           placeholder="Slot Number"
@@ -197,12 +180,6 @@ export default function CarForm({
             {isEdit ? "Update" : "Submit"}
           </button>
         </div>
-        {/* <button
-          type="submit"
-          className="bg-blue-500 text-white p-2 w-full rounded"
-        >
-          {isEdit ? "Update" : "Add"}
-        </button> */}
       </form>
     </div>
   );
