@@ -245,7 +245,6 @@ export default function useCarsCRUD(storageKey) {
       const updates = {
         trackerNo,
         status,
-        assignedDate: new Date().toISOString(),
       };
 
       const { data, error } = await client
@@ -258,7 +257,7 @@ export default function useCarsCRUD(storageKey) {
 
       setcarData((prev) =>
         prev.map((d) =>
-          d.id === id ? { ...d, trackerNo, status, assignedDate: updates.assignedDate } : d
+          d.id === id ? { ...d, trackerNo, status, } : d
         )
       );
       return { message: "Tracker and status updated", id };
