@@ -44,10 +44,10 @@ function page() {
     role: "",
     permissions: [],
   });
+  const [collapsed, setCollapsed] = useState(false);
 
+  const toggleSidebar = () => setCollapsed(!collapsed);
   const openModal = (staff = null) => {
- 
-
     setEditingStaff(staff);
     if (staff) {
       setFormData({
@@ -129,11 +129,19 @@ function page() {
   return (
     <div>
       <div className="flex bg-[#fff]">
-        <Sidebar />
+        <Sidebar collapsed={collapsed} />
 
         <div>
-          <Navbar title={"Staff"} />
-          <div className="flex-1 p-4 bg-gray-200 rounded-2xl w-[86vw] h-[93vh]">
+          <Navbar
+            title={"Staff"}
+            collapsed={collapsed}
+            toggleSidebar={toggleSidebar}
+          />
+          <div
+            className={`flex-1 p-4 bg-gray-200 rounded-2xl  ${
+              collapsed ? "w-[95vw]" : "w-[86vw]"
+            } h-[93vh]`}
+          >
             <div className="container mx-auto p-4">
               <ToastContainer />
 

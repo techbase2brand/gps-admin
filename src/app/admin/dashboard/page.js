@@ -16,39 +16,86 @@
 // }
 "use client";
 import Sidebar from "../../components/Layout/Sidebar";
-import FacilityForm from "../../components/FacilityForm";
-import FacilityTable from "../../components/FacilityTable";
 import useCRUD from "../../hooks/useCRUD";
 import DashboardCard from "../../components/DashboardCard";
-import Header from "../../components/Layout/Header";
 import { useState } from "react";
 import useCarsCRUD from "../../hooks/useCarsCRUD";
-import { FiPlus, FiSearch, FiFilter } from "react-icons/fi";
-import { FiCalendar } from "react-icons/fi";
-import { FaCar, FaMicrochip, FaParking } from "react-icons/fa";
-import { CiMicrochip } from "react-icons/ci";
+import { FaCar, FaMicrochip, FaParking, FaMapMarkerAlt } from "react-icons/fa";
 import { HiChip } from "react-icons/hi";
 import Navbar from "../../components/Layout/Navbar";
-
-const todos = [
-  { task: "Check Inventory", color: "bg-purple-600" },
-  { task: "Manage Delivery Team", color: "bg-purple-600" },
-  { task: "Contact Selma: Confirm Delivery", color: "bg-orange-500" },
-  { task: "Update Shop Catalogue", color: "bg-purple-600" },
-  { task: "Count Profit Analytics", color: "bg-orange-500" },
-];
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
   const { data, addItem, deleteItem, loading } = useCRUD("facility");
   const { carData } = useCarsCRUD("cars");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [collapsed, setCollapsed] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [searchVin, setSearchVin] = useState("");
+
+  const toggleSidebar = () => setCollapsed(!collapsed);
   return (
     <div className="flex bg-[#fff]">
-      <Sidebar />
-
+      <Sidebar collapsed={collapsed} />
       <div>
-        <Navbar title={"Dashboard"} />
-        <div className="flex-1 p-4 bg-gray-200 rounded-2xl w-[86vw] h-[92vh]">
+        <Navbar
+          title={"Dashboard"}
+          collapsed={collapsed}
+          toggleSidebar={toggleSidebar}
+        />
+        <div
+          className={`flex-1 p-4 bg-gray-200 rounded-2xl ${
+            collapsed ? "w-[95vw]" : "w-[86vw]"
+          } h-[92vh]`}
+        >
+          <div className="flex justify-end">
+            <button
+              onClick={() => setShowModal(true)}
+              className="bg-[#613EEA] flex items-center justify-center text-bold text-white px-4 py-2 gap-2 rounded-full my-4"
+            >
+              <FaMapMarkerAlt size={19} className="text-White" /> Track Vehicle
+            </button>
+            {showModal && (
+              <div className="fixed inset-0 bg-black/50  flex items-center justify-center z-50">
+                <div className="bg-white p-6 rounded-lg w-full max-w-md">
+                  <h2 className="text-xl font-bold text-black mb-4">
+                    Track Vehicle
+                  </h2>
+                  <input
+                    type="text"
+                    value={searchVin}
+                    onChange={(e) => setSearchVin(e.target.value)}
+                    placeholder="Enter VIN number"
+                    className="border border-gray-300 text-black placeholder-black rounded px-4 py-2 w-full mb-4"
+                  />
+                  <div className="flex justify-end gap-4">
+                    <button
+                      onClick={() => setShowModal(false)}
+                      className="px-4 py-2 rounded bg-gray-300 text-black"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        const item = carData?.find(
+                          (c) => c?.vin.toLocaleLowerCase() == searchVin
+                        );
+                        if (item) {
+                          router.push(`/admin/cars/view/${item.id}`);
+                          setShowModal(false);
+                        } else {
+                          alert("Vehicle not found");
+                        }
+                      }}
+                      className="px-4 py-2 rounded bg-[#613EEA] text-white"
+                    >
+                      Search
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 p-4">
             <DashboardCard
               title="Total Facilities"
@@ -70,13 +117,17 @@ export default function Home() {
             />
             <DashboardCard
               title="Assigned Trackers"
-              count={carData?.filter(car => car?.status === "Assigned")?.length}
+              count={
+                carData?.filter((car) => car?.status === "Assigned")?.length
+              }
               iconSrc={<FaMicrochip size={24} className="text-green-500" />}
               progressColor="bg-green-500"
             />
             <DashboardCard
               title="Unassigned Trackers"
-              count={carData?.filter(car => car?.status === "Unassigned")?.length}
+              count={
+                carData?.filter((car) => car?.status === "Unassigned")?.length
+              }
               iconSrc={<FaMicrochip size={24} className="text-red-500" />}
               progressColor="bg-orange-500"
             />
@@ -165,37 +216,23 @@ export default function Home() {
                             {f.vin}
                           </td>
                           <td className="py-2 text-black  px-8">{f.chip}</td>
-                          <td className={`py-2 flex   h-6 px-6 w-32 ${f?.status =="Assigned" ? 'text-green-500 bg-green-100':  'text-red-500 bg-red-100'}  rounded-full items-center gap-2`}>
-                             {f?.status || "Unassigned"}
+                          <td
+                            className={`py-2 flex   h-6 px-6 w-32 ${
+                              f?.status == "Assigned"
+                                ? "text-green-500 bg-green-100"
+                                : "text-red-500 bg-red-100"
+                            }  rounded-full items-center gap-2`}
+                          >
+                            {f?.status || "Unassigned"}
                           </td>
                           {/* <td className="py-2 text-black px-8">{f.address}</td> */}
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  {/* <ul className="space-y-3">
-                    {todos?.map((todo, idx) => (
-                      <li
-                        key={idx}
-                        className="flex items-center bg-gray-100 rounded-lg overflow-hidden"
-                      >
-                        <span className={`w-2 h-full ${todo.color}`}></span>
-                        <div className="flex-1 px-4 py-3 text-black">
-                          {todo.task}
-                        </div>
-                        <FiFilter className="text-gray-500 mx-3" />
-                      </li>
-                    ))}
-                  </ul> */}
                 </div>
               </div>
             </>
-            // <FacilityTable
-            //   data={data}
-            //   deleteFacility={deleteItem}
-            //   loading={loading}
-            //   searchQuery={searchQuery}
-            // />
           )}
         </div>
       </div>

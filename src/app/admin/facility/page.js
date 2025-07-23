@@ -26,16 +26,27 @@ import useCarsCRUD from "../../hooks/useCarsCRUD";
 import Navbar from "../../components/Layout/Navbar";
 
 export default function Home() {
-  const { data, addItem, deleteItem,updateItem, loading } = useCRUD("facility");
+  const { data, addItem, deleteItem, updateItem, loading } =
+    useCRUD("facility");
   const { carData } = useCarsCRUD("/api/cars");
   const [searchQuery, setSearchQuery] = useState("");
-  console.log("data1data1data1", carData);
+  const [collapsed, setCollapsed] = useState(false);
+
+  const toggleSidebar = () => setCollapsed(!collapsed);
   return (
     <div className="flex bg-[#f7f8fb]">
-      <Sidebar />
+      <Sidebar collapsed={collapsed} />
       <div>
-        <Navbar title={" Facility Management"} />
-        <div className="flex-1 p-4 bg-gray-200 rounded-2xl w-[86vw] h-[92vh]">
+        <Navbar
+          title={" Facility Management"}
+          collapsed={collapsed}
+          toggleSidebar={toggleSidebar}
+        />
+        <div
+          className={`flex-1 p-4 bg-gray-200 rounded-2xl ${
+            collapsed ? "w-[95vw]" : "w-[86vw]"
+          } h-[92vh]`}
+        >
           {loading ? (
             <div>Loading........</div>
           ) : (
