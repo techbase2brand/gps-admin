@@ -200,9 +200,9 @@ export default function Navbar({ title, toggleSidebar, collapsed }) {
         {/* Search Modal */}
         {showSearchModal && (
           <div
-            className="absolute left-0 mt-2 bg-white border rounded shadow-lg overflow-y-auto"
+            className="absolute left-0 mt-2 mr-10 bg-white border rounded shadow-lg overflow-y-auto"
             style={{
-              width: "40vw",
+              width: "33vw",
               height: "60vh",
               zIndex: 999999,
             }}
