@@ -51,28 +51,26 @@ export default function ViewFacilityPage() {
     zIndex: 1,
   };
 
-
-useEffect(() => {
-  if (carData && data && id) {
-    const car = carData.find((c) => String(c.id) === id);
-    if (car) {
-      const matchingFacility = data.find(
-        (facility) => facility.name === car.facilityId
-      );
-      if (matchingFacility) {
-        setFacility(matchingFacility);
+  useEffect(() => {
+    if (carData && data && id) {
+      const car = carData.find((c) => String(c.id) === id);
+      if (car) {
+        const matchingFacility = data.find(
+          (facility) => facility.name === car.facilityId
+        );
+        if (matchingFacility) {
+          setFacility(matchingFacility);
+        }
       }
     }
-  }
-}, [carData, data, id]);
+  }, [carData, data, id]);
 
   useEffect(() => {
     if (facility?.address) {
-      setShowTooltip(true)
+      setShowTooltip(true);
       geocodeAddress(facility.address);
     }
   }, [facility]);
-
 
   const geocodeAddress = async (address) => {
     try {
@@ -99,7 +97,7 @@ useEffect(() => {
     <main>
       <div className="flex bg-[#f7f8fb]">
         <Sidebar />
-        <div className="flex-1 p-4">
+        <div className="flex-1 p-4 bg-gray-200">
           <h1 className="text-2xl font-bold mb-4 text-black">
             {facility.name}
           </h1>
@@ -124,7 +122,8 @@ useEffect(() => {
                   <div
                     style={{ fontSize: "16px", padding: "2px", color: "black" }}
                   >
-                    <span>Facility Name: {facility?.name}</span><br/>
+                    <span>Facility Name: {facility?.name}</span>
+                    <br />
                     {facility?.address}
                   </div>
                 </InfoWindow>

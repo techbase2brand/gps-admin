@@ -74,7 +74,7 @@
 //       image_black: "/car.png",
 //     },
 //     // {
-//     //   href: "/admin/cars",
+//     //   href: "/admin/cars", 
 //     //   label: "Assign Tracker",
 //     //   image_white: "/assign_white.png",
 //     //   image_black: "/assign_black.png",
@@ -118,6 +118,7 @@
 //     </div>
 //   );
 // }
+
 
 // "use client";
 
@@ -278,9 +279,7 @@ export default function Sidebar({ collapsed }) {
           href="#"
           className={`flex items-center ${
             collapsed ? "justify-center" : "gap-2 pl-8"
-          } text-2xl font-bold text-[#613EEA] h-14 px-4 ${
-            collapsed ? "mt-1" : "mt-5"
-          } sticky top-0 bg-white z-50`}
+          } text-2xl font-bold text-[#613EEA] h-14 px-4 ${collapsed ?"mt-1" :"mt-5"} sticky top-0 bg-white z-50`}
         >
           <Image
             src="/dashboard_ion.png"
@@ -302,6 +301,12 @@ export default function Sidebar({ collapsed }) {
                   isActive ? "bg-gray-200 relative" : ""
                 }`}
               >
+ {isActive && (
+                  <>
+                    <span className="absolute -top-10 right-[-4] w-10 h-10 rounded-full shadow-[20px_20px_0_theme(colors.gray.200)] z-[-1]"></span>
+                    <span className="absolute -bottom-10 right-[-4] w-10 h-10 rounded-full shadow-[20px_-20px_0_theme(colors.gray.200)] z-[-1]"></span>
+                  </>
+                )}
                 <Link
                   href={link.href}
                   className={`flex items-center ${
@@ -313,9 +318,7 @@ export default function Sidebar({ collapsed }) {
                   }`}
                 >
                   <span>{link.icon}</span>
-                  {!collapsed && (
-                    <span className="font-bold">{link.label}</span>
-                  )}
+                  {!collapsed && <span className="font-bold">{link.label}</span>}
                 </Link>
               </li>
             );

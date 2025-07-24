@@ -45,7 +45,7 @@ export default function Home() {
         />
         <div
           className={`flex-1 p-4 bg-gray-200 rounded-2xl ${
-            collapsed ? "w-[95vw]" : "w-[86vw]"
+            collapsed ? "w-[95vw]" : "w-[87vw]"
           } h-[92vh]`}
         >
           <div className="flex justify-end">
@@ -76,9 +76,21 @@ export default function Home() {
                       Cancel
                     </button>
                     <button
+                      // onClick={() => {
+                      //   const item = carData?.find(
+                      //     (c) => c?.vin.toLocaleLowerCase() == searchVin
+                      //   );
+                      //   if (item) {
+                      //     router.push(`/admin/cars/view/${item.id}`);
+                      //     setShowModal(false);
+                      //   } else {
+                      //     alert("Vehicle not found");
+                      //   }
+                      // }}
                       onClick={() => {
                         const item = carData?.find(
-                          (c) => c?.vin.toLocaleLowerCase() == searchVin
+                          (c) =>
+                            c?.vin?.toLowerCase() === searchVin.toLowerCase()
                         );
                         if (item) {
                           router.push(`/admin/cars/view/${item.id}`);

@@ -187,9 +187,9 @@ export default function ViewFacilityPage() {
 
   return (
     <main>
-      <div className="flex bg-[#f7f8fb]">
+      <div className="flex bg-gray-200">
         <Sidebar />
-        <div className="flex-1 p-4">
+        <div className="flex-1 p-4 bg-gray-200">
           <h1 className="text-2xl font-bold mb-4 text-black">
             {facility.name}
           </h1>
