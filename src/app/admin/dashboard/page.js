@@ -177,23 +177,27 @@ export default function Home() {
                           <th className="py-2">Name</th>
                           <th className="py-2 px-8">Number</th>
                           <th className="py-2">City</th>
-                          <th className="py-2 px-8">address</th>
+                          <th className="py-2 px-8">Address</th>
+                          <th className="py-2 px-8">Parking Slots</th>
                         </tr>
                       </thead>
                       <tbody>
                         {data?.map((f, idx) => (
                           <tr key={idx} className="border-b">
                             <td className="py-2 flex  text-black items-center gap-2">
-                              {f.name}
+                              {f.name || '-'}
                             </td>
                             <td className="py-2 text-black  px-8">
-                              {f.number}
+                              {f.number || '-'}
                             </td>
                             <td className="py-2 flex  text-black items-center gap-2">
-                              {f.city}
+                              {f.city || '-'}
                             </td>
                             <td className="py-2 text-black px-8">
-                              {f.address}
+                              {f.address || '-'}
+                            </td>
+                            <td className="py-2 text-black px-8">
+                              {f.parkingSlots || '-'}
                             </td>
                           </tr>
                         ))}

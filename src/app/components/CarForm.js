@@ -96,88 +96,204 @@ export default function CarForm({
     model: "" || defaultValues?.model,
     color: "" || defaultValues?.color,
   });
+  
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   console.log("carss", car, defaultValues);
   const { data: facilities } = useCRUD("facility");
   // const { addItem, updateItem, fetchAll } = useCarsCRUD("/api/cars");
 
+  const handleChange = (name, value) => {
+    setCar({ ...car, [name]: value });
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: "" });
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    // VIN validation
+    if (!car.vin.trim()) {
+      newErrors.vin = "VIN is required";
+    } else if (car.vin.trim().length < 3) {
+      newErrors.vin = "VIN must be at least 3 characters";
+    }
+
+    // Chip validation
+    if (!car.chip.trim()) {
+      newErrors.chip = "Chip is required";
+    } else if (car.chip.trim().length < 2) {
+      newErrors.chip = "Chip must be at least 2 characters";
+    }
+
+    // Slot Number validation
+    if (!car.slotNo.trim()) {
+      newErrors.slotNo = "Slot Number is required";
+    } else if (car.slotNo.trim().length < 1) {
+      newErrors.slotNo = "Slot Number is required";
+    }
+
+    // Model validation
+    if (!car.model.trim()) {
+      newErrors.model = "Model is required";
+    } else if (car.model.trim().length < 2) {
+      newErrors.model = "Model must be at least 2 characters";
+    }
+
+    // Color validation
+    if (!car.color.trim()) {
+      newErrors.color = "Color is required";
+    } else if (car.color.trim().length < 2) {
+      newErrors.color = "Color must be at least 2 characters";
+    }
+
+    // Facility validation
+    if (!car.facilityId) {
+      newErrors.facilityId = "Facility selection is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isEdit) {
-      await updateItem({ id: Number(defaultValues?.id), ...car });
-      closeModal();
-    } else {
-      await addItem(car);
-      closeModal();
+    
+    // Validate form before submission
+    if (!validateForm()) {
+      return;
     }
-    closeModal();
+
+    setIsSubmitting(true);
+
+    try {
+      if (isEdit) {
+        await updateItem({ id: Number(defaultValues?.id), ...car });
+      } else {
+        await addItem(car);
+      }
+      closeModal();
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      setErrors({ submit: "Failed to save car. Please try again." });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="flex">
-      <form onSubmit={handleSubmit} className=" rounded   space-y-4">
-        <input
-          type="text"
-          placeholder="VIN"
-          className="border p-2 w-full text-black"
-          value={car.vin}
-          onChange={(e) => setCar({ ...car, vin: e.target.value })}
-        />
-        <input
-          type="text"
-          placeholder="Chip"
-          className="border p-2 w-full text-black"
-          value={car.chip}
-          onChange={(e) => setCar({ ...car, chip: e.target.value })}
-        />
-        <input
-          type="text"
-          placeholder="Slot Number"
-          className="border p-2 w-full text-black"
-          value={car.slotNo}
-          onChange={(e) => setCar({ ...car, slotNo: e.target.value })}
-        />
+      <form onSubmit={handleSubmit} className="bg-white rounded w-96 space-y-4">
+        <div>
+          <input
+            type="text"
+            placeholder="VIN"
+            className={`border p-2 w-full text-black ${errors.vin ? 'border-red-500' : 'border-gray-300'}`}
+            value={car.vin}
+            onChange={(e) => handleChange('vin', e.target.value)}
+            required
+          />
+          {errors.vin && <p className="text-red-500 text-sm mt-1">{errors.vin}</p>}
+        </div>
+        
+        <div>
+          <input
+            type="text"
+            placeholder="Chip"
+            className={`border p-2 w-full text-black ${errors.chip ? 'border-red-500' : 'border-gray-300'}`}
+            value={car.chip}
+            onChange={(e) => handleChange('chip', e.target.value)}
+            required
+          />
+          {errors.chip && <p className="text-red-500 text-sm mt-1">{errors.chip}</p>}
+        </div>
+        
+        <div>
+          <input
+            type="text"
+            placeholder="Slot Number"
+            className={`border p-2 w-full text-black ${errors.slotNo ? 'border-red-500' : 'border-gray-300'}`}
+            value={car.slotNo}
+            onChange={(e) => handleChange('slotNo', e.target.value)}
+            required
+          />
+          {errors.slotNo && <p className="text-red-500 text-sm mt-1">{errors.slotNo}</p>}
+        </div>
 
-        <input
-          type="text"
-          placeholder="Modal"
-          className="border p-2 w-full text-black"
-          value={car.model}
-          onChange={(e) => setCar({ ...car, model: e.target.value })}
-        />
-        <input
-          type="text"
-          placeholder="Color"
-          className="border p-2 w-full text-black"
-          value={car.color}
-          onChange={(e) => setCar({ ...car, color: e.target.value })}
-        />
+        <div>
+          <input
+            type="text"
+            placeholder="Model"
+            className={`border p-2 w-full text-black ${errors.model ? 'border-red-500' : 'border-gray-300'}`}
+            value={car.model}
+            onChange={(e) => handleChange('model', e.target.value)}
+            required
+          />
+          {errors.model && <p className="text-red-500 text-sm mt-1">{errors.model}</p>}
+        </div>
+        
+        <div>
+          <input
+            type="text"
+            placeholder="Color"
+            className={`border p-2 w-full text-black ${errors.color ? 'border-red-500' : 'border-gray-300'}`}
+            value={car.color}
+            onChange={(e) => handleChange('color', e.target.value)}
+            required
+          />
+          {errors.color && <p className="text-red-500 text-sm mt-1">{errors.color}</p>}
+        </div>
 
-        <select
-          className="border p-2 w-full text-black"
-          value={car.facilityId}
-          onChange={(e) => setCar({ ...car, facilityId: e.target.value })}
-        >
-          <option value="">Select Facility</option>
-          {facilities?.map((f) => (
-            <option key={f.id} value={f.name}>
-              {f.name}
-            </option>
-          ))}
-        </select>
+        <div>
+          <select
+            className={`border p-2 w-full text-black ${errors.facilityId ? 'border-red-500' : 'border-gray-300'}`}
+            value={car.facilityId}
+            onChange={(e) => handleChange('facilityId', e.target.value)}
+            required
+          >
+            <option value="">Select Facility</option>
+            {facilities?.map((f) => (
+              <option key={f.id} value={f.name}>
+                {f.name}
+              </option>
+            ))}
+          </select>
+          {errors.facilityId && <p className="text-red-500 text-sm mt-1">{errors.facilityId}</p>}
+        </div>
+
+        {/* Error message */}
+        {errors.submit && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            {errors.submit}
+          </div>
+        )}
+
         <div className="fixed bottom-0 left-0 w-full max-w-md bg-white p-4 border-t flex justify-between gap-4">
           <button
             type="button"
             onClick={closeModal}
-            className="bg-gray-500 text-white px-10 py-2 w-[48%] rounded hover:bg-gray-600 mr-4"
+            className="bg-gray-500 text-white px-4 py-2 w-[50%] rounded hover:bg-gray-600"
+            disabled={isSubmitting}
           >
             Cancel
           </button>
           <button
             type="submit"
-            onClick={handleSubmit}
-            className="bg-[#613EEA] text-white px-4 py-2 w-[48%] rounded hover:bg-[#613EEA]"
+            className={`px-4 py-2 w-[50%] rounded text-white ${
+              isSubmitting 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : 'bg-[#613EEA] hover:bg-[#613EEA]'
+            }`}
+            disabled={isSubmitting}
           >
-            {isEdit ? "Update" : "Submit"}
+            {isSubmitting 
+              ? 'Saving...' 
+              : (isEdit ? "Update Car" : "Add Car")
+            }
           </button>
         </div>
       </form>

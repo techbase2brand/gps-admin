@@ -129,6 +129,7 @@ export default function useCRUD(storageKey) {
         address: item.address || "",
         lat: item.lat || "",
         long: item.long || "",
+        parkingSlots: item.parkingSlots || 0,
       };
 
       const { data: insertedData, error } = await client
@@ -154,6 +155,7 @@ export default function useCRUD(storageKey) {
         address: item.address || "",
         lat: item.lat || "",
         long: item.long || "",
+        parkingSlots: item.parkingSlots || 0,
       };
 
       const { data: updated, error } = await client

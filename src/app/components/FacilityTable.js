@@ -114,6 +114,7 @@ export default function FacilityTable({
             <th className=" px-4 text-start py-2 text-black">Number</th>
             <th className="px-4 text-start  py-2 text-black">City</th>
             <th className="px-4 text-start  py-2 text-black">Address</th>
+            <th className="px-4 text-start  py-2 text-black">Parking Slots</th>
             <th className="px-4 text-start  py-2 text-black">Actions</th>
           </tr>
         </thead>
@@ -121,11 +122,14 @@ export default function FacilityTable({
           <tbody>
             {[...filteredData]?.reverse()?.map((facility) => (
               <tr key={facility?.id} className="border-b border-gray-300">
-                <td className=" px-4 py-2 text-black">{facility?.name}</td>
-                <td className=" px-4 py-2 text-black">{facility?.number}</td>
-                <td className=" px-4 py-2 text-black">{facility?.city}</td>
+                <td className=" px-4 py-2 text-black">{facility?.name || '-'}</td>
+                <td className=" px-4 py-2 text-black">{facility?.number || '-'}</td>
+                <td className=" px-4 py-2 text-black">{facility?.city || '-'}</td>
                 <td className=" px-4 py-2 w-[30%] text-black">
-                  {facility?.address}
+                  {facility?.address || '-'}
+                </td>
+                <td className=" px-4 py-2 text-black">
+                  {facility?.parkingSlots || '-'}
                 </td>
                 <td className=" px-4 py-2 space-x-2 text-black">
                   <button
