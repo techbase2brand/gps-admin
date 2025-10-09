@@ -203,7 +203,7 @@ export default function Navbar({ title, toggleSidebar, collapsed }) {
             className="absolute left-0 mt-2 mr-10 bg-white border rounded shadow-lg overflow-y-auto"
             style={{
               width: "33vw",
-              height: "60vh",
+              height: "min-h-30vh",
               zIndex: 999999,
             }}
           >
@@ -218,28 +218,6 @@ export default function Navbar({ title, toggleSidebar, collapsed }) {
               <h3 className="text-lg font-semibold mb-2 text-black">
                 Search Results
               </h3>
-              {results.length > 0 && (
-                <div className="flex justify-end">
-                  <button
-                    onClick={() => {
-                      if (results[0]) {
-                        const type = results[0].type;
-                        if (type === "Facility") {
-                          router.push("/admin/facility/");
-                        } else if (type === "Car") {
-                          router.push("/admin/cars/");
-                        } else if (type === "Staff") {
-                          router.push("/admin/teams/");
-                        }
-                      }
-                    }}
-                    // onClick={() => router.push("/admin/facility/")}
-                    className="bg-[#613EEA] text-white px-4 py-2 rounded-full my-4"
-                  >
-                    See All
-                  </button>
-                </div>
-              )}
 
               {results.length === 0 ? (
                 <p className="text-black">No results found.</p>
@@ -264,6 +242,28 @@ export default function Navbar({ title, toggleSidebar, collapsed }) {
                     </li>
                   ))}
                 </ul>
+              )}
+              {results.length > 0 && (
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => {
+                      if (results[0]) {
+                        const type = results[0].type;
+                        if (type === "Facility") {
+                          router.push("/admin/facility/");
+                        } else if (type === "Car") {
+                          router.push("/admin/cars/");
+                        } else if (type === "Staff") {
+                          router.push("/admin/teams/");
+                        }
+                      }
+                    }}
+                    // onClick={() => router.push("/admin/facility/")}
+                    className="bg-[#613EEA] text-white px-4 py-2 rounded-full my-4"
+                  >
+                    See All
+                  </button>
+                </div>
               )}
             </div>
           </div>

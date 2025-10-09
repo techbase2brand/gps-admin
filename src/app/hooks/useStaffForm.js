@@ -147,7 +147,8 @@
 
 "use client";
 import { useState, useEffect } from "react";
-import client from "../api/client"; // adjust path as per your project setup
+import client from "../api/client"; 
+import bcrypt from "bcryptjs";
 
 export default function useStaffForm() {
   const [staffList, setStaffList] = useState([]);
@@ -173,11 +174,15 @@ export default function useStaffForm() {
   useEffect(() => {
     fetchAllStaff();
   }, []);
+const addStaff = async (staff) => {
+  try {
+    // Hash password before saving
+    const hashedPassword = await bcrypt.hash(staff.password, 10);
 
-  const addStaff = async (staff) => {
     const newStaff = {
       id: Date.now(),
       ...staff,
+      password: hashedPassword, // store hashed password
       status: "Active",
       published: true,
     };
@@ -193,26 +198,72 @@ export default function useStaffForm() {
       setStaffList((prev) => [...prev, newStaff]);
       setStaffData((prev) => [...prev, newStaff]);
     }
-  };
+  } catch (err) {
+    console.error("Hashing error:", err.message);
+  }
+};
 
-  const editStaff = async (id, updatedStaff) => {
-    const { data, error } = await client
-      .from("staff")
-      .update(updatedStaff)
-      .eq("id", id)
-      .select();
+const editStaff = async (id, updatedStaff) => {
+  // Remove password field if exists, as edit does not update password here
+  const { password, ...staffWithoutPassword } = updatedStaff;
 
-    if (error) {
-      console.error("Edit staff error:", error.message);
-    } else {
-      setStaffList((prev) =>
-        prev.map((s) => (s.id === id ? { ...s, ...updatedStaff } : s))
-      );
-      setStaffData((prev) =>
-        prev.map((s) => (s.id === id ? { ...s, ...updatedStaff } : s))
-      );
-    }
-  };
+  const { data, error } = await client
+    .from("staff")
+    .update(staffWithoutPassword)
+    .eq("id", id)
+    .select();
+
+  if (error) {
+    console.error("Edit staff error:", error.message);
+  } else {
+    setStaffList((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...staffWithoutPassword } : s))
+    );
+    setStaffData((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...staffWithoutPassword } : s))
+    );
+  }
+};
+
+  // const addStaff = async (staff) => {
+  //   const newStaff = {
+  //     id: Date.now(),
+  //     ...staff,
+  //     status: "Active",
+  //     published: true,
+  //   };
+
+  //   const { data, error } = await client
+  //     .from("staff")
+  //     .insert([newStaff])
+  //     .select();
+
+  //   if (error) {
+  //     console.error("Add staff error:", error.message);
+  //   } else {
+  //     setStaffList((prev) => [...prev, newStaff]);
+  //     setStaffData((prev) => [...prev, newStaff]);
+  //   }
+  // };
+
+  // const editStaff = async (id, updatedStaff) => {
+  //   const { data, error } = await client
+  //     .from("staff")
+  //     .update(updatedStaff)
+  //     .eq("id", id)
+  //     .select();
+
+  //   if (error) {
+  //     console.error("Edit staff error:", error.message);
+  //   } else {
+  //     setStaffList((prev) =>
+  //       prev.map((s) => (s.id === id ? { ...s, ...updatedStaff } : s))
+  //     );
+  //     setStaffData((prev) =>
+  //       prev.map((s) => (s.id === id ? { ...s, ...updatedStaff } : s))
+  //     );
+  //   }
+  // };
 
   const deleteStaff = async (id) => {
     const { error } = await client

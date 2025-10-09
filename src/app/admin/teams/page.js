@@ -5,7 +5,6 @@ import Sidebar from "../../components/Layout/Sidebar";
 import React, { useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { IoEyeOutline } from "react-icons/io5";
 import { FiEdit } from "react-icons/fi";
 import { MdDeleteOutline } from "react-icons/md";
 import useStaffForm from "../../hooks/useStaffForm";
@@ -39,6 +38,7 @@ function page() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    password:"",
     contact: "",
     joiningDate: "",
     role: "",
@@ -223,6 +223,18 @@ function page() {
                         required
                       />
 
+                      {/* {!editingStaff && ( */}
+                        <input
+                          name="password"
+                          type="password"
+                          placeholder="Password"
+                          value={formData.password}
+                          onChange={handleChange}
+                          className="w-full border px-3 py-2 rounded text-black placeholder-gray-400"
+                          required
+                        />
+                      {/* )} */}
+
                       <input
                         name="contact"
                         placeholder="Contact Number"
@@ -336,7 +348,6 @@ function page() {
                       <td className="p-2 text-black">
                         <button
                           onClick={() => togglePublished(staff.id)}
-                          // onClick={() => handleStatusChange(staff.id)}
                           className={`px-4 py-1 rounded-full  ${
                             staff.status === "Active"
                               ? "bg-green-100  text-green-500"
@@ -365,10 +376,6 @@ function page() {
                         </label>
                       </td>
                       <td className="p-2">
-                        {/* <button className="text-blue-500">
-                          {" "}
-                          <IoEyeOutline size={20} className="text-black" />
-                        </button> */}
                         <button
                           className="ml-4 text-red-500"
                           onClick={() => openModal(staff)}
@@ -389,9 +396,6 @@ function page() {
                   {showDeleteModal && (
                     <div className="fixed inset-0 bg-black/50  flex justify-center items-center z-50">
                       <div className="bg-white p-6 rounded shadow-md w-full max-w-sm">
-                        {/* <h3 className="text-lg text-black font-semibold mb-4">
-                          Confirm Delete
-                        </h3> */}
                         <p className="mb-6 text-black">
                           Are you sure you want to delete this staff member?
                         </p>
