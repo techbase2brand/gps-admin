@@ -57,7 +57,9 @@ export async function GET(req) {
  */
 export async function POST(req) {
   const body = await req.json();
-  const newCar = { id: Date.now(), ...body, assignedDate: null, status: "Assigned" };
+  // Status depends on chip: if chip exists → Assigned, else → Unassigned
+  const status = body.chip && body.chip.trim() ? "Assigned" : "Unassigned";
+  const newCar = { id: Date.now(), ...body, assignedDate: null, status };
   cars.push(newCar);
   return NextResponse.json(newCar);
 }
@@ -67,8 +69,10 @@ export async function POST(req) {
  */
 export async function PUT(req) {
   const body = await req.json();
+  // Status depends on chip: if chip exists → Assigned, else → Unassigned
+  const status = body.chip && body.chip.trim() ? "Assigned" : "Unassigned";
   cars = cars.map((item) =>
-    item.id === body.id ? { ...item, ...body } : item
+    item.id === body.id ? { ...item, ...body, status } : item
   );
   return NextResponse.json({ message: "Updated", updated: body });
 }

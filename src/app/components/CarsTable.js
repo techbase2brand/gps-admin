@@ -125,6 +125,8 @@ export default function CarsTable({ searchQuery, assignview }) {
   const [selectedCarId, setSelectedCarId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCar, setEditingCar] = useState(null);
+  const [localSearch, setLocalSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const openAddModal = () => {
     setEditingCar(null);
@@ -142,11 +144,20 @@ export default function CarsTable({ searchQuery, assignview }) {
   };
 
   const selectedCar = carData?.find((car) => car.id === selectedCarId);
-  const filteredData = carData?.filter((car) =>
-    [car.vin, car?.facilityId, car.slotNo, car.trackerNo].some((field) =>
-      field?.toString().toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  );
+
+  // Filter data
+  const filteredData = carData?.filter((car) => {
+    const matchesSearch = [car.vin, car?.facilityId, car.slotNo, car.trackerNo, car.chip].some((field) =>
+      field?.toString().toLowerCase().includes(localSearch.toLowerCase())
+    );
+    const matchesStatus = statusFilter === "all" || car.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const handleReset = () => {
+    setLocalSearch("");
+    setStatusFilter("all");
+  };
 
   const handleAssignTracker = async () => {
     if (selectedCarId && trackerInput) {
@@ -156,20 +167,44 @@ export default function CarsTable({ searchQuery, assignview }) {
     }
   };
 
-  const handleToggleStatus = async (car) => {
-    const newStatus = car.status === "Assigned" ? "Unassigned" : "Assigned";
-    await updateTrackerAndStatus(car?.id, car?.trackerNo, newStatus);
-  };
+  // Toggle status removed - status now depends on chip only
+  // const handleToggleStatus = async (car) => {
+  //   const newStatus = car.status === "Assigned" ? "Unassigned" : "Assigned";
+  //   await updateTrackerAndStatus(car?.id, car?.trackerNo, newStatus);
+  // };
 
   return (
     <div>
-      <button
-        onClick={openAddModal}
-        // onClick={() => router.push("/admin/cars/add")}
-        className="bg-[#613EEA] text-white px-4 py-2 mt-10 rounded-full mb-10"
-      >
-        + Add vehicle
-      </button>
+      {/* Search Bar and Filters */}
+      <div className="mb-4 flex justify-between items-center mt-10 mb-10">
+        <div className="flex space-x-3 items-center">
+          <input
+            type="text"
+            placeholder="Search vehicles..."
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            className="w-80 px-4 py-2 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:border-[#613EEA]"
+          />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-40 px-4 py-2 mr-4 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-[#613EEA]"
+          >
+            <option value="all">All Status</option>
+            <option value="Assigned">Assigned</option>
+            <option value="Unassigned">Unassigned</option>
+          </select>
+        </div>
+        
+        <div>
+          <button
+            onClick={openAddModal}
+            className="px-6 py-2 bg-[#613EEA] text-white rounded-full shadow-md hover:bg-[#5030d0] transition-colors"
+          >
+            + Add Vehicle
+          </button>
+        </div>
+      </div>
 
       {/* Modal */}
       {isModalOpen && (
@@ -190,6 +225,7 @@ export default function CarsTable({ searchQuery, assignview }) {
               addItem={addItem}
               updateItem={updateItem}
               fetchAll={fetchAll}
+              existingCars={carData}
             />
           </div>
         </div>
@@ -262,78 +298,77 @@ export default function CarsTable({ searchQuery, assignview }) {
             <th className="text-start px-4 py-2 text-black">Actions</th>
           </tr>
         </thead>
-        {filteredData?.length > 0 ? (
-          <tbody>
-            {filteredData?.map((car) => (
-              <tr key={car?.id} className="border-b border-gray-300">
-                <td className="text-start px-4 py-2 text-black">{car?.vin}</td>
-                <td className="text-start px-4 py-2 text-black">{car?.chip}</td>
+        <tbody>
+          {filteredData?.map((car) => (
+            <tr key={car?.id} className="border-b border-gray-300">
+              <td className="text-start px-4 py-2 text-black">{car?.vin}</td>
+              <td className="text-start px-4 py-2 text-black">{car?.chip}</td>
+              <td className="text-start px-4 py-2 text-black">
+                {car?.facilityId}
+              </td>
+              <td className="text-start px-4 py-2 text-black">
+                {car?.slotNo}
+              </td>
+              {assignview && (
                 <td className="text-start px-4 py-2 text-black">
-                  {car?.facilityId}
+                  {car?.trackerNo || "N/A"}
                 </td>
+              )}
+              {assignview && (
                 <td className="text-start px-4 py-2 text-black">
-                  {car?.slotNo}
+                  {car?.assignedDate
+                    ? new Date(car?.assignedDate).toLocaleDateString()
+                    : "N/A"}
                 </td>
-                {assignview && (
-                  <td className="text-start px-4 py-2 text-black">
-                    {car?.trackerNo || "N/A"}
-                  </td>
-                )}
-                {assignview && (
-                  <td className="text-start px-4 py-2 text-black">
-                    {car?.assignedDate
-                      ? new Date(car?.assignedDate).toLocaleDateString()
-                      : "N/A"}
-                  </td>
-                )}
-                <td className="text-start px-4 py-2 text-black">
-                  <button
-                    onClick={() => handleToggleStatus(car)}
-                    className={`px-4 py-1 rounded-full  ${
-                      car?.status === "Assigned"
-                        ? "bg-green-100  text-green-500"
-                        : "bg-red-100  text-red-500"
-                    }`}
-                  >
-                    {car?.status || "Unassigned"}
-                  </button>
-                </td>
-                <td className=" px-4 py-2 space-x-2 text-black">
-                  <button
-                   onClick={() => {
-                      const query = new URLSearchParams({
-                        id: car.id,
-                      }).toString();
-                      router.push(`/admin/cars/view/${car.id}`);
-                    }}
-                    // onClick={() => router.push(`/admin/cars/${car?.id}`)}
-                    className=" px-2 py-2 rounded"
-                  >
-                    <IoEyeOutline size={20} className="text-black" />
-                  </button>
-                  <button
-                    onClick={() => openEditModal(car)}
-                    // onClick={() => router.push(`/admin/cars/${car?.id}`)}
-                    className="px-2 py-2 rounded"
-                  >
-                    <FiEdit size={16} className="text-green-500" />
-                  </button>
-                  <button
-                    onClick={() => setDeleteId(car.id)}
-                    className="px-2 py-2 rounded"
-                  >
-                    <MdDeleteOutline size={20} className="text-red-500" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        ) : (
-          <span className="font-bold mb-2 text-black self-center">
-            No results found:
-          </span>
-        )}
+              )}
+              <td className="text-start px-4 py-2 text-black">
+                <span
+                  className={`px-4 py-1 rounded-full inline-block ${
+                    car?.status === "Assigned"
+                      ? "bg-green-100  text-green-500"
+                      : "bg-red-100  text-red-500"
+                  }`}
+                >
+                  {car?.status || "Unassigned"}
+                </span>
+              </td>
+              <td className=" px-4 py-2 space-x-2 text-black">
+                <button
+                 onClick={() => {
+                    const query = new URLSearchParams({
+                      id: car.id,
+                    }).toString();
+                    router.push(`/admin/cars/view/${car.id}`);
+                  }}
+                  // onClick={() => router.push(`/admin/cars/${car?.id}`)}
+                  className=" px-2 py-2 rounded"
+                >
+                  <IoEyeOutline size={20} className="text-black" />
+                </button>
+                <button
+                  onClick={() => openEditModal(car)}
+                  // onClick={() => router.push(`/admin/cars/${car?.id}`)}
+                  className="px-2 py-2 rounded"
+                >
+                  <FiEdit size={16} className="text-green-500" />
+                </button>
+                <button
+                  onClick={() => setDeleteId(car.id)}
+                  className="px-2 py-2 rounded"
+                >
+                  <MdDeleteOutline size={20} className="text-red-500" />
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
       </table>
+      
+      {filteredData?.length === 0 && (
+        <div className="text-center py-10">
+          <p className="text-gray-500 text-lg">No vehicles found</p>
+        </div>
+      )}
 
       {deleteId && (
         <div className="fixed inset-0 bg-black/50  flex justify-center items-center z-50">

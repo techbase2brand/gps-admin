@@ -20,7 +20,7 @@ import useCRUD from "../../hooks/useCRUD";
 import DashboardCard from "../../components/DashboardCard";
 import { useState } from "react";
 import useCarsCRUD from "../../hooks/useCarsCRUD";
-import { FaCar, FaMicrochip, FaParking, FaMapMarkerAlt } from "react-icons/fa";
+import { FaCar, FaMicrochip, FaParking, FaMapMarkerAlt, FaBuilding, FaUsers } from "react-icons/fa";
 import { HiChip } from "react-icons/hi";
 import Navbar from "../../components/Layout/Navbar";
 import { useRouter } from "next/navigation";
@@ -29,9 +29,20 @@ export default function Home() {
   const router = useRouter();
   const { data, addItem, deleteItem, loading } = useCRUD("facility");
   const { carData } = useCarsCRUD("cars");
+  const { data: staffData } = useCRUD("staff");
   const [collapsed, setCollapsed] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [searchVin, setSearchVin] = useState("");
+
+  // Debug: Check status counts
+  const assignedCount = carData?.filter((car) => car?.status === "Assigned")?.length || 0;
+  const unassignedCount = carData?.filter((car) => car?.status === "Unassigned")?.length || 0;
+  
+  console.log("=== Dashboard Debug ===");
+  console.log("Total Cars:", carData?.length);
+  console.log("Assigned Count:", assignedCount);
+  console.log("Unassigned Count:", unassignedCount);
+  console.log("All Cars Status:", carData?.map(car => ({ vin: car.vin, chip: car.chip, status: car.status })));
 
   const toggleSidebar = () => setCollapsed(!collapsed);
   return (
@@ -112,42 +123,32 @@ export default function Home() {
             <DashboardCard
               title="Total Facilities"
               count={data?.length}
-              iconSrc={<FaParking size={24} className="text-pink-500" />}
-              progressColor="bg-pink-500"
+              iconSrc={<FaBuilding size={24} className="text-blue-500" />}
+              progressColor="bg-blue-500"
             />
             <DashboardCard
               title="Total Cars"
               count={carData?.length}
               iconSrc={<FaCar size={24} className="text-purple-600" />}
-              progressColor="bg-red-500"
-            />
-            <DashboardCard
-              title="Total Trackers"
-              count={5048}
-              iconSrc={<HiChip size={24} className="text-gray-500" />}
-              progressColor="bg-gray-500"
+              progressColor="bg-purple-600"
             />
             <DashboardCard
               title="Assigned Trackers"
-              count={
-                carData?.filter((car) => car?.status === "Assigned")?.length
-              }
+              count={assignedCount}
               iconSrc={<FaMicrochip size={24} className="text-green-500" />}
               progressColor="bg-green-500"
             />
             <DashboardCard
               title="Unassigned Trackers"
-              count={
-                carData?.filter((car) => car?.status === "Unassigned")?.length
-              }
+              count={unassignedCount}
               iconSrc={<FaMicrochip size={24} className="text-red-500" />}
-              progressColor="bg-orange-500"
+              progressColor="bg-red-500"
             />
             <DashboardCard
-              title="Facilities by Cities"
-              count={data?.length}
-              iconSrc={<FaParking size={24} className="text-blue-600" />}
-              progressColor="bg-blue-500"
+              title="Total Staff"
+              count={staffData?.length || 0}
+              iconSrc={<FaUsers size={24} className="text-orange-500" />}
+              progressColor="bg-orange-500"
             />
           </div>
           {loading ? (

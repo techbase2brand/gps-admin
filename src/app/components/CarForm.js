@@ -83,6 +83,7 @@ export default function CarForm({
   updateItem,
   addItem,
   closeModal,
+  existingCars = [],
 }) {
   const router = useRouter();
   const isEdit = defaultValues !== "add";
@@ -93,6 +94,7 @@ export default function CarForm({
     slotNo: "" || defaultValues?.slotNo,
     trackerNo: "" || defaultValues?.trackerNo,
     facilityId: "" || defaultValues?.facilityId,
+    make: "" || defaultValues?.make,
     model: "" || defaultValues?.model,
     color: "" || defaultValues?.color,
   });
@@ -101,6 +103,7 @@ export default function CarForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   console.log("carss", car, defaultValues);
+  console.log("existingCars for duplicate check:", existingCars);
   const { data: facilities } = useCRUD("facility");
   // const { addItem, updateItem, fetchAll } = useCarsCRUD("/api/cars");
 
@@ -121,6 +124,17 @@ export default function CarForm({
       newErrors.vin = "VIN is required";
     } else if (car.vin.trim().length < 3) {
       newErrors.vin = "VIN must be at least 3 characters";
+    } else {
+      // Check for duplicate VIN (skip check if editing the same car)
+      const duplicateVin = existingCars?.find(
+        (existingCar) => 
+          existingCar.vin.toLowerCase() === car.vin.trim().toLowerCase() &&
+          existingCar.id !== defaultValues?.id
+      );
+      if (duplicateVin) {
+        const facilityName = duplicateVin.facilityId || 'Unknown Facility';
+        newErrors.vin = `This VIN is already added in ${facilityName}`;
+      }
     }
 
     // Chip validation
@@ -128,6 +142,18 @@ export default function CarForm({
       newErrors.chip = "Chip is required";
     } else if (car.chip.trim().length < 2) {
       newErrors.chip = "Chip must be at least 2 characters";
+    } else {
+      // Check for duplicate Chip (skip check if editing the same car)
+      const duplicateChip = existingCars?.find(
+        (existingCar) => 
+          existingCar.chip.toLowerCase() === car.chip.trim().toLowerCase() &&
+          existingCar.id !== defaultValues?.id
+      );
+      if (duplicateChip) {
+        const facilityName = duplicateChip.facilityId || 'Unknown Facility';
+        const vinNumber = duplicateChip.vin || 'Unknown VIN';
+        newErrors.chip = `This Chip already exists in ${facilityName} with VIN: ${vinNumber}`;
+      }
     }
 
     // Slot Number validation
@@ -135,6 +161,24 @@ export default function CarForm({
       newErrors.slotNo = "Slot Number is required";
     } else if (car.slotNo.trim().length < 1) {
       newErrors.slotNo = "Slot Number is required";
+    } else if (car.facilityId) {
+      // Check for duplicate slot in same facility (skip check if editing the same car)
+      const duplicateSlot = existingCars?.find(
+        (existingCar) => 
+          existingCar.slotNo.toLowerCase() === car.slotNo.trim().toLowerCase() &&
+          existingCar.facilityId === car.facilityId &&
+          existingCar.id !== defaultValues?.id
+      );
+      if (duplicateSlot) {
+        newErrors.slotNo = `Slot ${car.slotNo} is already occupied in ${car.facilityId} by VIN: ${duplicateSlot.vin}`;
+      }
+    }
+
+    // Make validation
+    if (!car.make.trim()) {
+      newErrors.make = "Make is required";
+    } else if (car.make.trim().length < 2) {
+      newErrors.make = "Make must be at least 2 characters";
     }
 
     // Model validation
@@ -151,9 +195,34 @@ export default function CarForm({
       newErrors.color = "Color must be at least 2 characters";
     }
 
-    // Facility validation
+    // Facility validation and slots check
     if (!car.facilityId) {
       newErrors.facilityId = "Facility selection is required";
+    } else {
+      // Check available slots in selected facility
+      const selectedFacility = facilities?.find(f => f.name === car.facilityId);
+      
+      if (selectedFacility && selectedFacility.parkingSlots) {
+        // Count cars in this facility (excluding current car if editing)
+        const carsInFacility = existingCars?.filter(
+          existingCar => 
+            existingCar.facilityId === car.facilityId &&
+            existingCar.id !== defaultValues?.id
+        ).length || 0;
+
+        const totalSlots = parseInt(selectedFacility.parkingSlots);
+        const availableSlots = totalSlots - carsInFacility;
+
+        console.log('Facility:', car.facilityId);
+        console.log('Total Slots:', totalSlots);
+        console.log('Cars in Facility:', carsInFacility);
+        console.log('Available Slots:', availableSlots);
+
+        // If adding new car (not editing) and no slots available
+        if (!isEdit && availableSlots <= 0) {
+          newErrors.facilityId = `This yard has no available slots. Total: ${totalSlots}, Occupied: ${carsInFacility}`;
+        }
+      }
     }
 
     setErrors(newErrors);
@@ -222,6 +291,18 @@ export default function CarForm({
             required
           />
           {errors.slotNo && <p className="text-red-500 text-sm mt-1">{errors.slotNo}</p>}
+        </div>
+
+        <div>
+          <input
+            type="text"
+            placeholder="Make"
+            className={`border p-2 w-full text-black ${errors.make ? 'border-red-500' : 'border-gray-300'}`}
+            value={car.make}
+            onChange={(e) => handleChange('make', e.target.value)}
+            required
+          />
+          {errors.make && <p className="text-red-500 text-sm mt-1">{errors.make}</p>}
         </div>
 
         <div>

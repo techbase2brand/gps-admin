@@ -35,6 +35,38 @@ function page() {
   const [staffToDelete, setStaffToDelete] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
+  const [nameSortOrder, setNameSortOrder] = useState("asc"); // asc or desc
+  const [dateSortOrder, setDateSortOrder] = useState("desc"); // newest first by default
+  const [sortBy, setSortBy] = useState("name"); // "name" or "date"
+
+  // Sort staff by name or date
+  const sortedStaffData = [...staffData].sort((a, b) => {
+    if (sortBy === "name") {
+      if (nameSortOrder === "asc") {
+        return a.name.localeCompare(b.name);
+      } else {
+        return b.name.localeCompare(a.name);
+      }
+    } else if (sortBy === "date") {
+      const dateA = new Date(a.joiningDate);
+      const dateB = new Date(b.joiningDate);
+      if (dateSortOrder === "asc") {
+        return dateA - dateB; // oldest first
+      } else {
+        return dateB - dateA; // newest first
+      }
+    }
+  });
+
+  const toggleNameSort = () => {
+    setSortBy("name");
+    setNameSortOrder(nameSortOrder === "asc" ? "desc" : "asc");
+  };
+
+  const toggleDateSort = () => {
+    setSortBy("date");
+    setDateSortOrder(dateSortOrder === "asc" ? "desc" : "asc");
+  };
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -145,47 +177,34 @@ function page() {
             <div className="container mx-auto p-4">
               <ToastContainer />
 
-              {/* Filter, Add Staff, Reset Buttons */}
+              {/* Search, Role Filter, Add Staff, Reset */}
               <div className="mb-4 flex justify-between items-center mt-10 mb-10">
-                <div className="flex space-x-4">
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      placeholder="Search ..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-black placeholder-black"
-                    />
-                    <select
-                      value={filterRole}
-                      onChange={(e) => setFilterRole(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg placeholder-black text-black"
-                    >
-                      <option value="" className="text-black">
-                        Select Role
-                      </option>
-                      <option value="Admin">Admin</option>
-                      <option value="Staff">Staff</option>
-                    </select>
-                    <button
-                      onClick={() => openModal()}
-                      className="px-4 py-2 bg-[#613EEA] text-white rounded-lg shadow-md hover:bg-blue-600"
-                    >
-                      + Add Staff
-                    </button>
-                    <button
-                      onClick={handleFilter}
-                      className="px-4 py-2 bg-green-500 text-white rounded-lg shadow-md hover:bg-green-600"
-                    >
-                      Filter
-                    </button>
-                    <button
-                      onClick={handleReset}
-                      className="px-4 py-2 bg-gray-500 text-white rounded-lg shadow-md hover:bg-gray-600"
-                    >
-                      Reset
-                    </button>
-                  </div>
+                <div className="flex space-x-3 items-center">
+                  <input
+                    type="text"
+                    placeholder="Search by name or email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-80 px-4 py-2 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:border-[#613EEA]"
+                  />
+                  <select
+                    value={filterRole}
+                    onChange={(e) => setFilterRole(e.target.value)}
+                    className="w-40 px-4 py-2 mr-4 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-[#613EEA]"
+                  >
+                    <option value="all" className="text-black">All</option>
+                    <option value="Admin" className="text-black">Admin</option>
+                    <option value="Staff" className="text-black">Staff</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <button
+                    onClick={() => openModal()}
+                    className="px-6 py-2 bg-[#613EEA] text-white rounded-full shadow-md hover:bg-[#5030d0] transition-colors"
+                  >
+                    + Add Staff
+                  </button>
                 </div>
               </div>
 
@@ -327,10 +346,34 @@ function page() {
               <table className="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
                 <thead>
                   <tr className="text-left border-b bg-gray-300">
-                    <th className="p-2 text-black">NAME</th>
+                    <th 
+                      className="p-2 text-black cursor-pointer hover:bg-gray-400 transition-colors"
+                      onClick={toggleNameSort}
+                    >
+                      <div className="flex items-center gap-2">
+                        NAME
+                        {sortBy === "name" && (
+                          <span className="text-sm">
+                            {nameSortOrder === "asc" ? "↑" : "↓"}
+                          </span>
+                        )}
+                      </div>
+                    </th>
                     <th className="p-2 text-black">EMAIL</th>
                     <th className="p-2 text-black">CONTACT</th>
-                    <th className="p-2 text-black">JOINING DATE</th>
+                    <th 
+                      className="p-2 text-black cursor-pointer hover:bg-gray-400 transition-colors"
+                      onClick={toggleDateSort}
+                    >
+                      <div className="flex items-center gap-2">
+                        JOINING DATE
+                        {sortBy === "date" && (
+                          <span className="text-sm">
+                            {dateSortOrder === "asc" ? "↑" : "↓"}
+                          </span>
+                        )}
+                      </div>
+                    </th>
                     <th className="p-2 text-black">ROLE</th>
                     <th className="p-2 text-black">STATUS</th>
                     <th className="p-2 text-black">PUBLISHED</th>
@@ -338,7 +381,7 @@ function page() {
                   </tr>
                 </thead>
                 <tbody>
-                  {staffData?.map((staff) => (
+                  {sortedStaffData?.map((staff) => (
                     <tr key={staff.id} className="border-b">
                       <td className="p-2 text-black">{staff.name}</td>
                       <td className="p-2 text-black">{staff.email}</td>

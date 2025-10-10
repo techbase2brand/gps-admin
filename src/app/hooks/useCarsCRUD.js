@@ -191,7 +191,14 @@ export default function useCarsCRUD(storageKey) {
         .order("id", { ascending: true });
 
       if (error) throw error;
-      setcarData(data);
+      
+      // Fix status for all cars based on chip (for existing data)
+      const fixedData = data?.map(car => {
+        const correctStatus = car.chip && car.chip.trim() ? "Assigned" : "Unassigned";
+        return { ...car, status: correctStatus };
+      });
+      
+      setcarData(fixedData);
     } catch (err) {
       console.error("Fetch all error:", err.message);
     } finally {
@@ -201,10 +208,13 @@ export default function useCarsCRUD(storageKey) {
 
   const addItem = async (item) => {
     try {
+      // Status depends on chip: if chip exists → Assigned, else → Unassigned
+      const status = item.chip && item.chip.trim() ? "Assigned" : "Unassigned";
+      
       const newItem = {
         id: Date.now(), // keep same id logic
         ...item,
-        status: "Assigned",
+        status,
       };
 
       const { data, error } = await client
@@ -223,18 +233,22 @@ export default function useCarsCRUD(storageKey) {
 
   const updateItem = async (item) => {
     try {
+      // Status depends on chip: if chip exists → Assigned, else → Unassigned
+      const status = item.chip && item.chip.trim() ? "Assigned" : "Unassigned";
+      const updatedItem = { ...item, status };
+      
       const { data, error } = await client
         .from(storageKey)
-        .update(item)
+        .update(updatedItem)
         .eq("id", item.id)
         .select();
 
       if (error) throw error;
 
       setcarData((prev) =>
-        prev.map((d) => (d.id === item.id ? { ...d, ...item } : d))
+        prev.map((d) => (d.id === item.id ? { ...d, ...updatedItem } : d))
       );
-      return item;
+      return updatedItem;
     } catch (err) {
       console.error("Update item error:", err.message);
     }

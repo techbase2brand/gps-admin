@@ -33,6 +33,8 @@ export default function CarsAddEditPage() {
         defaultValues={id == "add" ? "add" : facility}
         addItem={addItem}
         updateItem={updateItem}
+        existingCars={data}
+        closeModal={() => router.push("/admin/cars")}
       />
     </div>
   );

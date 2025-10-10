@@ -153,7 +153,7 @@ import bcrypt from "bcryptjs";
 export default function useStaffForm() {
   const [staffList, setStaffList] = useState([]);
   const [staffData, setStaffData] = useState([]);
-  const [filterRole, setFilterRole] = useState("");
+  const [filterRole, setFilterRole] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch all staff from Supabase
@@ -174,6 +174,23 @@ export default function useStaffForm() {
   useEffect(() => {
     fetchAllStaff();
   }, []);
+
+  // Auto-filter on search or role change
+  useEffect(() => {
+    const filteredData = staffList.filter((staff) => {
+      const matchesSearch =
+        staff.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        staff.name.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesRole = 
+        filterRole === "" || 
+        filterRole === "all" || 
+        staff.role.toLowerCase() === filterRole.toLowerCase();
+
+      return matchesSearch && matchesRole;
+    });
+    setStaffData(filteredData);
+  }, [searchQuery, filterRole, staffList]);
 const addStaff = async (staff) => {
   try {
     // Hash password before saving
@@ -324,7 +341,7 @@ const editStaff = async (id, updatedStaff) => {
   };
 
   const handleReset = () => {
-    setFilterRole("");
+    setFilterRole("all");
     setSearchQuery("");
     setStaffData(staffList);
   };
