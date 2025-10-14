@@ -147,8 +147,18 @@ function page() {
   };
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
     const finalData = {
       ...formData,
+      role: null,  // Send null for now
+      permissions: null  // Send null for now
     };
     if (editingStaff) {
       editStaff(editingStaff.id, finalData);
@@ -187,7 +197,8 @@ function page() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-80 px-4 py-2 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:border-[#613EEA]"
                   />
-                  <select
+                  {/* Role Filter - Commented for now */}
+                  {/* <select
                     value={filterRole}
                     onChange={(e) => setFilterRole(e.target.value)}
                     className="w-40 px-4 py-2 mr-4 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-[#613EEA]"
@@ -195,7 +206,7 @@ function page() {
                     <option value="all" className="text-black">All</option>
                     <option value="Admin" className="text-black">Admin</option>
                     <option value="Staff" className="text-black">Staff</option>
-                  </select>
+                  </select> */}
                 </div>
                 
                 <div>
@@ -235,6 +246,7 @@ function page() {
 
                       <input
                         name="email"
+                        type="email"
                         placeholder="Email"
                         value={formData.email}
                         onChange={handleChange}
@@ -272,8 +284,8 @@ function page() {
                         required
                       />
 
-                      {/* Role Select */}
-                      <select
+                      {/* Role Select - Commented for now */}
+                      {/* <select
                         name="role"
                         value={formData.role}
                         onChange={handleChange}
@@ -283,10 +295,10 @@ function page() {
                         <option value="">Select Role</option>
                         <option value="Admin">Admin</option>
                         <option value="Staff">Staff</option>
-                      </select>
+                      </select> */}
 
-                      {/* Permissions */}
-                      <div>
+                      {/* Permissions - Commented for now */}
+                      {/* <div>
                         <p className="font-bold mb-1 text-black">Permissions</p>
                         <div className="flex flex-col gap-2">
                           <label className="flex items-center gap-2 text-black">
@@ -314,7 +326,7 @@ function page() {
                             </label>
                           ))}
                         </div>
-                      </div>
+                      </div> */}
 
                       {/* <button
                         type="submit"
@@ -374,7 +386,7 @@ function page() {
                         )}
                       </div>
                     </th>
-                    <th className="p-2 text-black">ROLE</th>
+                    {/* <th className="p-2 text-black">ROLE</th> */}
                     <th className="p-2 text-black">STATUS</th>
                     <th className="p-2 text-black">PUBLISHED</th>
                     <th className="p-2 text-black">ACTIONS</th>
@@ -387,7 +399,7 @@ function page() {
                       <td className="p-2 text-black">{staff.email}</td>
                       <td className="p-2 text-black">{staff.contact}</td>
                       <td className="p-2 text-black">{staff.joiningDate}</td>
-                      <td className="p-2 text-black">{staff.role}</td>
+                      {/* <td className="p-2 text-black">{staff.role}</td> */}
                       <td className="p-2 text-black">
                         <button
                           onClick={() => togglePublished(staff.id)}
