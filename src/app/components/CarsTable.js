@@ -109,6 +109,7 @@ import { IoEyeOutline } from "react-icons/io5";
 import { FiEdit } from "react-icons/fi";
 import { MdDeleteOutline } from "react-icons/md";
 import CarForm from "./CarForm";
+import useCRUD from "../hooks/useCRUD";
 
 export default function CarsTable({ searchQuery, assignview }) {
   const {
@@ -119,6 +120,7 @@ export default function CarsTable({ searchQuery, assignview }) {
     addItem,
     updateTrackerAndStatus,
   } = useCarsCRUD("cars");
+  const { data: facilities } = useCRUD("facility");
   const router = useRouter();
   const [deleteId, setDeleteId] = useState(null);
   const [trackerInput, setTrackerInput] = useState("");
@@ -145,9 +147,16 @@ export default function CarsTable({ searchQuery, assignview }) {
 
   const selectedCar = carData?.find((car) => car.id === selectedCarId);
 
+  // Helper function to get facility name from facility ID
+  const getFacilityName = (facilityId) => {
+    const facility = facilities?.find(f => f.id.toString() === facilityId?.toString());
+    return facility?.name || 'Unknown Facility';
+  };
+
   // Filter data
   const filteredData = carData?.filter((car) => {
-    const matchesSearch = [car.vin, car?.facilityId, car.slotNo, car.trackerNo, car.chip].some((field) =>
+    const facilityName = getFacilityName(car?.facilityId);
+    const matchesSearch = [car.vin, facilityName, car.slotNo, car.trackerNo, car.chip].some((field) =>
       field?.toString().toLowerCase().includes(localSearch.toLowerCase())
     );
     const matchesStatus = statusFilter === "all" || car.status === statusFilter;
@@ -304,7 +313,7 @@ export default function CarsTable({ searchQuery, assignview }) {
               <td className="text-start px-4 py-2 text-black">{car?.vin}</td>
               <td className="text-start px-4 py-2 text-black">{car?.chip}</td>
               <td className="text-start px-4 py-2 text-black">
-                {car?.facilityId}
+                {getFacilityName(car?.facilityId)}
               </td>
               <td className="text-start px-4 py-2 text-black">
                 {car?.slotNo}

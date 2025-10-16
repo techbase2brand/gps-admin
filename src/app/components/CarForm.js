@@ -128,11 +128,12 @@ export default function CarForm({
       // Check for duplicate VIN (skip check if editing the same car)
       const duplicateVin = existingCars?.find(
         (existingCar) => 
-          existingCar.vin.toLowerCase() === car.vin.trim().toLowerCase() &&
+          existingCar.vin && existingCar.vin.toLowerCase() === car.vin.trim().toLowerCase() &&
           existingCar.id !== defaultValues?.id
       );
       if (duplicateVin) {
-        const facilityName = duplicateVin.facilityId || 'Unknown Facility';
+        const facility = facilities?.find(f => f.id.toString() === duplicateVin.facilityId?.toString());
+        const facilityName = facility?.name || 'Unknown Facility';
         newErrors.vin = `This VIN is already added in ${facilityName}`;
       }
     }
@@ -146,11 +147,12 @@ export default function CarForm({
       // Check for duplicate Chip (skip check if editing the same car)
       const duplicateChip = existingCars?.find(
         (existingCar) => 
-          existingCar.chip.toLowerCase() === car.chip.trim().toLowerCase() &&
+          existingCar.chip && existingCar.chip.toLowerCase() === car.chip.trim().toLowerCase() &&
           existingCar.id !== defaultValues?.id
       );
       if (duplicateChip) {
-        const facilityName = duplicateChip.facilityId || 'Unknown Facility';
+        const facility = facilities?.find(f => f.id.toString() === duplicateChip.facilityId?.toString());
+        const facilityName = facility?.name || 'Unknown Facility';
         const vinNumber = duplicateChip.vin || 'Unknown VIN';
         newErrors.chip = `This Chip already exists in ${facilityName} with VIN: ${vinNumber}`;
       }
@@ -165,12 +167,14 @@ export default function CarForm({
       // Check for duplicate slot in same facility (skip check if editing the same car)
       const duplicateSlot = existingCars?.find(
         (existingCar) => 
-          existingCar.slotNo.toLowerCase() === car.slotNo.trim().toLowerCase() &&
-          existingCar.facilityId === car.facilityId &&
+          existingCar.slotNo && existingCar.slotNo.toLowerCase() === car.slotNo.trim().toLowerCase() &&
+          existingCar.facilityId?.toString() === car.facilityId?.toString() &&
           existingCar.id !== defaultValues?.id
       );
       if (duplicateSlot) {
-        newErrors.slotNo = `Slot ${car.slotNo} is already occupied in ${car.facilityId} by VIN: ${duplicateSlot.vin}`;
+        const facility = facilities?.find(f => f.id.toString() === car.facilityId?.toString());
+        const facilityName = facility?.name || 'Unknown Facility';
+        newErrors.slotNo = `Slot ${car.slotNo} is already occupied in ${facilityName} by VIN: ${duplicateSlot.vin}`;
       }
     }
 
@@ -200,20 +204,20 @@ export default function CarForm({
       newErrors.facilityId = "Facility selection is required";
     } else {
       // Check available slots in selected facility
-      const selectedFacility = facilities?.find(f => f.name === car.facilityId);
+      const selectedFacility = facilities?.find(f => f.id.toString() === car.facilityId.toString());
       
       if (selectedFacility && selectedFacility.parkingSlots) {
         // Count cars in this facility (excluding current car if editing)
         const carsInFacility = existingCars?.filter(
           existingCar => 
-            existingCar.facilityId === car.facilityId &&
+            existingCar.facilityId?.toString() === car.facilityId?.toString() &&
             existingCar.id !== defaultValues?.id
         ).length || 0;
 
         const totalSlots = parseInt(selectedFacility.parkingSlots);
         const availableSlots = totalSlots - carsInFacility;
 
-        console.log('Facility:', car.facilityId);
+        console.log('Facility:', selectedFacility.name);
         console.log('Total Slots:', totalSlots);
         console.log('Cars in Facility:', carsInFacility);
         console.log('Available Slots:', availableSlots);
@@ -333,12 +337,15 @@ export default function CarForm({
           <select
             className={`border p-2 w-full text-black ${errors.facilityId ? 'border-red-500' : 'border-gray-300'}`}
             value={car.facilityId}
-            onChange={(e) => handleChange('facilityId', e.target.value)}
+            onChange={(e) => {
+              const selectedFacility = facilities?.find(f => f.id.toString() === e.target.value);
+              handleChange('facilityId', selectedFacility?.id || '');
+            }}
             required
           >
             <option value="">Select Facility</option>
             {facilities?.map((f) => (
-              <option key={f.id} value={f.name}>
+              <option key={f.id} value={f.id}>
                 {f.name}
               </option>
             ))}

@@ -56,7 +56,7 @@ export default function ViewFacilityPage() {
       const car = carData.find((c) => String(c.id) === id);
       if (car) {
         const matchingFacility = data.find(
-          (facility) => facility.name === car.facilityId
+          (facility) => facility.id.toString() === car.facilityId?.toString()
         );
         if (matchingFacility) {
           setFacility(matchingFacility);
