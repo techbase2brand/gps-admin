@@ -58,9 +58,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  FaFacebookF,
-  FaGoogle,
-  FaTwitter,
   FaUser,
   FaEnvelope,
   FaLock,
@@ -72,11 +69,15 @@ import loadingAnimation from "./assets/loader.json";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [isLogin, setIsLogin] = useState(false);
+  const [isLogin, setIsLogin] = useState(true); // Always show login, never signup
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Static login credentials
+  const STATIC_EMAIL = "gpsadmin@gmail.com";
+  const STATIC_PASSWORD = "12345678";
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -88,13 +89,21 @@ export default function LoginPage() {
     } else if (password.length < 8) {
       setError("Password must be at least 8 characters");
     } else {
-      setError("");
-      setLoading(true); // start loader
+      // Static login validation - only allow specific credentials
+      if (email === STATIC_EMAIL && password === STATIC_PASSWORD) {
+        setError("");
+        setLoading(true); // start loader
+        // Store login status in localStorage for session management
+        localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("userEmail", email);
 
-      setTimeout(() => {
-        setLoading(false);
-        router.push("/admin/dashboard");
-      }, 2000); // 4 seconds delay
+        setTimeout(() => {
+          setLoading(false);
+          router.push("/admin/dashboard");
+        }, 2000); // 2 seconds delay
+      } else {
+        setError("Invalid email or password. Please use the correct admin credentials.");
+      }
     }
   };
 
@@ -121,19 +130,18 @@ export default function LoginPage() {
           animate={{ opacity: 1 }}
           className="text-3xl font-semibold"
         >
-          {isLogin ? "Hello !" : "Welcome back !"}
+          Welcome back!
         </motion.h1>
         <p className="my-6 text-center text-sm px-4">
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. A, excepturi
-          dignissimos assumenda voluptatum incidunt sint accusantium mollitia
-          enim quia perferendis.
+          Welcome to GPS Admin Dashboard. Please login with your admin credentials to access the system.
         </p>
-        <button
+        {/* Comment out signup toggle button */}
+        {/* <button
           onClick={() => setIsLogin(!isLogin)}
           className="rounded-full border border-white px-6 py-2 text-sm uppercase hover:bg-white hover:text-black transition"
         >
           {isLogin ? "Sign Up" : "Sign In"}
-        </button>
+        </button> */}
       </motion.div>
 
       {/* Form Section */}
@@ -141,6 +149,7 @@ export default function LoginPage() {
         animate={{ x: isLogin ? "-100%" : "0%" }}
         transition={{ duration: 1 }}
         className="flex w-1/2 flex-col items-center justify-center bg-white text-black p-8 z-10"
+        onSubmit={handleSubmit}
       >
         <motion.h1
           key={isLogin ? "Sign in" : "Create Account"}
@@ -148,7 +157,7 @@ export default function LoginPage() {
           animate={{ opacity: 1 }}
           className="text-3xl font-semibold mb-6"
         >
-          {isLogin ? "Sign in" : "Create Account"}
+          Sign in
         </motion.h1>
 
         <div className="flex space-x-6 text-2xl mb-6">
@@ -158,25 +167,16 @@ export default function LoginPage() {
             width={160}
             height={35}
           />
-          {/* <div className="p-3 border rounded-full">
-            <FaFacebookF />
-          </div>
-          <div className="p-3 border rounded-full">
-            <FaGoogle />
-          </div>
-          <div className="p-3 border rounded-full">
-            <FaTwitter />
-          </div> */}
         </div>
 
         <p className="text-sm text-center mb-6">
-          Lorem ipsum dolor sit amet, consectetur adipisicing elit.
-          <br />
-          Dignissimos, laboriosam?
+          Enter your admin credentials to access the dashboard.
         </p>
 
         <div className="space-y-4 w-full max-w-sm">
-          {!isLogin && (
+          {/* Error message */}
+          {/* Comment out signup name field */}
+          {/* {!isLogin && (
             <div className="relative">
               <input
                 type="text"
@@ -185,7 +185,7 @@ export default function LoginPage() {
               />
               <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
             </div>
-          )}
+          )} */}
           <div className="relative">
             <input
               type="email"
@@ -207,6 +207,7 @@ export default function LoginPage() {
             <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
           </div>
         </div>
+        {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
 
         <button
           type="submit"
@@ -219,12 +220,9 @@ export default function LoginPage() {
               loop={true}
               className="w-12"
             />
-          ) : isLogin ? (
-            "Sign In"
           ) : (
-            "Sign Up"
+            "Sign In"
           )}
-          {/* {isLogin ? "Sign In" : "Sign Up"} */}
         </button>
       </motion.form>
     </div>

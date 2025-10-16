@@ -125,7 +125,7 @@
 // }
 "use client";
 import { useState, useEffect } from "react";
-import { FiMenu, FiSearch, FiBell } from "react-icons/fi";
+import { FiMenu, FiSearch, FiBell, FiLogOut } from "react-icons/fi";
 import { LuPanelLeftOpen } from "react-icons/lu";
 import Image from "next/image";
 import useGlobalSearch from "../../hooks/useGlobalSearch";
@@ -136,6 +136,15 @@ export default function Navbar({ title, toggleSidebar, collapsed }) {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [query, setQuery] = useState("");
   const { results, loading, searchAllTables } = useGlobalSearch();
+
+  // Logout function
+  const handleLogout = () => {
+    // Clear authentication data
+    localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("userEmail");
+    // Redirect to main page (animated login form)
+    router.push("/");
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -271,6 +280,17 @@ export default function Navbar({ title, toggleSidebar, collapsed }) {
       </div>
 
       <FiBell size={20} className="hover:animate-bounce text-[#613EEA]" />
+      
+      {/* Logout Button */}
+      <button
+        onClick={handleLogout}
+        className="flex items-center gap-2 px-3 py-1 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+        title="Logout"
+      >
+        <FiLogOut size={16} />
+        <span className="text-sm font-medium">Logout</span>
+      </button>
+      
       <Image
         src="/dashboard_ion.png"
         alt="Profile"
