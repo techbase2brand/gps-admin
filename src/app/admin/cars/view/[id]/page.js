@@ -11,6 +11,8 @@ import {
 import useCRUD from "../../../../hooks/useCRUD";
 import Sidebar from "../../../../components/Layout/Sidebar";
 import useCarsCRUD from "../../../../hooks/useCarsCRUD";
+import { capitalizeFirstLetter, capitalizeWords } from "../../../../utils/textUtils";
+import useFetchVehicleLocation from "../../../../hooks/useFetchVehicleLocation";
 
 const borderCoordinates = [
   { lat: 30.711434513935473, lng: 76.69281881288748 },
@@ -41,6 +43,7 @@ export default function ViewCarPage() {
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_API_KEY,
   });
+  const { initializeMqtt, disconnect, loading: mqttLoading, error: mqttError, mqttConnected } = useFetchVehicleLocation();
   const polygonOptions = {
     fillColor: "transparent", // or rgba with opacity if needed
     fillOpacity: 0.1,
@@ -79,6 +82,36 @@ export default function ViewCarPage() {
       geocodeAddress(facility.address);
     }
   }, [car, facility]);
+
+  // If no coords but chip exists, initialize MQTT like mobile app
+  useEffect(() => {
+    if (!car) return;
+    const hasCoords = Boolean(car?.latitude && car?.longitude);
+
+    if (!hasCoords && car?.chip) {
+      console.log('📍 [ViewCar] No coords found, initializing MQTT for chip:', car.chip);
+
+      const onLocationUpdate = (location) => {
+        console.log('📍 [ViewCar] Location update received:', location);
+        setCar((prev) => ({
+          ...prev,
+          latitude: location.latitude,
+          longitude: location.longitude
+        }));
+        setCoordinates({ lat: location.latitude, lng: location.longitude });
+        setShowTooltip(true);
+      };
+
+      initializeMqtt(car.chip, onLocationUpdate);
+    }
+
+    // Cleanup on unmount or when chip changes
+    return () => {
+      if (car?.chip) {
+        disconnect();
+      }
+    };
+  }, [car?.chip]); // Only depend on chip, not the functions
 
   const geocodeAddress = async (address) => {
     try {
@@ -126,13 +159,13 @@ export default function ViewCarPage() {
           <h1 className="text-2xl font-bold mb-4 text-black">
             Vehicle Details - {car.vin}
           </h1>
-          
+
           {/* Half screen layout */}
           <div className="grid grid-cols-2 gap-4 h-[80vh]">
             {/* Left side - Map */}
             <div className="bg-white rounded-lg shadow-lg p-4">
               <h2 className="text-lg font-semibold mb-3 text-black">Vehicle Location</h2>
-              
+
               {/* Chip Assignment Warning Note */}
               {!car?.chip && (
                 <div className="mb-3 bg-orange-50 border border-orange-200 rounded-lg p-3">
@@ -162,14 +195,14 @@ export default function ViewCarPage() {
                   center={coordinates}
                   zoom={15}
                 >
-                  {car?.chip && (
+                  {car?.latitude && car?.longitude && (
                     <Marker
                       position={coordinates}
-                      title={car?.latitude && car?.longitude ? "Vehicle Location" : facility?.address}
+                      title="Vehicle Location"
                       onClick={() => setShowTooltip(true)}
                     />
                   )}
-                  {showTooltip && car?.chip && (
+                  {showTooltip && car?.latitude && car?.longitude && (
                     <InfoWindow
                       position={coordinates}
                       onCloseClick={() => setShowTooltip(false)}
@@ -177,7 +210,9 @@ export default function ViewCarPage() {
                       <div style={{ fontSize: "16px", padding: "2px", color: "black" }}>
                         <span>Vehicle: {car?.vin}</span>
                         <br />
-                        {car?.latitude && car?.longitude ? "Current Location" : facility?.address}
+                        {/* {car?.latitude && car?.longitude ? "Current Location" : facility?.address} */}
+                        {/* {car?.latitude && car?.longitude ? `Latitude: ${car?.latitude}, Longitude: ${car?.longitude}` : "No location data"} */}
+                        {car.chip ? `Chip: ${car.chip}` : "No chip assigned"}
                       </div>
                     </InfoWindow>
                   )}
@@ -207,11 +242,11 @@ export default function ViewCarPage() {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-sm text-gray-600 mb-1">Make</label>
-                        <div className="border rounded px-3 py-2 bg-gray-50 text-black">{car?.make || "-"}</div>
+                        <div className="border rounded px-3 py-2 bg-gray-50 text-black">{car?.make ? capitalizeWords(car.make) : "-"}</div>
                       </div>
                       <div>
                         <label className="block text-sm text-gray-600 mb-1">Model</label>
-                        <div className="border rounded px-3 py-2 bg-gray-50 text-black">{car?.model || "-"}</div>
+                        <div className="border rounded px-3 py-2 bg-gray-50 text-black">{car?.model ? capitalizeWords(car.model) : "-"}</div>
                       </div>
                     </div>
                     <div>
@@ -264,31 +299,30 @@ export default function ViewCarPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Vehicle Specs */}
                 <div className="bg-gray-50 rounded-lg p-4">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Vehicle Specifications</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-white rounded p-3 shadow-sm">
                       <label className="block text-sm font-medium text-gray-600 mb-1">Make</label>
-                      <p className="text-lg text-black">{car.make || <span className="text-gray-500 italic">N/A</span>}</p>
+                      <p className="text-lg text-black">{car.make ? capitalizeWords(car.make) : <span className="text-gray-500 italic">N/A</span>}</p>
                     </div>
                     <div className="bg-white rounded p-3 shadow-sm">
                       <label className="block text-sm font-medium text-gray-600 mb-1">Model</label>
-                      <p className="text-lg text-black">{car.model || <span className="text-gray-500 italic">N/A</span>}</p>
+                      <p className="text-lg text-black">{car.model ? capitalizeWords(car.model) : <span className="text-gray-500 italic">N/A</span>}</p>
                     </div>
                     <div className="bg-white rounded p-3 shadow-sm">
                       <label className="block text-sm font-medium text-gray-600 mb-1">Color</label>
-                      <p className="text-lg text-black">{car.color || <span className="text-gray-500 italic">N/A</span>}</p>
+                      <p className="text-lg text-black">{car.color ? capitalizeFirstLetter(car.color) : <span className="text-gray-500 italic">N/A</span>}</p>
                     </div>
                     <div className="bg-white rounded p-3 shadow-sm">
                       <label className="block text-sm font-medium text-gray-600 mb-1">Status</label>
                       <div className="mt-1">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          car.status === "Assigned" 
-                            ? "bg-green-100 text-green-800 border border-green-200" 
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${car.status === "Assigned"
+                            ? "bg-green-100 text-green-800 border border-green-200"
                             : "bg-red-100 text-red-800 border border-red-200"
-                        }`}>
+                          }`}>
                           {car.status}
                         </span>
                       </div>
