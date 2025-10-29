@@ -27,14 +27,17 @@ const borderCoordinates = [
   { lat: 30.71141554405, lng: 76.69281145815148 },
 ];
 
-export default function ViewFacilityPage() {
+export default function ViewCarPage() {
   const { id } = useParams();
   const { data } = useCRUD("facility");
-  const { carData } = useCarsCRUD("cars");
+  const { carData, updateItem } = useCarsCRUD("cars");
 
+  const [car, setCar] = useState(null);
   const [facility, setFacility] = useState(null);
   const [coordinates, setCoordinates] = useState({ lat: 0, lng: 0 });
   const [showTooltip, setShowTooltip] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [chipInput, setChipInput] = useState("");
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_API_KEY,
   });
@@ -53,10 +56,11 @@ export default function ViewFacilityPage() {
 
   useEffect(() => {
     if (carData && data && id) {
-      const car = carData.find((c) => String(c.id) === id);
-      if (car) {
+      const foundCar = carData.find((c) => String(c.id) === id);
+      if (foundCar) {
+        setCar(foundCar);
         const matchingFacility = data.find(
-          (facility) => facility.id.toString() === car.facilityId?.toString()
+          (facility) => facility.id.toString() === foundCar.facilityId?.toString()
         );
         if (matchingFacility) {
           setFacility(matchingFacility);
@@ -66,11 +70,15 @@ export default function ViewFacilityPage() {
   }, [carData, data, id]);
 
   useEffect(() => {
-    if (facility?.address) {
+    // Use vehicle location from database (latitude, longitude fields)
+    if (car?.latitude && car?.longitude) {
+      setCoordinates({ lat: parseFloat(car.latitude), lng: parseFloat(car.longitude) });
+      setShowTooltip(true);
+    } else if (facility?.address) {
       setShowTooltip(true);
       geocodeAddress(facility.address);
     }
-  }, [facility]);
+  }, [car, facility]);
 
   const geocodeAddress = async (address) => {
     try {
@@ -91,7 +99,24 @@ export default function ViewFacilityPage() {
     }
   };
 
-  if (!isLoaded || !facility) return <p>Loading...</p>;
+  const handleAssignChip = () => {
+    setChipInput("");
+    setShowAssignModal(true);
+  };
+
+  const handleSubmitAssignChip = async () => {
+    if (!chipInput.trim() || !car?.id) return;
+    try {
+      const updated = await updateItem({ id: car.id, ...car, chip: chipInput.trim() });
+      // Optimistically update local page state
+      setCar((prev) => ({ ...prev, chip: chipInput.trim(), status: "Assigned" }));
+      setShowAssignModal(false);
+    } catch (e) {
+      console.error("Failed to assign chip", e);
+    }
+  };
+
+  if (!isLoaded || !car) return <p>Loading...</p>;
 
   return (
     <main>
@@ -99,37 +124,202 @@ export default function ViewFacilityPage() {
         <Sidebar />
         <div className="flex-1 p-4 bg-gray-200">
           <h1 className="text-2xl font-bold mb-4 text-black">
-            {facility.name}
+            Vehicle Details - {car.vin}
           </h1>
-          <div style={{ height: "80vh", width: "100%" }}>
-            <GoogleMap
-              mapContainerStyle={{ height: "100%", width: "100%" }}
-              center={coordinates}
-              zoom={15}
-            >
-              <Marker
-                position={coordinates}
-                title={facility.address}
-                // label={facility.address ? String(facility.address) : ""}
-                onClick={() => setShowTooltip(true)}
-              />
-              {showTooltip && (
-                <InfoWindow
-                  position={coordinates}
-                  onCloseClick={() => setShowTooltip(false)}
-                  style={{ position: "absolute", bottom: "500px" }}
-                >
-                  <div
-                    style={{ fontSize: "16px", padding: "2px", color: "black" }}
-                  >
-                    <span>Facility Name: {facility?.name}</span>
-                    <br />
-                    {facility?.address}
+          
+          {/* Half screen layout */}
+          <div className="grid grid-cols-2 gap-4 h-[80vh]">
+            {/* Left side - Map */}
+            <div className="bg-white rounded-lg shadow-lg p-4">
+              <h2 className="text-lg font-semibold mb-3 text-black">Vehicle Location</h2>
+              
+              {/* Chip Assignment Warning Note */}
+              {!car?.chip && (
+                <div className="mb-3 bg-orange-50 border border-orange-200 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <svg className="w-5 h-5 text-orange-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                      <div>
+                        <p className="text-sm font-medium text-orange-800">Chip Not Assigned</p>
+                        <p className="text-xs text-orange-600">Please assign a chip to view vehicle location</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleAssignChip}
+                      className="px-3 py-1 text-sm rounded bg-orange-600 text-white hover:bg-orange-700"
+                    >
+                      Assign Chip
+                    </button>
                   </div>
-                </InfoWindow>
+                </div>
               )}
-              <Polygon paths={borderCoordinates} options={polygonOptions} />
-            </GoogleMap>
+
+              <div style={{ height: "calc(100% - 3rem)" }}>
+                <GoogleMap
+                  mapContainerStyle={{ height: "100%", width: "100%" }}
+                  center={coordinates}
+                  zoom={15}
+                >
+                  {car?.chip && (
+                    <Marker
+                      position={coordinates}
+                      title={car?.latitude && car?.longitude ? "Vehicle Location" : facility?.address}
+                      onClick={() => setShowTooltip(true)}
+                    />
+                  )}
+                  {showTooltip && car?.chip && (
+                    <InfoWindow
+                      position={coordinates}
+                      onCloseClick={() => setShowTooltip(false)}
+                    >
+                      <div style={{ fontSize: "16px", padding: "2px", color: "black" }}>
+                        <span>Vehicle: {car?.vin}</span>
+                        <br />
+                        {car?.latitude && car?.longitude ? "Current Location" : facility?.address}
+                      </div>
+                    </InfoWindow>
+                  )}
+                </GoogleMap>
+              </div>
+            </div>
+
+            {/* Assign Chip Modal */}
+            {showAssignModal && (
+              <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40">
+                <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-black">Assign Chip</h3>
+                    <button
+                      onClick={() => setShowAssignModal(false)}
+                      className="text-gray-600 hover:text-gray-800"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">Vehicle VIN</label>
+                      <div className="border rounded px-3 py-2 bg-gray-50 text-black">{car?.vin}</div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm text-gray-600 mb-1">Make</label>
+                        <div className="border rounded px-3 py-2 bg-gray-50 text-black">{car?.make || "-"}</div>
+                      </div>
+                      <div>
+                        <label className="block text-sm text-gray-600 mb-1">Model</label>
+                        <div className="border rounded px-3 py-2 bg-gray-50 text-black">{car?.model || "-"}</div>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-700 mb-1">Chip ID</label>
+                      <input
+                        type="text"
+                        className="w-full border rounded px-3 py-2 text-black"
+                        placeholder="Enter Chip ID"
+                        value={chipInput}
+                        onChange={(e) => setChipInput(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex justify-end gap-3">
+                    <button
+                      onClick={() => setShowAssignModal(false)}
+                      className="px-4 py-2 rounded bg-gray-200 text-black hover:bg-gray-300"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSubmitAssignChip}
+                      className="px-4 py-2 rounded bg-[#613EEA] text-white hover:opacity-90"
+                    >
+                      Assign
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Right side - Vehicle Details */}
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h2 className="text-xl font-bold mb-6 text-black border-b pb-3">Vehicle Information</h2>
+              <div className="space-y-6">
+                {/* Primary Info */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Basic Details</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white rounded p-3 shadow-sm">
+                      <label className="block text-sm font-medium text-gray-600 mb-1">VIN Number</label>
+                      <p className="text-lg text-black font-bold">{car.vin}</p>
+                    </div>
+                    <div className="bg-white rounded p-3 shadow-sm">
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Chip ID</label>
+                      <p className="text-lg text-black font-semibold">
+                        {car.chip || <span className="text-gray-500 italic">Not Assigned</span>}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Vehicle Specs */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Vehicle Specifications</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white rounded p-3 shadow-sm">
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Make</label>
+                      <p className="text-lg text-black">{car.make || <span className="text-gray-500 italic">N/A</span>}</p>
+                    </div>
+                    <div className="bg-white rounded p-3 shadow-sm">
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Model</label>
+                      <p className="text-lg text-black">{car.model || <span className="text-gray-500 italic">N/A</span>}</p>
+                    </div>
+                    <div className="bg-white rounded p-3 shadow-sm">
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Color</label>
+                      <p className="text-lg text-black">{car.color || <span className="text-gray-500 italic">N/A</span>}</p>
+                    </div>
+                    <div className="bg-white rounded p-3 shadow-sm">
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Status</label>
+                      <div className="mt-1">
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          car.status === "Assigned" 
+                            ? "bg-green-100 text-green-800 border border-green-200" 
+                            : "bg-red-100 text-red-800 border border-red-200"
+                        }`}>
+                          {car.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Assignment Info */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Assignment Details</h3>
+                  <div className="bg-white rounded p-4 shadow-sm">
+                    <label className="block text-sm font-medium text-gray-600 mb-2">Assigned Yard</label>
+                    <div className="space-y-2">
+                      <p className="text-lg text-black font-semibold">
+                        {facility?.name || <span className="text-gray-500 italic">Not Assigned</span>}
+                      </p>
+                      {facility?.address && (
+                        <div className="flex items-start space-x-2">
+                          <svg className="w-4 h-4 text-gray-400 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <p className="text-sm text-gray-600">{facility.address}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
           </div>
         </div>
       </div>
