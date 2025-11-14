@@ -169,21 +169,19 @@ function page() {
   };
 
   return (
-    <div>
-      <div className="flex bg-[#fff]">
-        <Sidebar collapsed={collapsed} />
-
-        <div>
-          <Navbar
-            title={"Staff"}
-            collapsed={collapsed}
-            toggleSidebar={toggleSidebar}
-          />
-          <div
-            className={`flex-1 p-4 bg-gray-200 rounded-2xl  ${
-              collapsed ? "w-[95vw]" : "w-[86vw]"
-            } h-[93vh]`}
-          >
+    <div className="flex bg-[#fff] min-h-screen">
+      <Sidebar collapsed={collapsed} />
+      <div className="flex flex-col flex-1 min-h-screen bg-[#fff]">
+        <Navbar
+          title={"Staff"}
+          collapsed={collapsed}
+          toggleSidebar={toggleSidebar}
+        />
+        <div
+          className={`flex-1 p-4 bg-gray-200 rounded-2xl ${
+            collapsed ? "w-[95vw]" : "w-[86vw]"
+          } min-h-[calc(100vh-80px)]`}
+        >
             <div className="container mx-auto p-4">
               <ToastContainer />
 
@@ -477,7 +475,6 @@ function page() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 

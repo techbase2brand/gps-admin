@@ -237,7 +237,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MdDashboard } from "react-icons/md";
 import { FaCar, FaParking } from "react-icons/fa";
-import { FiUsers, FiLogOut } from "react-icons/fi";
+import { FiUsers, FiLogOut, FiMessageSquare } from "react-icons/fi";
 import Image from "next/image";
 
 export default function Sidebar({ collapsed }) {
@@ -264,6 +264,11 @@ export default function Sidebar({ collapsed }) {
       label: "Team Staff",
       icon: <FiUsers size={20} />,
     },
+    {
+      href: "/admin/reports-issues",
+      label: "Reports & Issues",
+      icon: <FiMessageSquare size={20} />,
+    },
   ];
 
   return (
@@ -271,15 +276,15 @@ export default function Sidebar({ collapsed }) {
       id="sidebar"
       className={`${
         collapsed ? "w-[80px]" : "w-[220px]"
-      } h-[100vh] bg-white z-[2000] transition-all duration-300 ease-in-out overflow-x-hidden flex flex-col justify-between`}
+      } min-h-[100vh] bg-white z-[2000] transition-all duration-300 ease-in-out overflow-x-hidden flex flex-col`}
     >
       {/* Brand */}
-      <div>
+      <div className="flex-shrink-0">
         <Link
           href="#"
           className={`flex items-center ${
             collapsed ? "justify-center" : "gap-2 pl-8"
-          } text-2xl font-bold text-[#613EEA] h-14 px-4 ${collapsed ?"mt-1" :"mt-5"} sticky top-0 bg-white z-50`}
+          } text-2xl font-bold text-[#613EEA] h-14 px-4 ${collapsed ?"mt-1" :"mt-5"}`}
         >
           <Image
             src="/dashboard_ion.png"
@@ -327,7 +332,7 @@ export default function Sidebar({ collapsed }) {
       </div>
 
       {/* Bottom Menu */}
-      <ul className="space-y-2 mb-4">
+      <ul className="space-y-2 mb-4 mt-auto">
         <li>
           <Link
             href="/"

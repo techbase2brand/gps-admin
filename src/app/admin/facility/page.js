@@ -34,9 +34,9 @@ export default function Home() {
 
   const toggleSidebar = () => setCollapsed(!collapsed);
   return (
-    <div className="flex bg-[#f7f8fb]">
+    <div className="flex bg-[#fff] min-h-screen">
       <Sidebar collapsed={collapsed} />
-      <div>
+      <div className="flex flex-col flex-1 min-h-screen bg-[#fff]">
         <Navbar
           title={" Facility Management"}
           collapsed={collapsed}
@@ -45,7 +45,7 @@ export default function Home() {
         <div
           className={`flex-1 p-4 bg-gray-200 rounded-2xl ${
             collapsed ? "w-[95vw]" : "w-[86vw]"
-          } h-[92vh]`}
+          } min-h-[calc(100vh-80px)]`}
         >
           {loading ? (
             <div>Loading........</div>

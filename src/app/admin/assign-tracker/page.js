@@ -8,9 +8,9 @@ export default function AssignTracker() {
   const [searchQuery, setSearchQuery] = useState("");
 
   return (
-    <div className="flex">
+    <div className="flex bg-[#fff] min-h-screen">
       <Sidebar />
-      <div className="flex-1 p-4 bg-[#f7f8fb]">
+      <div className="flex-1 p-4 bg-[#fff] min-h-screen">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold mb-4 text-black">Cars Details</h1>
           <Header searchQuery={searchQuery} setSearchQuery={setSearchQuery} />

@@ -1,11 +1,10 @@
 "use client";
 import Sidebar from "../../components/Layout/Sidebar";
-import CarsTable from "../../components/CarsTable";
-import Header from "../../components/Layout/Header";
+import ReportsIssuesTable from "../../components/ReportsIssuesTable";
 import { useState } from "react";
 import Navbar from "../../components/Layout/Navbar";
 
-export default function Cars() {
+export default function ReportsIssues() {
   const [searchQuery, setSearchQuery] = useState("");
   const [collapsed, setCollapsed] = useState(false);
 
@@ -16,18 +15,19 @@ export default function Cars() {
       <Sidebar collapsed={collapsed} />
       <div className="flex flex-col flex-1 min-h-screen bg-[#fff]">
         <Navbar
-          title={"Vin List"}
+          title={"Reports and Issues"}
           collapsed={collapsed}
           toggleSidebar={toggleSidebar}
         />
         <div
-          className={`flex-1 p-4 bg-gray-200 rounded-2xl ${
+          className={`p-4 bg-gray-200 rounded-2xl ${
             collapsed ? "w-[95vw]" : "w-[86vw]"
           } min-h-[calc(100vh-80px)]`}
         >
-          <CarsTable searchQuery={searchQuery} />
+          <ReportsIssuesTable searchQuery={searchQuery} />
         </div>
       </div>
     </div>
   );
 }
+
