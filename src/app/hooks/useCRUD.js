@@ -130,6 +130,9 @@ export default function useCRUD(storageKey) {
         lat: item.lat || "",
         long: item.long || "",
         parkingSlots: item.parkingSlots || 0,
+        ...(item.polygonCoordinates !== undefined && {
+          polygonCoordinates: item.polygonCoordinates,
+        }),
       };
 
       const { data: insertedData, error } = await client
@@ -156,6 +159,9 @@ export default function useCRUD(storageKey) {
         lat: item.lat || "",
         long: item.long || "",
         parkingSlots: item.parkingSlots || 0,
+        ...(item.polygonCoordinates !== undefined && {
+          polygonCoordinates: item.polygonCoordinates,
+        }),
       };
 
       const { data: updated, error } = await client

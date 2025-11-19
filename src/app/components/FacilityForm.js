@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import useCRUD from "../hooks/useCRUD";
+import { FaMapMarkerAlt } from "react-icons/fa";
 
 export default function FacilityForm({
   defaultValues,
@@ -10,6 +12,7 @@ export default function FacilityForm({
   closeModal,
 }) {
   const router = useRouter();
+  const { data: existingFacilities } = useCRUD("facility");
   const [form, setForm] = useState({
     name: "" || defaultValues?.name,
     number: "" || defaultValues?.number,
@@ -22,6 +25,25 @@ export default function FacilityForm({
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingForPolygon, setIsSavingForPolygon] = useState(false);
+  
+  // Check if we're in edit mode
+  const isEditMode = defaultValues && defaultValues !== "add" && defaultValues?.id;
+
+  // Check if form has unsaved changes
+  const hasUnsavedChanges = () => {
+    if (!isEditMode || !defaultValues) return false;
+    
+    return (
+      form.name !== (defaultValues?.name || "") ||
+      form.number !== (defaultValues?.number || "") ||
+      form.city !== (defaultValues?.city || "") ||
+      form.address !== (defaultValues?.address || "") ||
+      form.lat !== (defaultValues?.lat || "") ||
+      form.long !== (defaultValues?.long || "") ||
+      form.parkingSlots !== (defaultValues?.parkingSlots || "")
+    );
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,6 +70,17 @@ export default function FacilityForm({
       newErrors.number = "Facility number is required";
     } else if (!/^[A-Za-z0-9\s-]+$/.test(form.number.trim())) {
       newErrors.number = "Facility number can only contain letters, numbers, spaces, and hyphens";
+    } else {
+      // Check for duplicate facility number (skip check if editing the same facility)
+      const duplicateNumber = existingFacilities?.find(
+        (existingFacility) => 
+          existingFacility.number && 
+          existingFacility.number.trim().toLowerCase() === form.number.trim().toLowerCase() &&
+          existingFacility.id !== defaultValues?.id
+      );
+      if (duplicateNumber) {
+        newErrors.number = "This facility number is already added";
+      }
     }
 
     // City validation
@@ -99,17 +132,55 @@ export default function FacilityForm({
 
     try {
       if (defaultValues == "add") {
-        await addItem(form);
+        const newFacility = await addItem(form);
+        closeModal();
+        // Redirect to view page with new facility ID
+        if (newFacility && newFacility.id) {
+          router.push(`/admin/facility/view/${newFacility.id}`);
+        } else {
+          // Fallback to facility list if ID not available
+          router.push("/admin/facility");
+        }
       } else {
         await updateItem({ id: Number(defaultValues?.id), ...form });
+        closeModal();
+        // Redirect to view page after successful edit
+        router.push(`/admin/facility/view/${defaultValues?.id}`);
       }
-      closeModal();
-      router.push("/admin/facility");
     } catch (error) {
       console.error("Error submitting form:", error);
       setErrors({ submit: "Failed to save facility. Please try again." });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleEditPolygon = async () => {
+    if (!isEditMode || !defaultValues?.id) return;
+
+    // Check if there are unsaved changes
+    if (hasUnsavedChanges()) {
+      // Validate form first
+      if (!validateForm()) {
+        setErrors({ submit: "Please fix form errors before saving." });
+        return;
+      }
+
+      setIsSavingForPolygon(true);
+      try {
+        // Save the form first
+        await updateItem({ id: Number(defaultValues?.id), ...form });
+        // After successful save, navigate to view page
+        router.push(`/admin/facility/view/${defaultValues.id}`);
+      } catch (error) {
+        console.error("Error saving facility before polygon edit:", error);
+        setErrors({ submit: "Failed to save facility. Please try again." });
+      } finally {
+        setIsSavingForPolygon(false);
+      }
+    } else {
+      // No changes, directly navigate to view page
+      router.push(`/admin/facility/view/${defaultValues.id}`);
     }
   };
 
@@ -181,6 +252,23 @@ export default function FacilityForm({
         {errors.submit && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
             {errors.submit}
+          </div>
+        )}
+
+        {/* Edit Polygon Button - Only show in edit mode, above bottom buttons */}
+        {isEditMode && (
+          <div className="mb-4">
+            <button
+              type="button"
+              onClick={handleEditPolygon}
+              disabled={isSavingForPolygon || isSubmitting}
+              className={`w-full bg-[#613EEA] text-white px-4 py-2 rounded flex items-center justify-center gap-2 hover:bg-[#5030d0] transition-colors ${
+                isSavingForPolygon || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              <FaMapMarkerAlt size={16} />
+              {isSavingForPolygon ? 'Saving...' : 'Edit Polygon on Map'}
+            </button>
           </div>
         )}
 

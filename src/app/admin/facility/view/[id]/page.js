@@ -93,68 +93,45 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  GoogleMap,
-  InfoWindow,
-  Marker,
-  Polygon,
-  useLoadScript,
-} from "@react-google-maps/api";
+import dynamic from "next/dynamic";
 import useCRUD from "../../../../hooks/useCRUD";
 import Sidebar from "../../../../components/Layout/Sidebar";
 
-const borderCoordinates = [
-  { lat: 30.711434513935473, lng: 76.69281881288748 },
-  { lat: 30.711061439447136, lng: 76.693120359315 },
-  { lat: 30.70958809725289, lng: 76.69090656730441 },
-  { lat: 30.70915810473933, lng: 76.69000928281343 },
-  { lat: 30.70944898223773, lng: 76.68975921992285 },
-  { lat: 30.710542926715164, lng: 76.69148024099525 },
-  { lat: 30.71141554405, lng: 76.69281145815148 },
-  { lat: 30.70958809725289, lng: 76.69090656730441 },
-  { lat: 30.70915810473933, lng: 76.69000928281343 },
-  { lat: 30.70944898223773, lng: 76.68975921992285 },
-  { lat: 30.710542926715164, lng: 76.69148024099525 },
-  { lat: 30.71141554405, lng: 76.69281145815148 },
-];
-
-// const borderCoordinates = [
-//   { lat: 30.710833800037605, lng: 76.69063444004115 },
-//   { lat: 30.711845526500284, lng: 76.69225249404184 },
-//   { lat:  30.711383927617547, lng: 76.69264965275153 },
-//   { lat:  30.710701010151155, lng: 76.69170823951532 },
-//   { lat:  30.71035954960432, lng: 76.69100217958652 },
-//   { lat:  30.710814830065118, lng: 76.69064914962229 },
-
-// ];
+// Dynamically import Leaflet component to avoid SSR issues
+const FacilityMapWithDrawing = dynamic(
+  () => import("../../../../components/FacilityMapWithDrawing"),
+  { ssr: false }
+);
 
 export default function ViewFacilityPage() {
   const { id } = useParams();
-  const { data } = useCRUD("facility");
+  const { data, updateItem } = useCRUD("facility");
   const [facility, setFacility] = useState(null);
   const [coordinates, setCoordinates] = useState({ lat: 0, lng: 0 });
-  const [showTooltip, setShowTooltip] = useState(false);
-  const { isLoaded } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_API_KEY,
-  });
-  const polygonOptions = {
-    fillColor: "transparent", // or rgba with opacity if needed
-    fillOpacity: 0.1,
-    strokeColor: "#FF5E62",
-    strokeOpacity: 1,
-    strokeWeight: 2,
-    clickable: false,
-    draggable: false,
-    editable: false,
-    geodesic: false,
-    zIndex: 1,
-  };
+  const [polygonCoordinates, setPolygonCoordinates] = useState(null);
+  const [savedPolygonCoordinates, setSavedPolygonCoordinates] = useState(null); // Track saved state
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
+  const [hasUnsavedPolygons, setHasUnsavedPolygons] = useState(false);
+  const [showSaveWarning, setShowSaveWarning] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
+
   useEffect(() => {
     const found = data?.find((item) => String(item?.id) === id);
     setFacility(found);
 
     if (found?.address) {
       geocodeAddress(found?.address);
+    }
+
+    // Load existing polygon coordinates if available
+    if (found?.polygonCoordinates) {
+      setPolygonCoordinates(found.polygonCoordinates);
+      setSavedPolygonCoordinates(found.polygonCoordinates); // Track saved state
+      setHasUnsavedPolygons(false);
+    } else {
+      setSavedPolygonCoordinates(null);
+      setHasUnsavedPolygons(false);
     }
   }, [data, id]);
 
@@ -183,43 +160,233 @@ export default function ViewFacilityPage() {
     }
   };
 
-  if (!isLoaded || !facility) return <p>Loading...</p>;
+  const handlePolygonChange = (newPolygon) => {
+    setPolygonCoordinates(newPolygon);
+    setSaveMessage(""); // Clear previous messages
+    
+    // Check if polygons have changed from saved state
+    const hasChanges = JSON.stringify(newPolygon) !== JSON.stringify(savedPolygonCoordinates);
+    setHasUnsavedPolygons(hasChanges && newPolygon && (
+      Array.isArray(newPolygon) ? newPolygon.length > 0 : true
+    ));
+  };
+
+  const handleSavePolygon = async () => {
+    if (!polygonCoordinates || (Array.isArray(polygonCoordinates) && polygonCoordinates.length === 0)) {
+      setSaveMessage("No polygon to save. Please draw a polygon first.");
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveMessage("");
+
+    try {
+      await updateItem({
+        id: facility.id,
+        polygonCoordinates: polygonCoordinates,
+      });
+      setSaveMessage("Polygon saved successfully!");
+      setSavedPolygonCoordinates(polygonCoordinates); // Update saved state
+      setHasUnsavedPolygons(false); // Mark as saved
+      setTimeout(() => setSaveMessage(""), 3000);
+    } catch (error) {
+      console.error("Error saving polygon:", error);
+      setSaveMessage("Failed to save polygon. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle browser close/refresh warning with custom modal
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedPolygons) {
+        // Show custom modal instead of browser alert
+        e.preventDefault();
+        setShowSaveWarning(true);
+        // Store that this is a browser navigation attempt
+        setPendingNavigation("browser_close");
+        // Prevent default browser alert
+        e.returnValue = "";
+        return "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [hasUnsavedPolygons]);
+
+  // Handle browser back button with custom modal
+  useEffect(() => {
+    if (!hasUnsavedPolygons) return;
+
+    const handlePopState = (e) => {
+      if (hasUnsavedPolygons) {
+        // Prevent back navigation
+        window.history.pushState(null, "", window.location.href);
+        // Show custom modal
+        setShowSaveWarning(true);
+        setPendingNavigation("browser_back");
+      }
+    };
+
+    // Push state to track back button
+    window.history.pushState(null, "", window.location.href);
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [hasUnsavedPolygons]);
+
+  // Handle save and leave
+  const handleSaveAndLeave = async () => {
+    await handleSavePolygon();
+    setShowSaveWarning(false);
+    const navType = pendingNavigation;
+    setPendingNavigation(null);
+    
+    // If it was browser back, navigate back after save
+    if (navType === "browser_back") {
+      window.history.back();
+    }
+    // If it was browser close, allow it after save
+    if (navType === "browser_close") {
+      // Browser will handle the close after we return
+      return;
+    }
+  };
+
+  // Handle leave without saving
+  const handleLeaveWithoutSave = () => {
+    setHasUnsavedPolygons(false);
+    setShowSaveWarning(false);
+    const navType = pendingNavigation;
+    setPendingNavigation(null);
+    
+    // If it was browser back, navigate back
+    if (navType === "browser_back") {
+      window.history.back();
+    }
+    // If it was browser close, allow it
+    if (navType === "browser_close") {
+      // Browser will handle the close
+      return;
+    }
+  };
+
+  // Cancel warning
+  const handleCancelWarning = () => {
+    setShowSaveWarning(false);
+    setPendingNavigation(null);
+  };
+
+  if (!facility) return <p>Loading...</p>;
 
   return (
     <main>
+      {/* Custom Unsaved Polygons Warning Modal */}
+      {showSaveWarning && (
+        <div 
+          className="fixed inset-0 z-[10000] bg-black bg-opacity-60 flex items-center justify-center backdrop-blur-sm"
+          onClick={handleCancelWarning}
+        >
+          <div 
+            className="bg-white rounded-2xl p-8 max-w-lg w-[90%] shadow-2xl border-2 border-yellow-300 animate-fadeIn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-4 mb-6">
+              <div className="bg-yellow-100 rounded-full p-4 flex-shrink-0">
+                <svg className="w-10 h-10 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-800">Unsaved Polygons</h3>
+                <p className="text-sm text-gray-500 mt-1">Save your changes before leaving</p>
+              </div>
+            </div>
+            
+            <div className="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+              <p className="text-gray-700 mb-1 font-medium">
+                You have marked <span className="font-bold text-red-600">{Array.isArray(polygonCoordinates) ? polygonCoordinates.length : (polygonCoordinates ? 1 : 0)} polygon{Array.isArray(polygonCoordinates) && polygonCoordinates.length > 1 ? 's' : ''}</span> but haven't saved them yet.
+              </p>
+              <p className="text-gray-600 text-sm">
+                If you leave now, your changes will be lost. Do you want to save the polygons before leaving?
+              </p>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={handleCancelWarning}
+                className="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium shadow-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveAndLeave}
+                className="px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium shadow-md hover:shadow-lg"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex bg-gray-200">
         <Sidebar />
         <div className="flex-1 p-4 bg-gray-200">
-          <h1 className="text-2xl font-bold mb-4 text-black">
-            {facility.name}
-          </h1>
-          <div style={{ height: "80vh", width: "100%" }}>
-            <GoogleMap
-              mapContainerStyle={{ height: "100%", width: "100%" }}
-              center={coordinates}
-              zoom={15}
-            >
-              <Marker
-                position={coordinates}
-                title={facility.address}
-                // label={facility.address ? String(facility.address) : ""}
-                onClick={() => setShowTooltip(true)}
-              />
-              {showTooltip && (
-                <InfoWindow
-                  position={coordinates}
-                  onCloseClick={() => setShowTooltip(false)}
-                  style={{ position: "absolute", bottom: "500px" }}
-                >
-                  <div
-                    style={{ fontSize: "16px", padding: "2px", color: "black" }}
-                  >
-                    {facility?.address}
-                  </div>
-                </InfoWindow>
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl font-bold text-black">{facility.name}</h1>
+            <div className="flex items-center gap-3">
+              {hasUnsavedPolygons && (
+                <span className="text-xs px-3 py-1 bg-yellow-100 text-yellow-700 rounded border border-yellow-300">
+                  ⚠️ Unsaved polygons
+                </span>
               )}
-              <Polygon paths={borderCoordinates} options={polygonOptions} />
-            </GoogleMap>
+              {saveMessage && (
+                <span
+                  className={`text-sm px-3 py-1 rounded ${
+                    saveMessage.includes("success")
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {saveMessage}
+                </span>
+              )}
+              <button
+                onClick={handleSavePolygon}
+                disabled={isSaving || !polygonCoordinates || (Array.isArray(polygonCoordinates) && polygonCoordinates.length === 0)}
+                className={`px-4 py-2 rounded transition-colors font-medium ${
+                  hasUnsavedPolygons
+                    ? "bg-red-500 text-white hover:bg-red-600"
+                    : "bg-blue-500 text-white hover:bg-blue-600"
+                } disabled:bg-gray-400 disabled:cursor-not-allowed`}
+              >
+                {isSaving ? "Saving..." : hasUnsavedPolygons ? "Save Polygons ⚠️" : "Save Polygon"}
+              </button>
+            </div>
+          </div>
+          <div style={{ height: "80vh", width: "100%" }}>
+            {coordinates.lat && coordinates.lng ? (
+              <FacilityMapWithDrawing
+                center={coordinates}
+                zoom={18}
+                facilityAddress={facility.address}
+                existingPolygon={polygonCoordinates}
+                onPolygonChange={handlePolygonChange}
+                showControls={true}
+                allowMultiple={true}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p>Loading map...</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
