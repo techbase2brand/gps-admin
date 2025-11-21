@@ -91,10 +91,11 @@
 
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import useCRUD from "../../../../hooks/useCRUD";
+import useFacilityPolygons from "../../../../hooks/useFacilityPolygons";
 import Sidebar from "../../../../components/Layout/Sidebar";
 
 // Dynamically import Leaflet component to avoid SSR issues
@@ -105,7 +106,9 @@ const FacilityMapWithDrawing = dynamic(
 
 export default function ViewFacilityPage() {
   const { id } = useParams();
-  const { data, updateItem } = useCRUD("facility");
+  const router = useRouter();
+  const { data } = useCRUD("facility");
+  const { polygons, savePolygons, loading: polygonsLoading } = useFacilityPolygons(id);
   const [facility, setFacility] = useState(null);
   const [coordinates, setCoordinates] = useState({ lat: 0, lng: 0 });
   const [polygonCoordinates, setPolygonCoordinates] = useState(null);
@@ -123,17 +126,20 @@ export default function ViewFacilityPage() {
     if (found?.address) {
       geocodeAddress(found?.address);
     }
+  }, [data, id]);
 
-    // Load existing polygon coordinates if available
-    if (found?.polygonCoordinates) {
-      setPolygonCoordinates(found.polygonCoordinates);
-      setSavedPolygonCoordinates(found.polygonCoordinates); // Track saved state
+  // Load polygons from new table
+  useEffect(() => {
+    if (polygons && polygons.length > 0) {
+      setPolygonCoordinates(polygons);
+      setSavedPolygonCoordinates(polygons);
       setHasUnsavedPolygons(false);
     } else {
+      setPolygonCoordinates(null);
       setSavedPolygonCoordinates(null);
       setHasUnsavedPolygons(false);
     }
-  }, [data, id]);
+  }, [polygons]);
 
   useEffect(() => {
     if (facility?.address) {
@@ -181,17 +187,15 @@ export default function ViewFacilityPage() {
     setSaveMessage("");
 
     try {
-      await updateItem({
-        id: facility.id,
-        polygonCoordinates: polygonCoordinates,
-      });
-      setSaveMessage("Polygon saved successfully!");
+      // Save to new facility_polygons table
+      await savePolygons(polygonCoordinates);
+      setSaveMessage("Polygons saved successfully!");
       setSavedPolygonCoordinates(polygonCoordinates); // Update saved state
       setHasUnsavedPolygons(false); // Mark as saved
       setTimeout(() => setSaveMessage(""), 3000);
     } catch (error) {
-      console.error("Error saving polygon:", error);
-      setSaveMessage("Failed to save polygon. Please try again.");
+      console.error("Error saving polygons:", error);
+      setSaveMessage("Failed to save polygons. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -266,15 +270,8 @@ export default function ViewFacilityPage() {
     const navType = pendingNavigation;
     setPendingNavigation(null);
     
-    // If it was browser back, navigate back
-    if (navType === "browser_back") {
-      window.history.back();
-    }
-    // If it was browser close, allow it
-    if (navType === "browser_close") {
-      // Browser will handle the close
-      return;
-    }
+    // Navigate to facility page
+    router.push("/admin/facility");
   };
 
   // Cancel warning
@@ -324,6 +321,12 @@ export default function ViewFacilityPage() {
                 className="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium shadow-sm"
               >
                 Cancel
+              </button>
+              <button
+                onClick={handleLeaveWithoutSave}
+                className="px-6 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium shadow-md hover:shadow-lg"
+              >
+                Leave without saving
               </button>
               <button
                 onClick={handleSaveAndLeave}

@@ -183,6 +183,20 @@ export default function useCRUD(storageKey) {
 
   const deleteItem = async (id) => {
     try {
+      // If deleting a facility, also delete its polygons
+      if (storageKey === "facility") {
+        const { error: polygonError } = await client
+          .from("facility_polygons")
+          .delete()
+          .eq("facility_id", id);
+
+        if (polygonError) {
+          console.error("Delete polygons error:", polygonError.message);
+          // Continue with facility deletion even if polygon deletion fails
+        }
+      }
+
+      // Delete the facility/item
       const { error } = await client
         .from(storageKey)
         .delete()
@@ -194,6 +208,7 @@ export default function useCRUD(storageKey) {
       return { message: "Deleted", id };
     } catch (err) {
       console.error("Delete item error:", err.message);
+      throw err;
     }
   };
 

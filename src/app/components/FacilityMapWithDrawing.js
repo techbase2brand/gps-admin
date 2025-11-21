@@ -105,31 +105,64 @@ function DrawingControls({ onPolygonCreated, onPolygonEdited, onPolygonDeleted, 
     }
 
     // If existing polygon, add it to the feature group
-    // existingPolygon is already in Leaflet format [lat, lng]
+    // Handle existingPolygon - can be in multiple formats
     if (existingPolygon && Array.isArray(existingPolygon) && existingPolygon.length > 0) {
       try {
-        // Check if it's a single polygon (array of [lat, lng]) or multiple polygons
-        if (Array.isArray(existingPolygon[0]) && typeof existingPolygon[0][0] === 'number') {
-          // Single polygon in Leaflet format [[lat, lng], [lat, lng], ...]
+        // Check if it's slot-based format: [{ slot: 1, coordinates: [...] }, ...]
+        if (existingPolygon[0] && typeof existingPolygon[0] === 'object' && 'slot' in existingPolygon[0] && 'coordinates' in existingPolygon[0]) {
+          // Slot-based format - extract coordinates and convert to Leaflet format
+          existingPolygon.forEach((polyData) => {
+            if (polyData.coordinates && Array.isArray(polyData.coordinates) && polyData.coordinates.length > 0) {
+              // Convert Google format [{lat, lng}, ...] to Leaflet format [[lat, lng], ...]
+              const leafletCoords = polyData.coordinates.map(coord => {
+                if (coord.lat !== undefined && coord.lng !== undefined) {
+                  return [coord.lat, coord.lng];
+                } else if (coord.latitude !== undefined && coord.longitude !== undefined) {
+                  return [coord.latitude, coord.longitude];
+                }
+                return null;
+              }).filter(coord => coord !== null);
+
+              if (leafletCoords.length > 0) {
+                const polygon = L.polygon(leafletCoords, {
+                  color: "#FF5E62",
+                  fillColor: "#FF5E62",
+                  fillOpacity: 0.05, // Transparent inside color
+                  weight: 3,
+                  opacity: 1,
+                });
+                if (featureGroupRef.current) {
+                  polygon.addTo(featureGroupRef.current);
+                  polygonLayersRef.current.push(polygon);
+                }
+              }
+            }
+          });
+        }
+        // Check if it's a single polygon in Leaflet format [[lat, lng], [lat, lng], ...]
+        else if (Array.isArray(existingPolygon[0]) && typeof existingPolygon[0][0] === 'number') {
           const polygon = L.polygon(existingPolygon, {
             color: "#FF5E62",
             fillColor: "#FF5E62",
-            fillOpacity: 0.2,
-            weight: 2,
+            fillOpacity: 0.05, // Transparent inside color
+            weight: 3,
+            opacity: 1,
           });
           if (featureGroupRef.current) {
             polygon.addTo(featureGroupRef.current);
             polygonLayersRef.current.push(polygon);
           }
-        } else if (Array.isArray(existingPolygon[0]) && Array.isArray(existingPolygon[0][0])) {
-          // Multiple polygons - add each one
+        }
+        // Check if it's multiple polygons in Leaflet format
+        else if (Array.isArray(existingPolygon[0]) && Array.isArray(existingPolygon[0][0])) {
           existingPolygon.forEach((polyCoords) => {
             if (Array.isArray(polyCoords) && polyCoords.length > 0) {
               const polygon = L.polygon(polyCoords, {
                 color: "#FF5E62",
                 fillColor: "#FF5E62",
-                fillOpacity: 0.2,
-                weight: 2,
+                fillOpacity: 0.05, // Transparent inside color
+                weight: 3,
+                opacity: 1,
               });
               if (featureGroupRef.current) {
                 polygon.addTo(featureGroupRef.current);
@@ -137,6 +170,31 @@ function DrawingControls({ onPolygonCreated, onPolygonEdited, onPolygonDeleted, 
               }
             }
           });
+        }
+        // Check if it's Google format [{lat, lng}, ...] - single polygon
+        else if (existingPolygon[0] && typeof existingPolygon[0] === 'object' && ('lat' in existingPolygon[0] || 'latitude' in existingPolygon[0])) {
+          const leafletCoords = existingPolygon.map(coord => {
+            if (coord.lat !== undefined && coord.lng !== undefined) {
+              return [coord.lat, coord.lng];
+            } else if (coord.latitude !== undefined && coord.longitude !== undefined) {
+              return [coord.latitude, coord.longitude];
+            }
+            return null;
+          }).filter(coord => coord !== null);
+
+          if (leafletCoords.length > 0) {
+            const polygon = L.polygon(leafletCoords, {
+              color: "#FF5E62",
+              fillColor: "#FF5E62",
+              fillOpacity: 0.05, // Transparent inside color
+              weight: 3,
+              opacity: 1,
+            });
+            if (featureGroupRef.current) {
+              polygon.addTo(featureGroupRef.current);
+              polygonLayersRef.current.push(polygon);
+            }
+          }
         }
       } catch (error) {
         console.error("Error adding existing polygon:", error);
@@ -156,8 +214,8 @@ function DrawingControls({ onPolygonCreated, onPolygonEdited, onPolygonDeleted, 
           shapeOptions: {
             color: "#FF5E62",
             fillColor: "#FF5E62",
-            fillOpacity: 0.2,
-            weight: 2,
+            fillOpacity: 0.05, // Transparent inside color
+            weight: 3,
           },
           // Hide guide lines during drawing
           showArea: false,
@@ -206,7 +264,7 @@ function DrawingControls({ onPolygonCreated, onPolygonEdited, onPolygonDeleted, 
       layer.setStyle({
         color: "#FF5E62",
         fillColor: "#FF5E62",
-        fillOpacity: 0.3,
+        fillOpacity: 0.05, // Transparent inside color
         weight: 3,
         opacity: 1,
       });
@@ -323,8 +381,9 @@ function DrawingControls({ onPolygonCreated, onPolygonEdited, onPolygonDeleted, 
         layer.setStyle({
           color: "#FF5E62",
           fillColor: "#FF5E62",
-          fillOpacity: 0.2,
-          weight: 2,
+          fillOpacity: 0.05, // Transparent inside color
+          weight: 3,
+          opacity: 1,
         });
         
         const latlngs = layer.getLatLngs()[0];
@@ -501,13 +560,26 @@ export default function FacilityMapWithDrawing({
     if (allowMultiple && existingPolygon) {
       // If existingPolygon is an array of polygons
       if (Array.isArray(existingPolygon) && existingPolygon.length > 0) {
-        // Check if it's array of arrays (multiple polygons) or single polygon
-        if (Array.isArray(existingPolygon[0]) && Array.isArray(existingPolygon[0][0])) {
-          // Multiple polygons format
-          setAllPolygons(existingPolygon);
+        // Check if it's slot-based format: [{ slot: 1, coordinates: [...] }, ...]
+        if (existingPolygon[0] && typeof existingPolygon[0] === 'object' && 'slot' in existingPolygon[0] && 'coordinates' in existingPolygon[0]) {
+          // Slot-based format - extract coordinates (already in Google format)
+          const polygons = existingPolygon.map(poly => poly.coordinates || []);
+          setAllPolygons(polygons);
+        } else if (Array.isArray(existingPolygon[0]) && Array.isArray(existingPolygon[0][0])) {
+          // Multiple polygons format (array of arrays) - already in Leaflet format, convert to Google
+          const googlePolygons = existingPolygon.map(poly => leafletToGoogle(poly));
+          setAllPolygons(googlePolygons);
         } else if (existingPolygon[0] && typeof existingPolygon[0] === 'object' && 'lat' in existingPolygon[0]) {
           // Single polygon in Google format
           setAllPolygons([existingPolygon]);
+        }
+      }
+    } else if (!allowMultiple && existingPolygon) {
+      // Single polygon mode - initialize if needed
+      if (Array.isArray(existingPolygon) && existingPolygon.length > 0) {
+        if (existingPolygon[0] && typeof existingPolygon[0] === 'object' && 'lat' in existingPolygon[0]) {
+          // Already in Google format
+          setPolygonCoordinates(existingPolygon);
         }
       }
     }
@@ -520,7 +592,12 @@ export default function FacilityMapWithDrawing({
       setAllPolygons(updated);
       setPolygonCoordinates(coordinates);
       if (onPolygonChange) {
-        onPolygonChange(updated);
+        // Convert to slot-based format for saving
+        const slotBasedFormat = updated.map((polygon, index) => ({
+          slot: index + 1,
+          coordinates: polygon,
+        }));
+        onPolygonChange(slotBasedFormat);
       }
     } else {
       setPolygonCoordinates(coordinates);
@@ -537,7 +614,12 @@ export default function FacilityMapWithDrawing({
       setAllPolygons(updated);
       setPolygonCoordinates(coordinates);
       if (onPolygonChange) {
-        onPolygonChange(updated);
+        // Convert to slot-based format for saving
+        const slotBasedFormat = updated.map((polygon, index) => ({
+          slot: index + 1,
+          coordinates: polygon,
+        }));
+        onPolygonChange(slotBasedFormat);
       }
     } else {
       setPolygonCoordinates(coordinates);
@@ -555,7 +637,16 @@ export default function FacilityMapWithDrawing({
         setPolygonCoordinates(null);
       }
       if (onPolygonChange) {
-        onPolygonChange(updated.length > 0 ? updated : null);
+        if (updated.length > 0) {
+          // Convert to slot-based format for saving
+          const slotBasedFormat = updated.map((polygon, index) => ({
+            slot: index + 1,
+            coordinates: polygon,
+          }));
+          onPolygonChange(slotBasedFormat);
+        } else {
+          onPolygonChange(null);
+        }
       }
     } else {
       setPolygonCoordinates(null);
@@ -572,7 +663,12 @@ export default function FacilityMapWithDrawing({
       setAllPolygons(updated);
       setPolygonCoordinates(coordinates);
       if (onPolygonChange) {
-        onPolygonChange(updated);
+        // Convert to slot-based format for saving
+        const slotBasedFormat = updated.map((polygon, index) => ({
+          slot: index + 1,
+          coordinates: polygon,
+        }));
+        onPolygonChange(slotBasedFormat);
       }
     } else {
       setPolygonCoordinates(coordinates);
@@ -658,12 +754,17 @@ export default function FacilityMapWithDrawing({
 
   // Convert existing polygon from Google format to Leaflet format
   // Handle both single polygon and array of polygons
+  // Convert existingPolygon to Leaflet format for display
   const existingPolygonLeaflet = existingPolygon
-    ? (Array.isArray(existingPolygon) && existingPolygon.length > 0 && existingPolygon[0] && typeof existingPolygon[0] === 'object' && 'lat' in existingPolygon[0])
-      ? (Array.isArray(existingPolygon[0]) && existingPolygon[0][0] && typeof existingPolygon[0][0] === 'object' && 'lat' in existingPolygon[0][0])
-        ? existingPolygon.map(poly => googleToLeaflet(poly)) // Multiple polygons
-        : googleToLeaflet(existingPolygon) // Single polygon
-      : existingPolygon // Already in Leaflet format
+    ? (Array.isArray(existingPolygon) && existingPolygon.length > 0)
+      ? (existingPolygon[0] && typeof existingPolygon[0] === 'object' && 'slot' in existingPolygon[0] && 'coordinates' in existingPolygon[0])
+        ? existingPolygon.map(poly => googleToLeaflet(poly.coordinates || [])) // Slot-based format
+        : (existingPolygon[0] && typeof existingPolygon[0] === 'object' && 'lat' in existingPolygon[0])
+          ? (Array.isArray(existingPolygon[0]) && existingPolygon[0][0] && typeof existingPolygon[0][0] === 'object' && 'lat' in existingPolygon[0][0])
+            ? existingPolygon.map(poly => googleToLeaflet(poly)) // Multiple polygons in Google format
+            : googleToLeaflet(existingPolygon) // Single polygon in Google format
+          : existingPolygon // Already in Leaflet format
+      : null
     : null;
 
   return (
