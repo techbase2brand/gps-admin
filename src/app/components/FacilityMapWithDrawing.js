@@ -1,0 +1,842 @@
+"use client";
+
+import { useEffect, useState, useRef } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import "leaflet-draw";
+import "leaflet-draw/dist/leaflet.draw.css";
+import "leaflet-fullscreen/dist/leaflet.fullscreen.css";
+import "leaflet-measure/dist/leaflet-measure.css";
+import "leaflet-fullscreen";
+import "leaflet-measure/dist/leaflet-measure";
+import { googleToLeaflet, leafletToGoogle, toGeoJSON, toSimpleJSON } from "../utils/coordinateUtils";
+
+// Round to 6 decimal places helper
+function roundTo6Decimals(num) {
+  return Math.round(num * 1000000) / 1000000;
+}
+
+// Fix for default marker icon in Leaflet with Next.js
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+});
+
+// Component to add map controls (Fullscreen, Measure, Custom Shape Creator)
+function MapControls({ mapCenter, onShapeCreated }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map) return;
+
+    // Add Fullscreen control (top-left)
+    const fullscreenControl = L.control.fullscreen({
+      position: "topleft",
+    });
+    fullscreenControl.addTo(map);
+
+    // Add Measure control
+    const measureControl = new L.Control.Measure({
+      position: "topleft",
+      primaryLengthUnit: "meters",
+      secondaryLengthUnit: "feet",
+      primaryAreaUnit: "sqmeters",
+      secondaryAreaUnit: "acres",
+    });
+    measureControl.addTo(map);
+
+    // Custom shape creator function
+    window.createRegularPolygon = function (lat, lon, sides, radius, name) {
+      const points = [];
+      const angleStep = (2 * Math.PI) / sides;
+      for (let i = 0; i < sides; i++) {
+        const angle = i * angleStep;
+        const dx = (radius / 111320) * Math.cos(angle);
+        const dy = (radius / 110540) * Math.sin(angle);
+        points.push([lat + dy, lon + dx]);
+      }
+      const polygon = L.polygon(points, {
+        color: "orange",
+        fillColor: "orange",
+        fillOpacity: 0.4,
+      });
+      polygon.bindPopup(name || `Polygon ${sides} sides`);
+      polygon.addTo(map);
+      
+      // Convert to coordinates and notify parent
+      const coordinates = points.map((p) => [p[0], p[1]]);
+      if (onShapeCreated) {
+        onShapeCreated(coordinates);
+      }
+    };
+
+    // Cleanup
+    return () => {
+      map.removeControl(fullscreenControl);
+      map.removeControl(measureControl);
+      delete window.createRegularPolygon;
+    };
+  }, [map, mapCenter, onShapeCreated]);
+
+  return null;
+}
+
+// Component to handle drawing controls
+function DrawingControls({ onPolygonCreated, onPolygonEdited, onPolygonDeleted, existingPolygon, allowMultiple }) {
+  const map = useMap();
+  const featureGroupRef = useRef(L.featureGroup());
+  const drawControlRef = useRef(null);
+  const polygonLayersRef = useRef([]); // Store all polygon layers
+
+  useEffect(() => {
+    if (!map) return;
+
+    // Initialize feature group if not already done
+    if (!featureGroupRef.current) {
+      featureGroupRef.current = L.featureGroup();
+    }
+
+    // Add feature group to map - this ensures all layers added to it are visible
+    if (!map.hasLayer(featureGroupRef.current)) {
+      featureGroupRef.current.addTo(map);
+    }
+
+    // If existing polygon, add it to the feature group
+    // Handle existingPolygon - can be in multiple formats
+    if (existingPolygon && Array.isArray(existingPolygon) && existingPolygon.length > 0) {
+      try {
+        // Check if it's slot-based format: [{ slot: 1, coordinates: [...] }, ...]
+        if (existingPolygon[0] && typeof existingPolygon[0] === 'object' && 'slot' in existingPolygon[0] && 'coordinates' in existingPolygon[0]) {
+          // Slot-based format - extract coordinates and convert to Leaflet format
+          existingPolygon.forEach((polyData) => {
+            if (polyData.coordinates && Array.isArray(polyData.coordinates) && polyData.coordinates.length > 0) {
+              // Convert Google format [{lat, lng}, ...] to Leaflet format [[lat, lng], ...]
+              const leafletCoords = polyData.coordinates.map(coord => {
+                if (coord.lat !== undefined && coord.lng !== undefined) {
+                  return [coord.lat, coord.lng];
+                } else if (coord.latitude !== undefined && coord.longitude !== undefined) {
+                  return [coord.latitude, coord.longitude];
+                }
+                return null;
+              }).filter(coord => coord !== null);
+
+              if (leafletCoords.length > 0) {
+                const polygon = L.polygon(leafletCoords, {
+                  color: "#FF5E62",
+                  fillColor: "#FF5E62",
+                  fillOpacity: 0.05, // Transparent inside color
+                  weight: 3,
+                  opacity: 1,
+                });
+                if (featureGroupRef.current) {
+                  polygon.addTo(featureGroupRef.current);
+                  polygonLayersRef.current.push(polygon);
+                }
+              }
+            }
+          });
+        }
+        // Check if it's a single polygon in Leaflet format [[lat, lng], [lat, lng], ...]
+        else if (Array.isArray(existingPolygon[0]) && typeof existingPolygon[0][0] === 'number') {
+          const polygon = L.polygon(existingPolygon, {
+            color: "#FF5E62",
+            fillColor: "#FF5E62",
+            fillOpacity: 0.05, // Transparent inside color
+            weight: 3,
+            opacity: 1,
+          });
+          if (featureGroupRef.current) {
+            polygon.addTo(featureGroupRef.current);
+            polygonLayersRef.current.push(polygon);
+          }
+        }
+        // Check if it's multiple polygons in Leaflet format
+        else if (Array.isArray(existingPolygon[0]) && Array.isArray(existingPolygon[0][0])) {
+          existingPolygon.forEach((polyCoords) => {
+            if (Array.isArray(polyCoords) && polyCoords.length > 0) {
+              const polygon = L.polygon(polyCoords, {
+                color: "#FF5E62",
+                fillColor: "#FF5E62",
+                fillOpacity: 0.05, // Transparent inside color
+                weight: 3,
+                opacity: 1,
+              });
+              if (featureGroupRef.current) {
+                polygon.addTo(featureGroupRef.current);
+                polygonLayersRef.current.push(polygon);
+              }
+            }
+          });
+        }
+        // Check if it's Google format [{lat, lng}, ...] - single polygon
+        else if (existingPolygon[0] && typeof existingPolygon[0] === 'object' && ('lat' in existingPolygon[0] || 'latitude' in existingPolygon[0])) {
+          const leafletCoords = existingPolygon.map(coord => {
+            if (coord.lat !== undefined && coord.lng !== undefined) {
+              return [coord.lat, coord.lng];
+            } else if (coord.latitude !== undefined && coord.longitude !== undefined) {
+              return [coord.latitude, coord.longitude];
+            }
+            return null;
+          }).filter(coord => coord !== null);
+
+          if (leafletCoords.length > 0) {
+            const polygon = L.polygon(leafletCoords, {
+              color: "#FF5E62",
+              fillColor: "#FF5E62",
+              fillOpacity: 0.05, // Transparent inside color
+              weight: 3,
+              opacity: 1,
+            });
+            if (featureGroupRef.current) {
+              polygon.addTo(featureGroupRef.current);
+              polygonLayersRef.current.push(polygon);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error adding existing polygon:", error);
+      }
+    }
+
+    // Configure drawing options
+    const drawControl = new L.Control.Draw({
+      position: "topright",
+      draw: {
+        polygon: {
+          allowIntersection: false,
+          drawError: {
+            color: "#e1e100",
+            message: "<strong>Oh snap!</strong> you can't draw that!",
+          },
+          shapeOptions: {
+            color: "#FF5E62",
+            fillColor: "#FF5E62",
+            fillOpacity: 0.05, // Transparent inside color
+            weight: 3,
+          },
+          // Hide guide lines during drawing
+          showArea: false,
+          metric: false,
+          guideLayers: [],
+        },
+        polyline: false,
+        rectangle: false,
+        circle: false,
+        circlemarker: false,
+        marker: false,
+      },
+      edit: {
+        featureGroup: featureGroupRef.current,
+        remove: true,
+      },
+    });
+
+    // Add drawing control to map
+    map.addControl(drawControl);
+    drawControlRef.current = drawControl;
+
+    // Customize drawing markers to blue/green dots
+    const customizeDrawingMarkers = () => {
+      // Find all drawing markers and convert them to dots
+      const markers = document.querySelectorAll('.leaflet-draw-tooltip-marker');
+      markers.forEach((marker, index) => {
+        // Alternate between blue and green
+        const color = index % 2 === 0 ? '#3B82F6' : '#10B981'; // Blue or Green
+        marker.style.width = '10px';
+        marker.style.height = '10px';
+        marker.style.borderRadius = '50%';
+        marker.style.backgroundColor = color;
+        marker.style.border = '2px solid white';
+        marker.style.boxShadow = `0 0 0 2px ${color}`;
+        marker.style.marginLeft = '-5px';
+        marker.style.marginTop = '-5px';
+      });
+    };
+
+    // Event handlers
+    map.on(L.Draw.Event.CREATED, (e) => {
+      const { layer } = e;
+      
+      // Ensure polygon is properly styled and visible in RED color
+      layer.setStyle({
+        color: "#FF5E62",
+        fillColor: "#FF5E62",
+        fillOpacity: 0.05, // Transparent inside color
+        weight: 3,
+        opacity: 1,
+      });
+      
+      // Make sure polygon is interactive and visible
+      layer.options.interactive = true;
+      layer.options.bubblingMouseEvents = true;
+      
+      // IMPORTANT: Don't remove layer from map if it's already there
+      // Leaflet Draw adds it temporarily, but we'll keep it in featureGroup
+      // This ensures ALL polygons stay visible
+      
+      // Check if layer is already in featureGroup (shouldn't be, but check)
+      if (!featureGroupRef.current.hasLayer(layer)) {
+        // Add to feature group - since featureGroup is already on map,
+        // adding layer to it will make it visible
+        // This keeps ALL previous polygons visible too
+        featureGroupRef.current.addLayer(layer);
+      }
+      
+      // If layer was added directly to map by Leaflet Draw, remove it
+      // (we only want it in featureGroup to keep all polygons together)
+      if (map.hasLayer(layer) && !featureGroupRef.current.hasLayer(layer)) {
+        map.removeLayer(layer);
+        // Now add to featureGroup
+        featureGroupRef.current.addLayer(layer);
+      }
+      
+      // Store layer reference for tracking
+      if (!polygonLayersRef.current.includes(layer)) {
+        polygonLayersRef.current.push(layer);
+      }
+      
+      // Force layer to be visible by bringing it to front
+      layer.bringToFront();
+      
+      // Verify all layers in featureGroup are still on map
+      setTimeout(() => {
+        // Ensure featureGroup is on map
+        if (!map.hasLayer(featureGroupRef.current)) {
+          featureGroupRef.current.addTo(map);
+        }
+        
+        // Ensure all layers in featureGroup are visible
+        featureGroupRef.current.eachLayer((l) => {
+          if (!map.hasLayer(l)) {
+            // This shouldn't happen, but ensure it's visible
+            l.addTo(map);
+          }
+        });
+        
+        map.invalidateSize();
+      }, 100);
+      
+      // Ensure map bounds include ALL polygons
+      setTimeout(() => {
+        try {
+          const allLayers = featureGroupRef.current.getLayers();
+          if (allLayers.length > 0) {
+            const bounds = featureGroupRef.current.getBounds();
+            if (bounds && bounds.isValid && bounds.isValid()) {
+              map.fitBounds(bounds.pad(0.1));
+            }
+          } else {
+            // Fallback to layer bounds
+            const layerBounds = layer.getBounds();
+            if (layerBounds && layerBounds.isValid && layerBounds.isValid()) {
+              map.fitBounds(layerBounds.pad(0.1));
+            }
+          }
+        } catch (err) {
+          console.log("Bounds error:", err);
+        }
+      }, 200);
+      
+      const latlngs = layer.getLatLngs()[0];
+      const coordinates = latlngs.map((ll) => [ll.lat, ll.lng]);
+      
+      if (onPolygonCreated) {
+        onPolygonCreated(coordinates, layer);
+      }
+    });
+
+    // Hide guide lines when drawing starts
+    map.on(L.Draw.Event.DRAWSTART, () => {
+      setTimeout(() => {
+        customizeDrawingMarkers();
+        // Hide all guide lines
+        const guideLines = document.querySelectorAll('.leaflet-draw-guide-dash, .leaflet-draw-tooltip-guide');
+        guideLines.forEach(line => {
+          line.style.display = 'none';
+          line.style.opacity = '0';
+        });
+      }, 100);
+    });
+
+    // Customize markers and hide guide lines during drawing
+    map.on(L.Draw.Event.DRAWVERTEX, () => {
+      setTimeout(() => {
+        customizeDrawingMarkers();
+        // Hide guide lines
+        const guideLines = document.querySelectorAll('.leaflet-draw-guide-dash, .leaflet-draw-tooltip-guide');
+        guideLines.forEach(line => {
+          line.style.display = 'none';
+          line.style.opacity = '0';
+        });
+      }, 50);
+    });
+
+    map.on(L.Draw.Event.EDITED, (e) => {
+      const layers = e.layers;
+      layers.eachLayer((layer) => {
+        // Ensure polygon remains visible after edit
+        layer.setStyle({
+          color: "#FF5E62",
+          fillColor: "#FF5E62",
+          fillOpacity: 0.05, // Transparent inside color
+          weight: 3,
+          opacity: 1,
+        });
+        
+        const latlngs = layer.getLatLngs()[0];
+        const coordinates = latlngs.map((ll) => [ll.lat, ll.lng]);
+        
+        // Find index of edited layer
+        const index = polygonLayersRef.current.findIndex(l => l === layer);
+        
+        if (onPolygonEdited) {
+          onPolygonEdited(coordinates, index);
+        }
+      });
+    });
+
+    map.on(L.Draw.Event.DELETED, (e) => {
+      const layers = e.layers;
+      layers.eachLayer((layer) => {
+        // Remove from tracking array
+        const index = polygonLayersRef.current.findIndex(l => l === layer);
+        if (index !== -1) {
+          polygonLayersRef.current.splice(index, 1);
+        }
+        
+        if (onPolygonDeleted) {
+          onPolygonDeleted(index);
+        }
+      });
+    });
+
+    // Cleanup
+    return () => {
+      if (drawControlRef.current) {
+        map.removeControl(drawControlRef.current);
+      }
+      // Don't remove featureGroup on cleanup - we want to keep all polygons visible
+      // Only cleanup event listeners
+      map.off(L.Draw.Event.CREATED);
+      map.off(L.Draw.Event.EDITED);
+      map.off(L.Draw.Event.DELETED);
+      map.off(L.Draw.Event.DRAWSTART);
+      map.off(L.Draw.Event.DRAWVERTEX);
+      // Don't clear polygonLayersRef - we need to track all polygons
+    };
+  }, [map, existingPolygon, onPolygonCreated, onPolygonEdited, onPolygonDeleted, allowMultiple]);
+
+  return null;
+}
+
+// Shape Creator Form Component
+function ShapeCreatorForm({ mapCenter }) {
+  const [sides, setSides] = useState(3);
+  const [lat, setLat] = useState(mapCenter[0]?.toFixed(4) || "28.6139");
+  const [lng, setLng] = useState(mapCenter[1]?.toFixed(4) || "77.209");
+  const [radius, setRadius] = useState(30);
+  const [shapeName, setShapeName] = useState("MyShape");
+
+  const handleCreateShape = () => {
+    const sidesNum = parseInt(sides);
+    const latNum = parseFloat(lat);
+    const lngNum = parseFloat(lng);
+    const radiusNum = parseFloat(radius);
+
+    if (!sidesNum || !latNum || !lngNum || !radiusNum) {
+      alert("Please fill in all fields!");
+      return;
+    }
+
+    if (window.createRegularPolygon) {
+      window.createRegularPolygon(latNum, lngNum, sidesNum, radiusNum, shapeName);
+    } else {
+      alert("Shape creator not ready. Please try again.");
+    }
+  };
+
+  return (
+    <div style={{ background: "white", padding: "8px", borderRadius: "4px", width: "200px" }}>
+      <h4 style={{ margin: "0 0 6px 0", fontSize: "14px", fontWeight: "bold" }}>Shape Creator</h4>
+      <label style={{ fontSize: "12px" }}>Sides:</label>
+      <br />
+      <input
+        id="sides"
+        type="number"
+        min="3"
+        max="10"
+        value={sides}
+        onChange={(e) => setSides(e.target.value)}
+        style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+      />
+      <br />
+      <label style={{ fontSize: "12px" }}>Center Lat:</label>
+      <br />
+      <input
+        id="lat"
+        type="number"
+        value={lat}
+        step="0.0001"
+        onChange={(e) => setLat(e.target.value)}
+        style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+      />
+      <br />
+      <label style={{ fontSize: "12px" }}>Center Lon:</label>
+      <br />
+      <input
+        id="lon"
+        type="number"
+        value={lng}
+        step="0.0001"
+        onChange={(e) => setLng(e.target.value)}
+        style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+      />
+      <br />
+      <label style={{ fontSize: "12px" }}>Radius (meters):</label>
+      <br />
+      <input
+        id="radius"
+        type="number"
+        value={radius}
+        onChange={(e) => setRadius(e.target.value)}
+        style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+      />
+      <br />
+      <label style={{ fontSize: "12px" }}>Name:</label>
+      <br />
+      <input
+        id="shapeName"
+        type="text"
+        value={shapeName}
+        onChange={(e) => setShapeName(e.target.value)}
+        style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+      />
+      <br />
+      <br />
+      <button
+        onClick={handleCreateShape}
+        style={{
+          width: "100%",
+          backgroundColor: "orange",
+          color: "white",
+          border: "none",
+          padding: "6px",
+          borderRadius: "4px",
+          cursor: "pointer",
+          fontSize: "12px",
+          fontWeight: "bold",
+        }}
+      >
+        Create Shape
+      </button>
+    </div>
+  );
+}
+
+export default function FacilityMapWithDrawing({
+  center,
+  zoom = 18,
+  facilityAddress,
+  existingPolygon = null,
+  onPolygonChange = null,
+  showControls = true,
+  allowMultiple = false, // Allow multiple polygons
+}) {
+  const [polygonCoordinates, setPolygonCoordinates] = useState(allowMultiple ? [] : null);
+  const [allPolygons, setAllPolygons] = useState([]); // Store all polygons
+  const [mapCenter, setMapCenter] = useState(center || [28.6139, 77.209]);
+
+  useEffect(() => {
+    if (center && center.lat && center.lng) {
+      setMapCenter([center.lat, center.lng]);
+    }
+  }, [center]);
+
+  // Initialize polygons from existing data
+  useEffect(() => {
+    if (allowMultiple && existingPolygon) {
+      // If existingPolygon is an array of polygons
+      if (Array.isArray(existingPolygon) && existingPolygon.length > 0) {
+        // Check if it's slot-based format: [{ slot: 1, coordinates: [...] }, ...]
+        if (existingPolygon[0] && typeof existingPolygon[0] === 'object' && 'slot' in existingPolygon[0] && 'coordinates' in existingPolygon[0]) {
+          // Slot-based format - extract coordinates (already in Google format)
+          const polygons = existingPolygon.map(poly => poly.coordinates || []);
+          setAllPolygons(polygons);
+        } else if (Array.isArray(existingPolygon[0]) && Array.isArray(existingPolygon[0][0])) {
+          // Multiple polygons format (array of arrays) - already in Leaflet format, convert to Google
+          const googlePolygons = existingPolygon.map(poly => leafletToGoogle(poly));
+          setAllPolygons(googlePolygons);
+        } else if (existingPolygon[0] && typeof existingPolygon[0] === 'object' && 'lat' in existingPolygon[0]) {
+          // Single polygon in Google format
+          setAllPolygons([existingPolygon]);
+        }
+      }
+    } else if (!allowMultiple && existingPolygon) {
+      // Single polygon mode - initialize if needed
+      if (Array.isArray(existingPolygon) && existingPolygon.length > 0) {
+        if (existingPolygon[0] && typeof existingPolygon[0] === 'object' && 'lat' in existingPolygon[0]) {
+          // Already in Google format
+          setPolygonCoordinates(existingPolygon);
+        }
+      }
+    }
+  }, [existingPolygon, allowMultiple]);
+
+  const handlePolygonCreated = (coordinates, layer) => {
+    if (allowMultiple) {
+      const newPolygon = leafletToGoogle(coordinates);
+      const updated = [...allPolygons, newPolygon];
+      setAllPolygons(updated);
+      setPolygonCoordinates(coordinates);
+      if (onPolygonChange) {
+        // Convert to slot-based format for saving
+        const slotBasedFormat = updated.map((polygon, index) => ({
+          slot: index + 1,
+          coordinates: polygon,
+        }));
+        onPolygonChange(slotBasedFormat);
+      }
+    } else {
+      setPolygonCoordinates(coordinates);
+      if (onPolygonChange) {
+        onPolygonChange(leafletToGoogle(coordinates));
+      }
+    }
+  };
+
+  const handlePolygonEdited = (coordinates, index) => {
+    if (allowMultiple && index !== undefined && index !== -1) {
+      const updated = [...allPolygons];
+      updated[index] = leafletToGoogle(coordinates);
+      setAllPolygons(updated);
+      setPolygonCoordinates(coordinates);
+      if (onPolygonChange) {
+        // Convert to slot-based format for saving
+        const slotBasedFormat = updated.map((polygon, index) => ({
+          slot: index + 1,
+          coordinates: polygon,
+        }));
+        onPolygonChange(slotBasedFormat);
+      }
+    } else {
+      setPolygonCoordinates(coordinates);
+      if (onPolygonChange) {
+        onPolygonChange(leafletToGoogle(coordinates));
+      }
+    }
+  };
+
+  const handlePolygonDeleted = (index) => {
+    if (allowMultiple && index !== undefined && index !== -1) {
+      const updated = allPolygons.filter((_, i) => i !== index);
+      setAllPolygons(updated);
+      if (updated.length === 0) {
+        setPolygonCoordinates(null);
+      }
+      if (onPolygonChange) {
+        if (updated.length > 0) {
+          // Convert to slot-based format for saving
+          const slotBasedFormat = updated.map((polygon, index) => ({
+            slot: index + 1,
+            coordinates: polygon,
+          }));
+          onPolygonChange(slotBasedFormat);
+        } else {
+          onPolygonChange(null);
+        }
+      }
+    } else {
+      setPolygonCoordinates(null);
+      if (onPolygonChange) {
+        onPolygonChange(null);
+      }
+    }
+  };
+
+  const handleShapeCreated = (coordinates) => {
+    if (allowMultiple) {
+      const newPolygon = leafletToGoogle(coordinates);
+      const updated = [...allPolygons, newPolygon];
+      setAllPolygons(updated);
+      setPolygonCoordinates(coordinates);
+      if (onPolygonChange) {
+        // Convert to slot-based format for saving
+        const slotBasedFormat = updated.map((polygon, index) => ({
+          slot: index + 1,
+          coordinates: polygon,
+        }));
+        onPolygonChange(slotBasedFormat);
+      }
+    } else {
+      setPolygonCoordinates(coordinates);
+      if (onPolygonChange) {
+        onPolygonChange(leafletToGoogle(coordinates));
+      }
+    }
+  };
+
+  const handleExportJSON = () => {
+    const polygonsToExport = allowMultiple ? allPolygons : (polygonCoordinates ? [leafletToGoogle(polygonCoordinates)] : []);
+    
+    if (polygonsToExport.length === 0) {
+      alert("No polygons to export. Please draw a polygon first.");
+      return;
+    }
+
+    // Export in slot-based format with latitude/longitude
+    const parkingSlotPolygons = polygonsToExport.map((polygon, index) => {
+      return {
+        slot: index + 1,
+        coordinates: polygon.map(coord => ({
+          latitude: roundTo6Decimals(coord.lat),
+          longitude: roundTo6Decimals(coord.lng),
+        })),
+      };
+    });
+
+    const jsonString = JSON.stringify(parkingSlotPolygons, null, 2);
+    
+    // Create download link
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `parkingSlotPolygons-${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportGeoJSON = () => {
+    const polygonsToExport = allowMultiple ? allPolygons : (polygonCoordinates ? [leafletToGoogle(polygonCoordinates)] : []);
+    
+    if (polygonsToExport.length === 0) {
+      alert("No polygons to export. Please draw a polygon first.");
+      return;
+    }
+
+    // Export all polygons as GeoJSON FeatureCollection
+    const features = polygonsToExport.map((polygon, index) => {
+      const leafletCoords = googleToLeaflet(polygon);
+      return toGeoJSON(leafletCoords, {
+        facilityAddress: facilityAddress || "",
+        polygonIndex: index + 1,
+      });
+    });
+
+    const geoJsonData = {
+      type: "FeatureCollection",
+      features: features,
+      properties: {
+        facilityAddress: facilityAddress || "",
+        exportedAt: new Date().toISOString(),
+        polygonCount: features.length,
+      },
+    };
+    
+    const jsonString = JSON.stringify(geoJsonData, null, 2);
+    
+    // Create download link
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `facility-polygons-geojson-${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Convert existing polygon from Google format to Leaflet format
+  // Handle both single polygon and array of polygons
+  // Convert existingPolygon to Leaflet format for display
+  const existingPolygonLeaflet = existingPolygon
+    ? (Array.isArray(existingPolygon) && existingPolygon.length > 0)
+      ? (existingPolygon[0] && typeof existingPolygon[0] === 'object' && 'slot' in existingPolygon[0] && 'coordinates' in existingPolygon[0])
+        ? existingPolygon.map(poly => googleToLeaflet(poly.coordinates || [])) // Slot-based format
+        : (existingPolygon[0] && typeof existingPolygon[0] === 'object' && 'lat' in existingPolygon[0])
+          ? (Array.isArray(existingPolygon[0]) && existingPolygon[0][0] && typeof existingPolygon[0][0] === 'object' && 'lat' in existingPolygon[0][0])
+            ? existingPolygon.map(poly => googleToLeaflet(poly)) // Multiple polygons in Google format
+            : googleToLeaflet(existingPolygon) // Single polygon in Google format
+          : existingPolygon // Already in Leaflet format
+      : null
+    : null;
+
+  return (
+    <div className="relative w-full h-full">
+      {showControls && (
+        <div className="absolute bottom-4 right-4 z-[1000] bg-white p-3 rounded-lg shadow-lg flex flex-col gap-2">
+          {allowMultiple && allPolygons.length > 0 && (
+            <div className="text-xs text-gray-600 mb-1">
+              {allPolygons.length} polygon{allPolygons.length > 1 ? 's' : ''} drawn
+            </div>
+          )}
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={handleExportJSON}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={allowMultiple ? allPolygons.length === 0 : !polygonCoordinates}
+            >
+              Export JSON
+            </button>
+            {/* GeoJSON export button hidden for now */}
+            {/* <button
+              onClick={handleExportGeoJSON}
+              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={allowMultiple ? allPolygons.length === 0 : !polygonCoordinates}
+            >
+              Export GeoJSON
+            </button> */}
+          </div>
+        </div>
+      )}
+
+      <MapContainer
+        center={mapCenter}
+        zoom={zoom}
+        style={{ height: "100%", width: "100%", zIndex: 1 }}
+        scrollWheelZoom={true}
+        zoomControl={true}
+        maxZoom={20}
+      >
+        {/* Esri World Imagery (Satellite) - Free, no API key needed */}
+        <TileLayer
+          attribution='Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics'
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+          maxZoom={20}
+          tileSize={256}
+        />
+
+        {/* Facility Location Marker */}
+        {mapCenter && (
+          <Marker position={mapCenter}>
+            <Popup>
+              <div className="text-sm font-medium mb-2">
+                {facilityAddress || "Facility Location"}
+              </div>
+              <ShapeCreatorForm mapCenter={mapCenter} />
+            </Popup>
+          </Marker>
+        )}
+
+        {/* Map Controls (Fullscreen, Measure) */}
+        <MapControls mapCenter={mapCenter} onShapeCreated={handleShapeCreated} />
+
+        {/* Drawing Controls */}
+        <DrawingControls
+          onPolygonCreated={handlePolygonCreated}
+          onPolygonEdited={handlePolygonEdited}
+          onPolygonDeleted={handlePolygonDeleted}
+          existingPolygon={existingPolygonLeaflet}
+          allowMultiple={allowMultiple}
+        />
+      </MapContainer>
+    </div>
+  );
+}
+

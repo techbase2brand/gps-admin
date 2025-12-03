@@ -1,0 +1,12 @@
+================
+mqttWorkerv9.js. -----   For the parked notificaition sent after 5 mints when parked , send left notification 
+===============
+
+
+
+================
+mqttWorkerv10.js.   ----  For sthe parking notification for the sending send the starting on cpSlot= 19 have to check the last send notification 
+================
+
+
+

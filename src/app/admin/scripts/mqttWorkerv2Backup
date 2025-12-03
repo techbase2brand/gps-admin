@@ -1,0 +1,152 @@
+// scripts/mqttWorker.js
+
+const mqtt = require("mqtt"); 
+// Ensure these libraries are available
+const { createClient } = require("@supabase/supabase-js");
+
+// --- Configuration (Assuming you have fixed the connection issue) ---
+const MQTT_CONFIG = {
+  host: "ws://sensecap-openstream.seeed.cc:8083/mqtt",
+  username: "org-449810146246400",
+  password: "9B1C6913197A4C56B5EC31F1CEBAECF9E7C7235B015B456DB0EC577BD7C167F3",
+  protocolVersion: 4,
+};
+
+const SUPABASE_URL = "https://vhjetkdfxqbogbegboic.supabase.co";
+// 🛑 Reminder: Use Service Role Key for background updates (process.env.SUPABASE_SERVICE_KEY)
+const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZoamV0a2RmeHFib2diZWdib2ljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1ODU4MzgsImV4cCI6MjA3NjE2MTgzOH0.r4GY5UgwRjhicFnnmcRxBySjN7PMJKhImSDHwxqKcyg';
+ 
+if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+  console.error("FATAL: Supabase URL or Service Key not configured.");
+  process.exit(1);
+}
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+// State to track latest values, including event name
+// 🔑 latestEvent now holds the STRING eventName, not a float
+const latestChipData = {};
+
+async function startMqttWorker() {
+  console.log("🚀 Starting MQTT Backend Worker...");
+
+  const client = mqtt.connect(MQTT_CONFIG.host, {
+    username: MQTT_CONFIG.username,
+    password: MQTT_CONFIG.password,
+    protocolVersion: MQTT_CONFIG.protocolVersion,
+    clientId: `org-449810146246400-backend-worker`,
+  });
+
+  client.on("connect", () => {
+    console.log("✅ Worker Connected to MQTT.");
+
+    const latitudeTopicAll = `/device_sensor_data/449810146246400/+/+/vs/4198`;
+    const longitudeTopicAll = `/device_sensor_data/449810146246400/+/+/vs/4197`;
+    const sensor5003TopicAll = `/device_sensor_data/449810146246400/+/+/vs/5003`; // 🔑 5003 Topic added
+
+    // 🔑 1. ਸਾਰੇ Topics ਨੂੰ Subscribe ਕਰੋ (ਪਿਛਲੇ ਕੋਡ ਵਿੱਚ 5003 subscription ਛੁੱਟ ਗਿਆ ਸੀ)
+    client.subscribe([latitudeTopicAll, longitudeTopicAll, sensor5003TopicAll], (err) => {
+      if (err) {
+        console.error("❌ MQTT Subscribe Error:", err);
+      } else {
+        console.log(`✅ Subscribed to ALL chip topics (GPS + Sensor 5003).`);
+      }
+    });
+  });
+
+  client.on("message", async (topic, message) => {
+    try {
+      const payload = JSON.parse(message.toString());
+      const topicParts = topic.split("/");
+      const chipId = topicParts[3];
+
+      if (!chipId) return; 
+
+      if (!latestChipData[chipId]) {
+        latestChipData[chipId] = { latestLat: null, latestLon: null, latestEvent: null }; // Initialize
+      }
+
+      const chipData = latestChipData[chipId];
+      let updateCarsTable = false; // Flag to decide if we need a DB update
+
+      // --- 2. Update Specific Value ---
+      if (topic.includes("4197")) {
+        chipData.latestLon = payload.value;
+        updateCarsTable = true;
+      } else if (topic.includes("4198")) {
+        chipData.latestLat = payload.value;
+        updateCarsTable = true;
+      } else if (topic.includes("5003")) {
+          const sensorValue = payload.value;
+          // 🔑 ਗਲਤੀ ਸੁਧਾਰ: eventName ਨੂੰ array[0] ਵਿੱਚੋਂ ਕੱਢੋ
+          if (Array.isArray(sensorValue) && sensorValue.length > 0 && sensorValue[0].eventName) {
+              const eventName = sensorValue[0].eventName;
+              chipData.latestEvent = eventName; // 🔑 ਸਟ੍ਰਿੰਗ ਸਟੋਰ ਕਰੋ
+              updateCarsTable = true;
+              console.log(`⚡ [${chipId}] Event Received: ${eventName}`); // Log the event!
+          } else {
+              // Log 5003 data even if it's not the expected event array format
+              console.log(`⚡ [${chipId}] Raw 5003 Data Received:`, payload.value);
+              updateCarsTable = true;
+          }
+      }
+
+      // --- 3. Update Supabase if any data changed ---
+      // We update the DB immediately if event data comes, or if a GPS pair is complete.
+      if (updateCarsTable && (topic.includes("5003") || (chipData.latestLat !== null && chipData.latestLon !== null))) {
+        
+        const updateObject = {
+            last_location_update: new Date().toISOString()
+        };
+        
+        // Add coordinates if available
+        if (chipData.latestLat !== null && chipData.latestLon !== null) {
+            updateObject.latitude = parseFloat(chipData.latestLat);
+            updateObject.longitude = parseFloat(chipData.latestLon);
+            // Reset GPS buffers after use
+            chipData.latestLat = null;
+            chipData.latestLon = null;
+        }
+
+        // Add event name if available (and it's a string)
+        if (chipData.latestEvent !== null && typeof chipData.latestEvent === 'string') {
+            updateObject.eventName = chipData.latestEvent; // 🔑 Sname the string event
+            chipData.latestEvent = null; // Reset event buffer
+        }
+
+        // Log the final object being sent to the database
+        console.log(`💾 [${chipId}] Updating DB with:`, updateObject);
+        
+        // ⭐ Supabase DATABASE UPDATE
+        const { error: updateError } = await supabase
+            .from("cars")
+            .update(updateObject)
+            .eq("chip", chipId); 
+
+        if (updateError) {
+          console.error(
+            `❌ DB Update Error for ${chipId}:`,
+            updateError.message
+          );
+        } else {
+          console.log(`✅ DB updated successfully for ${chipId}`);
+        }
+      }
+    } catch (error) {
+      console.error("❌ Error processing MQTT message:", error.message);
+    }
+  });
+
+  // ... (client.on error/close handlers remain the same)
+  client.on("error", (error) => console.error("❌ MQTT Error:", error.message));
+  client.on("close", () =>
+    console.log("⚠️ MQTT Connection closed. Attempting reconnect...")
+  );
+}
+
+startMqttWorker();
+
+process.on("SIGINT", () => {
+  console.log("\nWorker shutting down...");
+  process.exit();
+});
