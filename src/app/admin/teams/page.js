@@ -37,10 +37,16 @@ function page() {
   const [editingStaff, setEditingStaff] = useState(null);
   const [nameSortOrder, setNameSortOrder] = useState("asc"); // asc or desc
   const [dateSortOrder, setDateSortOrder] = useState("desc"); // newest first by default
-  const [sortBy, setSortBy] = useState("name"); // "name" or "date"
+  const [sortBy, setSortBy] = useState("name"); // "name", "date", "email", "contact", "status"
+  const [statusFilter, setStatusFilter] = useState("all");
 
-  // Sort staff by name or date
-  const sortedStaffData = [...staffData].sort((a, b) => {
+  // Filter by status
+  const filteredStaffData = staffData.filter((staff) => {
+    return statusFilter === "all" || staff.status === statusFilter;
+  });
+
+  // Sort staff by name, date, email, contact, or status
+  const sortedStaffData = [...filteredStaffData].sort((a, b) => {
     if (sortBy === "name") {
       if (nameSortOrder === "asc") {
         return a.name.localeCompare(b.name);
@@ -55,7 +61,17 @@ function page() {
       } else {
         return dateB - dateA; // newest first
       }
+    } else if (sortBy === "email") {
+      const order = nameSortOrder === "asc" ? 1 : -1;
+      return order * a.email.localeCompare(b.email);
+    } else if (sortBy === "contact") {
+      const order = nameSortOrder === "asc" ? 1 : -1;
+      return order * (a.contact || '').localeCompare(b.contact || '');
+    } else if (sortBy === "status") {
+      const order = nameSortOrder === "asc" ? 1 : -1;
+      return order * (a.status || '').localeCompare(b.status || '');
     }
+    return 0;
   });
 
   const toggleNameSort = () => {
@@ -66,6 +82,24 @@ function page() {
   const toggleDateSort = () => {
     setSortBy("date");
     setDateSortOrder(dateSortOrder === "asc" ? "desc" : "asc");
+  };
+
+  const handleColumnSort = (column) => {
+    if (column === "name") {
+      toggleNameSort();
+    } else if (column === "date") {
+      toggleDateSort();
+    } else {
+      setSortBy(column);
+      setNameSortOrder(nameSortOrder === "asc" ? "desc" : "asc");
+    }
+  };
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    setSortBy("name");
+    setNameSortOrder("asc");
   };
   const [formData, setFormData] = useState({
     name: "",
@@ -178,7 +212,7 @@ function page() {
           toggleSidebar={toggleSidebar}
         />
         <div
-          className={`flex-1 p-4 bg-gray-200 rounded-2xl ${
+          className={`flex-1 p-4 bg-[#F8F8F8] rounded-2xl ${
             collapsed ? "w-[95vw]" : "w-[86vw]"
           } min-h-[calc(100vh-80px)]`}
         >
@@ -193,24 +227,38 @@ function page() {
                     placeholder="Search by name or email..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-80 px-4 py-2 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:border-[#613EEA]"
+                    className="w-80 px-4 py-2 border border-gray-300 rounded-lg text-[#333333] placeholder-[#666666] focus:outline-none focus:border-[#003F65]"
                   />
-                  {/* Role Filter - Commented for now */}
-                  {/* <select
-                    value={filterRole}
-                    onChange={(e) => setFilterRole(e.target.value)}
-                    className="w-40 px-4 py-2 mr-4 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-[#613EEA]"
-                  >
-                    <option value="all" className="text-black">All</option>
-                    <option value="Admin" className="text-black">Admin</option>
-                    <option value="Staff" className="text-black">Staff</option>
-                  </select> */}
+                  <div className="relative w-40 mr-4">
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="w-full px-4 py-2 pr-8 border border-gray-300 rounded-lg text-[#333333] focus:outline-none focus:border-[#003F65] appearance-none bg-white"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                      <svg className="w-4 h-4 text-[#666666]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                  {(searchQuery || statusFilter !== "all" || sortBy !== "name" || nameSortOrder !== "asc") && (
+                    <button
+                      onClick={handleResetFilters}
+                      className="px-4 py-2 border border-[#666666] text-[#333333] rounded-lg hover:bg-[#F8F8F8] transition-colors"
+                    >
+                      Reset
+                    </button>
+                  )}
                 </div>
                 
                 <div>
                   <button
                     onClick={() => openModal()}
-                    className="px-6 py-2 bg-[#613EEA] text-white rounded-full shadow-md hover:bg-[#5030d0] transition-colors"
+                    className="px-6 py-2 bg-[#003F65] text-white rounded-full shadow-md hover:bg-[#003F65] transition-colors"
                   >
                     + Add Staff
                   </button>
@@ -228,7 +276,7 @@ function page() {
                       ✕
                     </button>
 
-                    <h2 className="text-xl text-black font-semibold mb-4">
+                    <h2 className="text-xl text-[#333333] font-semibold mb-4">
                       {editingStaff ? "Edit" : "Add"} Staff
                     </h2>
 
@@ -238,7 +286,7 @@ function page() {
                         placeholder="Name"
                         value={formData.name}
                         onChange={handleChange}
-                        className="w-full border px-3 py-2 rounded text-black placeholder-gray-400"
+                        className="w-full border px-3 py-2 rounded text-[#333333] placeholder-[#666666]-400"
                         required
                       />
 
@@ -248,7 +296,7 @@ function page() {
                         placeholder="Email"
                         value={formData.email}
                         onChange={handleChange}
-                        className="w-full border px-3 py-2 rounded text-black placeholder-gray-400"
+                        className="w-full border px-3 py-2 rounded text-[#333333] placeholder-[#666666]-400"
                         required
                       />
 
@@ -259,7 +307,7 @@ function page() {
                           placeholder="Password"
                           value={formData.password}
                           onChange={handleChange}
-                          className="w-full border px-3 py-2 rounded text-black placeholder-gray-400"
+                          className="w-full border px-3 py-2 rounded text-[#333333] placeholder-[#666666]-400"
                           required
                         />
                       {/* )} */}
@@ -269,7 +317,7 @@ function page() {
                         placeholder="Contact Number"
                         value={formData.contact}
                         onChange={handleChange}
-                        className="w-full border px-3 py-2 rounded text-black placeholder-gray-400"
+                        className="w-full border px-3 py-2 rounded text-[#333333] placeholder-[#666666]-400"
                         required
                       />
 
@@ -278,7 +326,7 @@ function page() {
                         type="date"
                         value={formData.joiningDate}
                         onChange={handleChange}
-                        className="w-full border px-3 py-2 rounded text-black placeholder-gray-400"
+                        className="w-full border px-3 py-2 rounded text-[#333333] placeholder-[#666666]-400"
                         required
                       />
 
@@ -287,7 +335,7 @@ function page() {
                         name="role"
                         value={formData.role}
                         onChange={handleChange}
-                        className="w-full border px-3 py-2 rounded text-black"
+                        className="w-full border px-3 py-2 rounded text-[#333333]"
                         required
                       >
                         <option value="">Select Role</option>
@@ -297,9 +345,9 @@ function page() {
 
                       {/* Permissions - Commented for now */}
                       {/* <div>
-                        <p className="font-bold mb-1 text-black">Permissions</p>
+                        <p className="font-bold mb-1 text-[#333333]">Permissions</p>
                         <div className="flex flex-col gap-2">
-                          <label className="flex items-center gap-2 text-black">
+                          <label className="flex items-center gap-2 text-[#333333]">
                             <input
                               type="checkbox"
                               checked={
@@ -313,7 +361,7 @@ function page() {
                           {allPermissions?.map((perm) => (
                             <label
                               key={perm}
-                              className="flex items-center gap-2 text-black"
+                              className="flex items-center gap-2 text-[#333333]"
                             >
                               <input
                                 type="checkbox"
@@ -336,13 +384,13 @@ function page() {
                         <button
                           type="button"
                           onClick={closeModal}
-                          className="bg-gray-500 text-white px-4 py-2 w-[50%] rounded hover:bg-gray-600"
+                          className="bg-[#666666] text-white px-4 py-2 w-[50%] rounded hover:bg-[#666666]"
                         >
                           Cancel
                         </button>
                         <button
                           type="submit"
-                          className="bg-[#613EEA] text-white px-4 py-2 w-[50%] rounded hover:bg-[#613EEA]"
+                          className="bg-[#003F65] text-white px-4 py-2 w-[50%] rounded hover:bg-[#003F65]"
                         >
                           {editingStaff ? "Update" : "Submit"}
                         </button>
@@ -357,7 +405,7 @@ function page() {
                 <thead>
                   <tr className="text-left border-b bg-gray-300">
                     <th 
-                      className="p-2 text-black cursor-pointer hover:bg-gray-400 transition-colors"
+                      className="p-2 text-[#333333] cursor-pointer hover:bg-[#F8F8F8] transition-colors"
                       onClick={toggleNameSort}
                     >
                       <div className="flex items-center gap-2">
@@ -369,10 +417,34 @@ function page() {
                         )}
                       </div>
                     </th>
-                    <th className="p-2 text-black">EMAIL</th>
-                    <th className="p-2 text-black">CONTACT</th>
                     <th 
-                      className="p-2 text-black cursor-pointer hover:bg-gray-400 transition-colors"
+                      className="p-2 text-[#333333] cursor-pointer hover:bg-[#F8F8F8] transition-colors select-none"
+                      onClick={() => handleColumnSort("email")}
+                    >
+                      <div className="flex items-center gap-2">
+                        EMAIL
+                        {sortBy === "email" && (
+                          <span className="text-[#003F65]">
+                            {nameSortOrder === "asc" ? "↑" : "↓"}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      className="p-2 text-[#333333] cursor-pointer hover:bg-[#F8F8F8] transition-colors select-none"
+                      onClick={() => handleColumnSort("contact")}
+                    >
+                      <div className="flex items-center gap-2">
+                        CONTACT
+                        {sortBy === "contact" && (
+                          <span className="text-[#003F65]">
+                            {nameSortOrder === "asc" ? "↑" : "↓"}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      className="p-2 text-[#333333] cursor-pointer hover:bg-[#F8F8F8] transition-colors"
                       onClick={toggleDateSort}
                     >
                       <div className="flex items-center gap-2">
@@ -384,33 +456,45 @@ function page() {
                         )}
                       </div>
                     </th>
-                    {/* <th className="p-2 text-black">ROLE</th> */}
-                    <th className="p-2 text-black">STATUS</th>
-                    <th className="p-2 text-black">PUBLISHED</th>
-                    <th className="p-2 text-black">ACTIONS</th>
+                    {/* <th className="p-2 text-[#333333]">ROLE</th> */}
+                    <th 
+                      className="p-2 text-[#333333] cursor-pointer hover:bg-[#F8F8F8] transition-colors select-none"
+                      onClick={() => handleColumnSort("status")}
+                    >
+                      <div className="flex items-center gap-2">
+                        STATUS
+                        {sortBy === "status" && (
+                          <span className="text-[#003F65]">
+                            {nameSortOrder === "asc" ? "↑" : "↓"}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    {/* <th className="p-2 text-[#333333]">PUBLISHED</th> */}
+                    <th className="p-2 text-[#333333]">ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody>
                   {sortedStaffData?.map((staff) => (
-                    <tr key={staff.id} className="border-b">
-                      <td className="p-2 text-black">{staff.name}</td>
-                      <td className="p-2 text-black">{staff.email}</td>
-                      <td className="p-2 text-black">{staff.contact}</td>
-                      <td className="p-2 text-black">{staff.joiningDate}</td>
-                      {/* <td className="p-2 text-black">{staff.role}</td> */}
-                      <td className="p-2 text-black">
+                    <tr key={staff.id} className="border-b border-gray-300">
+                      <td className="p-2 text-[#333333]">{staff.name}</td>
+                      <td className="p-2 text-[#333333]">{staff.email}</td>
+                      <td className="p-2 text-[#333333]">{staff.contact}</td>
+                      <td className="p-2 text-[#333333]">{staff.joiningDate}</td>
+                      {/* <td className="p-2 text-[#333333]">{staff.role}</td> */}
+                      <td className="p-2 text-[#333333]">
                         <button
-                          onClick={() => togglePublished(staff.id)}
-                          className={`px-4 py-1 rounded-full  ${
+                          // onClick={() => togglePublished(staff.id)}
+                          className={`px-4 py-1 rounded-full ${
                             staff.status === "Active"
-                              ? "bg-green-100  text-green-500"
-                              : "bg-red-100  text-red-500"
+                              ? "bg-green-100 text-green-500"
+                              : "bg-red-100 text-red-500"
                           }`}
                         >
                           {staff.status}
                         </button>
                       </td>
-                      <td className="p-2">
+                      {/* <td className="p-2">
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input
                             type="checkbox"
@@ -418,7 +502,7 @@ function page() {
                             onClick={() => togglePublished(staff.id)}
                             className="sr-only"
                           />
-                          <span className="w-11 h-6 bg-gray-200 rounded-full inline-block"></span>
+                          <span className="w-11 h-6 bg-[#F8F8F8] rounded-full inline-block"></span>
                           <span
                             className={`absolute top-0.5 left-0.5 w-5 h-5  rounded-full transition transform ${
                               staff.status === "Active"
@@ -427,7 +511,7 @@ function page() {
                             }`}
                           ></span>
                         </label>
-                      </td>
+                      </td> */}
                       <td className="p-2">
                         <button
                           className="ml-4 text-red-500"
@@ -449,7 +533,7 @@ function page() {
                   {showDeleteModal && (
                     <div className="fixed inset-0 bg-black/50  flex justify-center items-center z-50">
                       <div className="bg-white p-6 rounded shadow-md w-full max-w-sm">
-                        <p className="mb-6 text-black">
+                        <p className="mb-6 text-[#333333]">
                           Are you sure you want to delete this staff member?
                         </p>
                         <div className="flex justify-end gap-4">

@@ -1,128 +1,3 @@
-// "use client";
-
-// import { useState } from "react";
-// import { FiMenu, FiSearch, FiBell, FiSun, FiMoon } from "react-icons/fi";
-// import Image from "next/image";
-
-// export default function Navbar({title}) {
-//   const [darkMode, setDarkMode] = useState(false);
-//   const [showNotifications, setShowNotifications] = useState(false);
-//   const [showProfile, setShowProfile] = useState(false);
-
-//   const toggleDarkMode = () => setDarkMode(!darkMode);
-//   const toggleNotifications = () => setShowNotifications(!showNotifications);
-//   const toggleProfile = () => setShowProfile(!showProfile);
-
-//   return (
-//     <nav className="sticky top-0 left-0 z-[1000] bg-white  flex items-center px-6 h-14 gap-6">
-//       {/* Menu Icon */}
-//       <FiMenu size={20} className="cursor-pointer text-black " />
-
-//       {/* Categories Link */}
-//       <span  className="text-black text-bold hover:text-blue-600">
-//         {title}
-//       </span>
-
-//       {/* Search Form */}
-//       <form className="flex items-center bg-gray-100 rounded-full ml-auto max-w-md w-full">
-//         <input
-//           type="search"
-//           placeholder="Search..."
-//           className="bg-transparent px-4 py-2 outline-none flex-grow text-black placeholder-black"
-//         />
-//         <button
-//           type="submit"
-//           className="bg-[#613EEA] text-white p-2 rounded-full"
-//         >
-//           <FiSearch size={18} />
-//         </button>
-//       </form>
-
-//       {/* Dark Mode Switch */}
-//       {/* <div className="flex items-center">
-//         <input
-//           type="checkbox"
-//           id="switch-mode"
-//           className="hidden"
-//           checked={darkMode}
-//           onChange={toggleDarkMode}
-//         />
-//         <label
-//           htmlFor="switch-mode"
-//           className="bg-gray-300 dark:bg-gray-700 rounded-full flex items-center justify-between p-1 w-12 cursor-pointer relative"
-//         >
-//           <FiMoon className="text-yellow-500" size={14} />
-//           <FiSun className="text-orange-500" size={14} />
-//           <div
-//             className={`bg-blue-600 rounded-full w-5 h-5 absolute top-0.5 transform transition-transform ${
-//               darkMode ? "translate-x-6" : "translate-x-0.5"
-//             }`}
-//           ></div>
-//         </label>
-//       </div> */}
-
-//       {/* Notification Bell */}
-//       <div className="relative">
-//         <button onClick={toggleNotifications} className="relative text-gray-800 dark:text-white">
-//           <FiBell size={20} className="hover:animate-bounce text-[#613EEA]" />
-//           <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-//             8
-//           </span>
-//         </button>
-
-//         {showNotifications && (
-//           <div className="absolute right-0 top-12 bg-white dark:bg-gray-700 rounded-xl shadow-lg w-64 max-h-72 overflow-y-auto z-50">
-//             <ul className="text-gray-800 dark:text-white">
-//               {[
-//                 "New message from John",
-//                 "Your order has been shipped",
-//                 "New comment on your post",
-//                 "Update available for your app",
-//                 "Reminder: Meeting at 3PM",
-//               ].map((item, idx) => (
-//                 <li
-//                   key={idx}
-//                   className="px-4 py-2 border-b border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
-//                 >
-//                   {item}
-//                 </li>
-//               ))}
-//             </ul>
-//           </div>
-//         )}
-//       </div>
-
-//       {/* Profile */}
-//       <div className="relative">
-//         <button onClick={toggleProfile}>
-//           <Image
-//             src="/dashboard_ion.png"
-//             alt="Profile"
-//             width={36}
-//             height={36}
-//             className="rounded-full object-cover"
-//           />
-//         </button>
-
-//         {showProfile && (
-//           <div className="absolute right-0 top-12 bg-white dark:bg-gray-700 rounded-xl shadow-lg w-48 z-50">
-//             <ul className="text-gray-800 dark:text-white">
-//               <li className="px-4 py-2 border-b border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600">
-//                 <a href="#">My Profile</a>
-//               </li>
-//               <li className="px-4 py-2 border-b border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600">
-//                 <a href="#">Settings</a>
-//               </li>
-//               <li className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600">
-//                 <a href="#">Log Out</a>
-//               </li>
-//             </ul>
-//           </div>
-//         )}
-//       </div>
-//     </nav>
-//   );
-// }
 "use client";
 import { useState, useEffect } from "react";
 import { FiMenu, FiSearch, FiBell, FiLogOut } from "react-icons/fi";
@@ -135,6 +10,7 @@ export default function Navbar({ title, toggleSidebar, collapsed }) {
   const router = useRouter();
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [query, setQuery] = useState("");
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { results, loading, searchAllTables } = useGlobalSearch();
 
   // Logout function
@@ -177,7 +53,7 @@ export default function Navbar({ title, toggleSidebar, collapsed }) {
           onClick={toggleSidebar}
         />
       )}
-      <span className="text-black font-bold hover:text-blue-600">{title}</span>
+      <span className="text-[#333333] font-bold hover:text-[#003F65]">{title}</span>
 
       {/* Search */}
       <div className="relative ml-auto max-w-md w-full">
@@ -191,7 +67,7 @@ export default function Navbar({ title, toggleSidebar, collapsed }) {
           <input
             type="search"
             placeholder="Search..."
-            className="bg-transparent px-4 py-2 outline-none flex-grow text-black placeholder-black"
+            className="bg-transparent px-4 py-2 outline-none flex-grow text-[#333333] placeholder-[#666666]"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -200,7 +76,7 @@ export default function Navbar({ title, toggleSidebar, collapsed }) {
           />
           <button
             type="submit"
-            className="bg-[#613EEA] text-white p-2 rounded-full"
+            className="bg-[#003F65] text-white p-2 rounded-full"
           >
             <FiSearch size={18} />
           </button>
@@ -209,34 +85,42 @@ export default function Navbar({ title, toggleSidebar, collapsed }) {
         {/* Search Modal */}
         {showSearchModal && (
           <div
-            className="absolute left-0 mt-2 mr-10 bg-white border rounded shadow-lg overflow-y-auto"
+            className="absolute left-0 mt-2 mr-10 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden"
             style={{
               width: "33vw",
-              height: "min-h-30vh",
+              maxHeight: "60vh",
               zIndex: 999999,
             }}
           >
-            <button
-              onClick={() => setShowSearchModal(false)}
-              className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
-            >
-              ✕
-            </button>
-
-            <div className="p-4">
-              <h3 className="text-lg font-semibold mb-2 text-black">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-[#F8F8F8]">
+              <h3 className="text-lg font-bold text-[#333333]">
                 Search Results
               </h3>
+              <button
+                onClick={() => setShowSearchModal(false)}
+                className="text-[#666666] hover:text-[#333333] transition-colors p-1 rounded hover:bg-white"
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
 
+            {/* Results */}
+            <div className="overflow-y-auto" style={{ maxHeight: "calc(60vh - 60px)" }}>
               {results.length === 0 ? (
-                <p className="text-black">No results found.</p>
+                <div className="p-6 text-center">
+                  <p className="text-[#666666]">No results found.</p>
+                </div>
               ) : (
                 <ul className="divide-y divide-gray-200">
                   {results?.map((item) => (
                     <li
                       key={`${item.type}-${item.id}`}
-                      className="py-2 text-black cursor-pointer hover:bg-gray-100"
+                      className="px-4 py-4 text-[#333333] cursor-pointer hover:bg-[#F8F8F8] transition-colors border-b border-gray-100 last:border-b-0"
                       onClick={() => {
+                        setShowSearchModal(false);
+                        setQuery("");
                         if (item.type === "Facility") {
                           router.push(`/admin/facility/view/${item.id}`);
                         } else if (item.type === "Car") {
@@ -246,45 +130,46 @@ export default function Navbar({ title, toggleSidebar, collapsed }) {
                         }
                       }}
                     >
-                      <span className="font-bold">{item.type}:</span>{" "}
-                      {item.name || item.vin || item.email}
+                      {item.type === "Car" ? (
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-start gap-4">
+                            <div className="flex-1 border-r border-gray-200 pr-4">
+                              <div className="text-xs font-semibold text-[#666666] mb-1.5 uppercase tracking-wide">VIN</div>
+                              <div className="text-sm font-semibold text-[#333333] break-all">{item.vin}</div>
+                            </div>
+                            {item.chip && (
+                              <div className="flex-1 pl-4">
+                                <div className="text-xs font-semibold text-[#666666] mb-1.5 uppercase tracking-wide">Chip</div>
+                                <div className="text-sm font-semibold text-[#333333] break-all">{item.chip}</div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-[#003F65] bg-[#F8F8F8] px-2 py-0.5 rounded">
+                              {item.type}
+                            </span>
+                          </div>
+                          <span className="text-sm text-[#333333]">{item.name || item.vin || item.email}</span>
+                        </div>
+                      )}
                     </li>
                   ))}
                 </ul>
-              )}
-              {results.length > 0 && (
-                <div className="flex justify-end">
-                  <button
-                    onClick={() => {
-                      if (results[0]) {
-                        const type = results[0].type;
-                        if (type === "Facility") {
-                          router.push("/admin/facility/");
-                        } else if (type === "Car") {
-                          router.push("/admin/cars/");
-                        } else if (type === "Staff") {
-                          router.push("/admin/teams/");
-                        }
-                      }
-                    }}
-                    // onClick={() => router.push("/admin/facility/")}
-                    className="bg-[#613EEA] text-white px-4 py-2 rounded-full my-4"
-                  >
-                    See All
-                  </button>
-                </div>
               )}
             </div>
           </div>
         )}
       </div>
 
-      <FiBell size={20} className="hover:animate-bounce text-[#613EEA]" />
+      {/* <FiBell size={20} className="hover:animate-bounce text-[#003F65]" /> */}
       
       {/* Logout Button */}
       <button
-        onClick={handleLogout}
-        className="flex items-center gap-2 px-3 py-1 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+        onClick={() => setShowLogoutConfirm(true)}
+        className="flex items-center gap-2 px-3 py-1 text-[#FF0000] hover:bg-red-50 rounded-md transition-colors"
         title="Logout"
       >
         <FiLogOut size={16} />
@@ -298,6 +183,55 @@ export default function Navbar({ title, toggleSidebar, collapsed }) {
         height={36}
         className="rounded-full object-cover"
       />
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] animate-fadeIn"
+          onClick={() => setShowLogoutConfirm(false)}
+        >
+          <div 
+            className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 transform transition-all animate-fadeIn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Icon */}
+            <div className="flex justify-center mb-3">
+              <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center">
+                <FiLogOut size={28} className="text-[#FF0000]" />
+              </div>
+            </div>
+            
+            {/* Title */}
+            <h2 className="text-xl font-bold text-[#333333] mb-2 text-center">
+              Logout Confirmation
+            </h2>
+            
+            {/* Message */}
+            <p className="text-[#666666] mb-6 text-center text-sm">
+              Are you sure you want to logout?
+            </p>
+            
+            {/* Buttons */}
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="px-5 py-2 rounded-lg bg-[#F8F8F8] text-[#333333] hover:bg-gray-200 transition-all duration-200 font-medium border border-gray-200 hover:border-gray-300 min-w-[90px]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowLogoutConfirm(false);
+                  handleLogout();
+                }}
+                className="px-5 py-2 rounded-lg bg-[#FF0000] text-white hover:bg-red-600 transition-all duration-200 font-medium shadow-md hover:shadow-lg min-w-[90px]"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

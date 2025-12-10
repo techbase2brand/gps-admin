@@ -1,19 +1,6 @@
 import { NextResponse } from "next/server";
 import client from "../client";
 
-// export function GET(request) {
-//   const { searchParams } = new URL(request.url);
-
-//   const lat = searchParams.get("lat")??0;
-//   const lng = searchParams.get("lng")??0;
-
-
-
-
-//   return NextResponse.json({ lat, lng });
-// }
-
-
 
 export async function GET() {
   const { data, error } = await client

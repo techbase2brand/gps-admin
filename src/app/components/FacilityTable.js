@@ -1,36 +1,3 @@
-// "use client";
-
-// export default function FacilityTable({ data, deleteFacility }) {
-//   return (
-//     <table border="1" cellPadding="5">
-//       <thead>
-//         <tr>
-//           <th>Number</th>
-//           <th>Address</th>
-//           <th>Lat</th>
-//           <th>Long</th>
-//           <th>Actions</th>
-//         </tr>
-//       </thead>
-//       <tbody>
-//         {data.map((facility) => (
-//           <tr key={facility.id}>
-//             <td>{facility.number}</td>
-//             <td>{facility.address}</td>
-//             <td>{facility.lat}</td>
-//             <td>{facility.long}</td>
-//             <td>
-//               <button>Edit</button>
-//               <button onClick={() => deleteFacility(facility.id)}>Delete</button>
-//               <button>View</button>
-//             </td>
-//           </tr>
-//         ))}
-//       </tbody>
-//     </table>
-//   );
-// }
-
 "use client";
 import { useRouter } from "next/navigation";
 import { useLocalStorageCRUD } from "../hooks/useLocalStorageCRUD";
@@ -59,6 +26,7 @@ export default function FacilityTable({
   const [cityFilter, setCityFilter] = useState("all");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [facilityToDelete, setFacilityToDelete] = useState(null);
+  const [sortConfig, setSortConfig] = useState({ column: null, direction: 'asc' });
 
   const openAddModal = () => {
     setEditingFacility(null);
@@ -78,6 +46,15 @@ export default function FacilityTable({
   // Get unique cities
   const uniqueCities = [...new Set(data?.map(f => f.city).filter(Boolean))];
 
+  // Handle column sorting
+  const handleSort = (column) => {
+    let direction = 'asc';
+    if (sortConfig.column === column && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ column, direction });
+  };
+
   // Filter data
   const filteredData = data?.filter((facility) => {
     const matchesSearch = [facility.name, facility.number, facility.city, facility.address].some(
@@ -87,9 +64,51 @@ export default function FacilityTable({
     return matchesSearch && matchesCity;
   });
 
+  // Sort data
+  const sortedData = [...(filteredData || [])].sort((a, b) => {
+    if (!sortConfig.column) return 0;
+
+    let aValue, bValue;
+
+    switch (sortConfig.column) {
+      case 'name':
+        aValue = a.name || '';
+        bValue = b.name || '';
+        break;
+      case 'number':
+        aValue = a.number || '';
+        bValue = b.number || '';
+        break;
+      case 'city':
+        aValue = a.city || '';
+        bValue = b.city || '';
+        break;
+      case 'parkingSlots':
+        aValue = parseInt(a.parkingSlots) || 0;
+        bValue = parseInt(b.parkingSlots) || 0;
+        return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+      default:
+        return 0;
+    }
+
+    if (sortConfig.column === 'parkingSlots') {
+      return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+    }
+
+    // String comparison
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      return sortConfig.direction === 'asc'
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue);
+    }
+
+    return 0;
+  });
+
   const handleReset = () => {
     setLocalSearch("");
     setCityFilter("all");
+    setSortConfig({ column: null, direction: 'asc' });
   };
 
   // Helper function to get vehicles in a facility
@@ -146,24 +165,39 @@ export default function FacilityTable({
             placeholder="Search facilities..."
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
-            className="w-80 px-4 py-2 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:border-[#613EEA]"
+            className="w-80 px-4 py-2 border border-gray-300 rounded-lg text-[#333333] placeholder-[#666666] focus:outline-none focus:border-[#003F65]"
           />
-          <select
-            value={cityFilter}
-            onChange={(e) => setCityFilter(e.target.value)}
-            className="w-40 px-4 py-2 mr-4 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-[#613EEA]"
-          >
-            <option value="all">All Cities</option>
-            {uniqueCities.map((city, idx) => (
-              <option key={idx} value={city}>{city}</option>
-            ))}
-          </select>
+          <div className="relative w-40 mr-4">
+            <select
+              value={cityFilter}
+              onChange={(e) => setCityFilter(e.target.value)}
+              className="w-full px-4 py-2 pr-8 border border-gray-300 rounded-lg text-[#333333] focus:outline-none focus:border-[#003F65] appearance-none bg-white"
+            >
+              <option value="all">All Cities</option>
+              {uniqueCities.map((city, idx) => (
+                <option key={idx} value={city}>{city}</option>
+              ))}
+            </select>
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+              <svg className="w-4 h-4 text-[#666666]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+          {(localSearch || cityFilter !== "all" || sortConfig.column) && (
+            <button
+              onClick={handleReset}
+              className="px-4 py-2 border border-[#666666] text-[#333333] rounded-lg hover:bg-[#F8F8F8] transition-colors"
+            >
+              Reset
+            </button>
+          )}
         </div>
         
         <div>
           <button
             onClick={openAddModal}
-            className="px-6 py-2 bg-[#613EEA] text-white rounded-full shadow-md hover:bg-[#5030d0] transition-colors"
+            className="px-6 py-2 bg-[#003F65] text-white rounded-full shadow-md hover:bg-[#003F65] transition-colors"
           >
             + Add Facility
           </button>
@@ -196,27 +230,75 @@ export default function FacilityTable({
       <table className="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
         <thead>
           <tr className="text-left border-b bg-gray-300">
-            <th className="px-4 text-start  py-2 text-black">Name</th>
-            <th className=" px-4 text-start py-2 text-black">Number</th>
-            <th className="px-4 text-start  py-2 text-black">City</th>
-            <th className="px-4 text-start  py-2 text-black">Address</th>
-            <th className="px-4 text-start  py-2 text-black">Parking Slots</th>
-            <th className="px-4 text-start  py-2 text-black">Actions</th>
+            <th 
+              className="px-4 text-start py-2 text-[#333333] cursor-pointer hover:bg-gray-200 select-none"
+              onClick={() => handleSort('name')}
+            >
+              <div className="flex items-center gap-2">
+                Name
+                {sortConfig.column === 'name' && (
+                  <span className="text-[#003F65]">
+                    {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                  </span>
+                )}
+              </div>
+            </th>
+            <th 
+              className="px-4 text-start py-2 text-[#333333] cursor-pointer hover:bg-gray-200 select-none"
+              onClick={() => handleSort('number')}
+            >
+              <div className="flex items-center gap-2">
+                Number
+                {sortConfig.column === 'number' && (
+                  <span className="text-[#003F65]">
+                    {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                  </span>
+                )}
+              </div>
+            </th>
+            <th 
+              className="px-4 text-start py-2 text-[#333333] cursor-pointer hover:bg-gray-200 select-none"
+              onClick={() => handleSort('city')}
+            >
+              <div className="flex items-center gap-2">
+                City
+                {sortConfig.column === 'city' && (
+                  <span className="text-[#003F65]">
+                    {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                  </span>
+                )}
+              </div>
+            </th>
+            <th className="px-4 text-start py-2 text-[#333333]">Address</th>
+            <th 
+              className="px-4 text-start py-2 text-[#333333] cursor-pointer hover:bg-gray-200 select-none"
+              onClick={() => handleSort('parkingSlots')}
+            >
+              <div className="flex items-center gap-2">
+                Parking Slots
+                {sortConfig.column === 'parkingSlots' && (
+                  <span className="text-[#003F65]">
+                    {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                  </span>
+                )}
+              </div>
+            </th>
+            <th className="px-4 text-start py-2 text-[#333333]">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {[...filteredData]?.reverse()?.map((facility) => (
+          {sortedData?.map((facility) => (
             <tr key={facility?.id} className="border-b border-gray-300">
-              <td className=" px-4 py-2 text-black">{facility?.name || '-'}</td>
-              <td className=" px-4 py-2 text-black">{facility?.number || '-'}</td>
-              <td className=" px-4 py-2 text-black">{facility?.city || '-'}</td>
-              <td className=" px-4 py-2 w-[30%] text-black">
-                {facility?.address || '-'}
+              <td className=" px-4 py-2 text-[#333333]">{facility?.name || "-"}</td>
+              <td className=" px-4 py-2 text-[#333333]">{facility?.number || "-"}</td>
+              <td className=" px-4 py-2 text-[#333333]">{facility?.city || "-"}</td>
+              <td className=" px-4 py-2 w-[30%] text-[#333333]">
+                {facility?.address || "-"}
               </td>
-              <td className=" px-4 py-2 text-black">
-                {facility?.parkingSlots || '-'}
+              <td className=" px-4 py-2 text-[#333333]">
+                {facility?.parkingSlots || "-"}
               </td>
-              <td className=" px-4 py-2 space-x-2 text-black">
+              <td className=" px-4 py-2 space-x-2 text-[#333333]">
                 <button
                   onClick={() => {
                     const query = new URLSearchParams({
@@ -229,7 +311,7 @@ export default function FacilityTable({
                   }}
                   className=" px-2 py-2 rounded"
                 >
-                  <IoEyeOutline size={20} className="text-black" />
+                  <IoEyeOutline size={20} className="text-[#333333]" />
                 </button>
                 <button
                   onClick={() => openEditModal(facility)}
@@ -252,9 +334,9 @@ export default function FacilityTable({
         </tbody>
       </table>
       
-      {filteredData?.length === 0 && (
+      {sortedData?.length === 0 && (
         <div className="text-center py-10">
-          <p className="text-gray-500 text-lg">No facilities found</p>
+          <p className="text-[#666666] text-lg">No facilities found</p>
         </div>
       )}
 

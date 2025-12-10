@@ -6,8 +6,20 @@ body {
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Nissan Primary Colors */
+  --nissan-primary-blue: #003F65;
+  --nissan-background-light: #F8F8F8;
+  --nissan-white: #fff;
+  --nissan-black: #000000;
+  --nissan-text-dark: #333333;
+  
+  /* Nissan Secondary Colors */
+  --nissan-gray: #666666;
+  --nissan-accent-red: #FF0000;
+  --nissan-linkedin-blue: #0A66C2;
+  
+  --background: #F8F8F8;
+  --foreground: #333333;
 }
 
 @theme inline {
@@ -19,13 +31,13 @@ body {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #F8F8F8;
+    --foreground: #333333;
   }
 }
 
 html, body {
-  background: #ffffff !important;
+  background: #F8F8F8 !important;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   min-height: 100vh;
@@ -62,7 +74,7 @@ html, body {
 
 /* Drawing vertex markers as dots */
 .leaflet-edit-marker-selected {
-  background-color: #FF5E62 !important;
+  background-color: #003F65 !important;
   border: 2px solid white !important;
   border-radius: 50% !important;
   width: 8px !important;
@@ -72,32 +84,32 @@ html, body {
 }
 
 .leaflet-edit-marker-icon {
-  background-color: #FF5E62 !important;
+  background-color: #003F65 !important;
   border: 2px solid white !important;
   border-radius: 50% !important;
   width: 8px !important;
   height: 8px !important;
   margin-left: -4px !important;
   margin-top: -4px !important;
-  box-shadow: 0 0 0 2px #FF5E62;
+  box-shadow: 0 0 0 2px #003F65;
 }
 
-/* Drawing tooltip markers as dots - Blue/Green alternating */
+/* Drawing tooltip markers as dots - Nissan Blue */
 .leaflet-draw-tooltip-marker {
   width: 10px !important;
   height: 10px !important;
   border-radius: 50% !important;
-  background-color: #3B82F6 !important; /* Blue default */
+  background-color: #003F65 !important; /* Nissan Primary Blue */
   border: 2px solid white !important;
-  box-shadow: 0 0 0 2px #3B82F6 !important;
+  box-shadow: 0 0 0 2px #003F65 !important;
   margin-left: -5px !important;
   margin-top: -5px !important;
 }
 
-/* Alternate green dots */
+/* Alternate dots with accent */
 .leaflet-draw-tooltip-marker:nth-child(even) {
-  background-color: #10B981 !important; /* Green */
-  box-shadow: 0 0 0 2px #10B981 !important;
+  background-color: #003F65 !important; /* Nissan Primary Blue */
+  box-shadow: 0 0 0 2px #003F65 !important;
 }
 
 /* Hide drawing guide lines and markers */

@@ -46,7 +46,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div className="flex items-center justify-center min-h-screen bg-[#F8F8F8]">
       <form
         onSubmit={handleSubmit}
         className="bg-white p-8 rounded shadow w-80 space-y-4"
@@ -54,10 +54,10 @@ export default function LoginPage() {
         <h1 className="text-xl font-bold text-center">Admin Login</h1>
         
         {/* Static credentials info for testing */}
-        <div className="bg-blue-50 p-3 rounded border border-blue-200">
-          <p className="text-sm text-blue-800 font-semibold mb-1">Test Credentials:</p>
-          <p className="text-xs text-blue-700">Email: gpsadmin123@gmail.com</p>
-          <p className="text-xs text-blue-700">Password: 12345678</p>
+        <div className="bg-[#F8F8F8] p-3 rounded border border-[#003F65]">
+          <p className="text-sm text-[#003F65] font-semibold mb-1">Test Credentials:</p>
+          <p className="text-xs text-[#003F65]">Email: gpsadmin123@gmail.com</p>
+          <p className="text-xs text-[#003F65]">Password: 12345678</p>
         </div>
         
         {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -76,7 +76,7 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <button type="submit" className="bg-blue-500 text-white p-2 w-full rounded hover:bg-blue-600">
+        <button type="submit" className="bg-[#003F65] text-white p-2 w-full rounded hover:bg-[#003F65]">
           Login
         </button>
         

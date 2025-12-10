@@ -273,20 +273,14 @@ function DrawingControls({ onPolygonCreated, onPolygonEdited, onPolygonDeleted, 
       layer.options.interactive = true;
       layer.options.bubblingMouseEvents = true;
       
-      // IMPORTANT: Don't remove layer from map if it's already there
-      // Leaflet Draw adds it temporarily, but we'll keep it in featureGroup
-      // This ensures ALL polygons stay visible
+  
       
       // Check if layer is already in featureGroup (shouldn't be, but check)
       if (!featureGroupRef.current.hasLayer(layer)) {
-        // Add to feature group - since featureGroup is already on map,
-        // adding layer to it will make it visible
-        // This keeps ALL previous polygons visible too
         featureGroupRef.current.addLayer(layer);
       }
       
       // If layer was added directly to map by Leaflet Draw, remove it
-      // (we only want it in featureGroup to keep all polygons together)
       if (map.hasLayer(layer) && !featureGroupRef.current.hasLayer(layer)) {
         map.removeLayer(layer);
         // Now add to featureGroup

@@ -21,7 +21,7 @@ export default function Cars() {
           toggleSidebar={toggleSidebar}
         />
         <div
-          className={`flex-1 p-4 bg-gray-200 rounded-2xl ${
+          className={`flex-1 p-4 bg-[#F8F8F8] rounded-2xl ${
             collapsed ? "w-[95vw]" : "w-[86vw]"
           } min-h-[calc(100vh-80px)]`}
         >

@@ -262,7 +262,7 @@ export default function FacilityForm({
               type="button"
               onClick={handleEditPolygon}
               disabled={isSavingForPolygon || isSubmitting}
-              className={`w-full bg-[#613EEA] text-white px-4 py-2 rounded flex items-center justify-center gap-2 hover:bg-[#5030d0] transition-colors ${
+              className={`w-full bg-[#003F65] text-white px-4 py-2 rounded flex items-center justify-center gap-2 hover:bg-[#003F65] transition-colors ${
                 isSavingForPolygon || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
@@ -286,7 +286,7 @@ export default function FacilityForm({
             className={`px-4 py-2 w-[50%] rounded text-white ${
               isSubmitting 
                 ? 'bg-gray-400 cursor-not-allowed' 
-                : 'bg-[#613EEA] hover:bg-[#613EEA]'
+                : 'bg-[#003F65] hover:bg-[#003F65]'
             }`}
             disabled={isSubmitting}
           >

@@ -1,106 +1,3 @@
-// "use client";
-// import { useRouter } from "next/navigation";
-// import { useState } from "react";
-// import useCarsCRUD from "../hooks/useCarsCRUD";
-
-// export default function CarsTable({ searchQuery }) {
-//   const { carData, deleteItem } = useCarsCRUD("/api/cars");
-//   const router = useRouter();
-//   const [deleteId, setDeleteId] = useState(null);
-//   const filteredData = carData?.filter((car) =>
-//     [car.vin, car?.facilityId, car.slotNo, car.trackerNo].some((field) =>
-//       field?.toString().toLowerCase().includes(searchQuery.toLowerCase())
-//     )
-//   );
-//   return (
-//     <div>
-//       <button
-//         onClick={() => router.push("/admin/cars/add")}
-//         className="bg-green-500 text-white px-4 py-2 rounded mb-4"
-//       >
-//         Add Car
-//       </button>
-
-//       <table className="min-w-full bg-white border">
-//         <thead>
-//           <tr>
-//             <th className="border px-4 py-2 text-black">VIN</th>
-//             <th className="border px-4 py-2 text-black">Yard Name</th>
-//             <th className="border px-4 py-2 text-black">Slot No.</th>
-//             <th className="border px-4 py-2 text-black">Tracker No.</th>
-//             <th className="border px-4 py-2 text-black">Actions</th>
-//           </tr>
-//         </thead>
-//         {filteredData?.length > 0 ? (
-//           <tbody>
-//             {filteredData?.map((car) => (
-//               <tr key={car?.id}>
-//                 <td className="border px-4 py-2 text-black">{car?.vin}</td>
-//                 <td className="border px-4 py-2 text-black">
-//                   {car?.facilityId}
-//                 </td>
-//                 <td className="border px-4 py-2 text-black">{car?.slotNo}</td>
-//                 <td className="border px-4 py-2 text-black">
-//                   {car?.trackerNo}
-//                 </td>
-//                 <td className="border px-4 py-2 space-x-2 text-black">
-//                   <button
-//                     onClick={() => router.push(`/admin/cars/${car?.id}`)}
-//                     className="bg-green-500 text-white px-2 py-1 rounded"
-//                   >
-//                     View
-//                   </button>
-//                   <button
-//                     onClick={() => router.push(`/admin/cars/${car?.id}`)}
-//                     className="bg-blue-500 text-white px-2 py-1 rounded"
-//                   >
-//                     Edit
-//                   </button>
-//                   <button
-//                     onClick={() => setDeleteId(car.id)}
-//                     className="bg-red-500 text-white px-2 py-1 rounded"
-//                   >
-//                     Delete
-//                   </button>
-//                 </td>
-//               </tr>
-//             ))}
-//           </tbody>
-//         ) : (
-//           <h2 className="font-bold mb-2 text-black self-center">
-//             No results found:
-//           </h2>
-//         )}
-//       </table>
-
-//       {deleteId && (
-//         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-//           <div className="bg-white p-4 rounded">
-//             <p>Are you sure you want to delete?</p>
-//             <div className="space-x-2 mt-4">
-//               <button
-//                 onClick={() => {
-//                   deleteItem(deleteId);
-//                   setDeleteId(null);
-//                 }}
-//                 className="bg-red-500 text-white px-4 py-2 rounded"
-//               >
-//                 Yes
-//               </button>
-//               <button
-//                 onClick={() => setDeleteId(null)}
-//                 className="bg-gray-300 px-4 py-2 rounded"
-//               >
-//                 No
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -129,6 +26,8 @@ export default function CarsTable({ searchQuery, assignview }) {
   const [editingCar, setEditingCar] = useState(null);
   const [localSearch, setLocalSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [facilityFilter, setFacilityFilter] = useState("all");
+  const [sortConfig, setSortConfig] = useState({ column: null, direction: 'asc' });
 
   const openAddModal = () => {
     setEditingCar(null);
@@ -150,7 +49,16 @@ export default function CarsTable({ searchQuery, assignview }) {
   // Helper function to get facility name from facility ID
   const getFacilityName = (facilityId) => {
     const facility = facilities?.find(f => f.id.toString() === facilityId?.toString());
-    return facility?.name || 'Unknown Facility';
+    return facility?.name || '-';
+  };
+
+  // Handle column sorting
+  const handleSort = (column) => {
+    let direction = 'asc';
+    if (sortConfig.column === column && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ column, direction });
   };
 
   // Filter data
@@ -160,12 +68,60 @@ export default function CarsTable({ searchQuery, assignview }) {
       field?.toString().toLowerCase().includes(localSearch.toLowerCase())
     );
     const matchesStatus = statusFilter === "all" || car.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesFacility = facilityFilter === "all" || car?.facilityId?.toString() === facilityFilter;
+    return matchesSearch && matchesStatus && matchesFacility;
+  });
+
+  // Sort data
+  const sortedData = [...(filteredData || [])].sort((a, b) => {
+    if (!sortConfig.column) return 0;
+
+    let aValue, bValue;
+
+    switch (sortConfig.column) {
+      case 'vin':
+        aValue = a.vin || '';
+        bValue = b.vin || '';
+        break;
+      case 'chip':
+        aValue = a.chip || '';
+        bValue = b.chip || '';
+        break;
+      case 'facility':
+        aValue = getFacilityName(a?.facilityId) || '';
+        bValue = getFacilityName(b?.facilityId) || '';
+        break;
+      case 'slotNo':
+        aValue = parseInt(a.slotNo) || 0;
+        bValue = parseInt(b.slotNo) || 0;
+        return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+      case 'status':
+        aValue = a.status || 'Unassigned';
+        bValue = b.status || 'Unassigned';
+        break;
+      default:
+        return 0;
+    }
+
+    if (sortConfig.column === 'slotNo') {
+      return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+    }
+
+    // String comparison
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      return sortConfig.direction === 'asc'
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue);
+    }
+
+    return 0;
   });
 
   const handleReset = () => {
     setLocalSearch("");
     setStatusFilter("all");
+    setFacilityFilter("all");
+    setSortConfig({ column: null, direction: 'asc' });
   };
 
   const handleAssignTracker = async () => {
@@ -192,23 +148,57 @@ export default function CarsTable({ searchQuery, assignview }) {
             placeholder="Search vehicles..."
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
-            className="w-80 px-4 py-2 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:border-[#613EEA]"
+            className="w-80 px-4 py-2 border border-gray-300 rounded-lg text-[#333333] placeholder-[#666666] focus:outline-none focus:border-[#003F65]"
           />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-40 px-4 py-2 mr-4 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-[#613EEA]"
-          >
-            <option value="all">All Status</option>
-            <option value="Assigned">Assigned</option>
-            <option value="Unassigned">Unassigned</option>
-          </select>
+          <div className="relative w-40 mr-4">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full px-4 py-2 pr-8 border border-gray-300 rounded-lg text-[#333333] focus:outline-none focus:border-[#003F65] appearance-none bg-white"
+            >
+              <option value="all">All Status</option>
+              <option value="Assigned">Assigned</option>
+              <option value="Unassigned">Unassigned</option>
+            </select>
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+              <svg className="w-4 h-4 text-[#666666]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+          <div className="relative w-48 mr-4">
+            <select
+              value={facilityFilter}
+              onChange={(e) => setFacilityFilter(e.target.value)}
+              className="w-full px-4 py-2 pr-8 border border-gray-300 rounded-lg text-[#333333] focus:outline-none focus:border-[#003F65] appearance-none bg-white"
+            >
+              <option value="all">All Facilities</option>
+              {facilities?.map((facility) => (
+                <option key={facility.id} value={facility.id.toString()}>
+                  {facility.name}
+                </option>
+              ))}
+            </select>
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+              <svg className="w-4 h-4 text-[#666666]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+          {(localSearch || statusFilter !== "all" || facilityFilter !== "all" || sortConfig.column) && (
+            <button
+              onClick={handleReset}
+              className="px-4 py-2 border border-[#666666] text-[#333333] rounded-lg hover:bg-[#F8F8F8] transition-colors"
+            >
+              Reset
+            </button>
+          )}
         </div>
         
         <div>
           <button
             onClick={openAddModal}
-            className="px-6 py-2 bg-[#613EEA] text-white rounded-full shadow-md hover:bg-[#5030d0] transition-colors"
+            className="px-6 py-2 bg-[#003F65] text-white rounded-full shadow-md hover:bg-[#003F65] transition-colors"
           >
             + Add Vehicle
           </button>
@@ -225,7 +215,7 @@ export default function CarsTable({ searchQuery, assignview }) {
             >
               ✕
             </button>
-            <h2 className="text-xl text-black font-semibold mb-4">
+            <h2 className="text-xl text-[#333333] font-semibold mb-4">
               {editingCar ? "Edit Vehicle" : "Add Vehicle"}
             </h2>
             <CarForm
@@ -246,9 +236,9 @@ export default function CarsTable({ searchQuery, assignview }) {
           <select
             value={selectedCarId || ""}
             onChange={(e) => setSelectedCarId(parseInt(e.target.value))}
-            className="border border-black placeholder-black px-4 py-2 rounded text-black"
+            className="border border-black placeholder-black px-4 py-2 rounded text-[#333333]"
           >
-            <option className="text-black" value="">
+            <option className="text-[#333333]" value="">
               Select VIN
             </option>
             {carData.map((car) => (
@@ -259,7 +249,7 @@ export default function CarsTable({ searchQuery, assignview }) {
           </select>
 
           {selectedCar && (
-            <div className="p-4 border rounded bg-gray-50 text-black">
+            <div className="p-4 border rounded bg-gray-50 text-[#333333]">
               <p>
                 <strong>VIN:</strong> {selectedCar.vin}
               </p>
@@ -277,7 +267,7 @@ export default function CarsTable({ searchQuery, assignview }) {
             placeholder="Enter tracker ID"
             value={trackerInput}
             onChange={(e) => setTrackerInput(e.target.value)}
-            className="border border-black px-4 py-2 rounded placeholder-black text-black"
+            className="border border-black px-4 py-2 rounded placeholder-black text-[#333333]"
           />
 
           <button
@@ -293,44 +283,104 @@ export default function CarsTable({ searchQuery, assignview }) {
       <table className="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
         <thead>
           <tr className="text-left border-b bg-gray-300">
-            <th className="text-start px-4 py-2 text-black">VIN</th>
-            <th className="text-start px-4 py-2 text-black">Chip</th>
-            <th className="text-start px-4 py-2 text-black">Yard Name</th>
-            <th className="text-start px-4 py-2 text-black">Slot No.</th>
+            <th 
+              className="text-start px-4 py-2 text-[#333333] cursor-pointer hover:bg-gray-200 select-none"
+              onClick={() => handleSort('vin')}
+            >
+              <div className="flex items-center gap-2">
+                VIN
+                {sortConfig.column === 'vin' && (
+                  <span className="text-[#003F65]">
+                    {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                  </span>
+                )}
+              </div>
+            </th>
+            <th 
+              className="text-start px-4 py-2 text-[#333333] cursor-pointer hover:bg-gray-200 select-none"
+              onClick={() => handleSort('chip')}
+            >
+              <div className="flex items-center gap-2">
+                Chip
+                {sortConfig.column === 'chip' && (
+                  <span className="text-[#003F65]">
+                    {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                  </span>
+                )}
+              </div>
+            </th>
+            <th 
+              className="text-start px-4 py-2 text-[#333333] cursor-pointer hover:bg-gray-200 select-none"
+              onClick={() => handleSort('facility')}
+            >
+              <div className="flex items-center gap-2">
+                Yard Name
+                {sortConfig.column === 'facility' && (
+                  <span className="text-[#003F65]">
+                    {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                  </span>
+                )}
+              </div>
+            </th>
+            <th 
+              className="text-start px-4 py-2 text-[#333333] cursor-pointer hover:bg-gray-200 select-none"
+              onClick={() => handleSort('slotNo')}
+            >
+              <div className="flex items-center gap-2">
+                Slot No.
+                {sortConfig.column === 'slotNo' && (
+                  <span className="text-[#003F65]">
+                    {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                  </span>
+                )}
+              </div>
+            </th>
             {assignview && (
-              <th className="text-start px-4 py-2 text-black">Tracker No.</th>
+              <th className="text-start px-4 py-2 text-[#333333]">Tracker No.</th>
             )}
             {assignview && (
-              <th className="text-start px-4 py-2 text-black">Assigned Date</th>
+              <th className="text-start px-4 py-2 text-[#333333]">Assigned Date</th>
             )}
-            <th className="text-start px-4 py-2 text-black">Status</th>
-            <th className="text-start px-4 py-2 text-black">Actions</th>
+            <th 
+              className="text-start px-4 py-2 text-[#333333] cursor-pointer hover:bg-gray-200 select-none"
+              onClick={() => handleSort('status')}
+            >
+              <div className="flex items-center gap-2">
+                Status
+                {sortConfig.column === 'status' && (
+                  <span className="text-[#003F65]">
+                    {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                  </span>
+                )}
+              </div>
+            </th>
+            <th className="text-start px-4 py-2 text-[#333333]">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {filteredData?.map((car) => (
+          {sortedData?.map((car) => (
             <tr key={car?.id} className="border-b border-gray-300">
-              <td className="text-start px-4 py-2 text-black">{car?.vin}</td>
-              <td className="text-start px-4 py-2 text-black">{car?.chip}</td>
-              <td className="text-start px-4 py-2 text-black">
-                {getFacilityName(car?.facilityId)}
+              <td className="text-start px-4 py-2 text-[#333333]">{car?.vin || "-"}</td>
+              <td className="text-start px-4 py-2 text-[#333333]">{car?.chip || "-"}</td>
+              <td className="text-start px-4 py-2 text-[#333333]">
+                {getFacilityName(car?.facilityId) || "-"}
               </td>
-              <td className="text-start px-4 py-2 text-black">
-                {car?.slotNo}
+              <td className="text-start px-4 py-2 text-[#333333]">
+                {car?.slotNo || "-"}
               </td>
               {assignview && (
-                <td className="text-start px-4 py-2 text-black">
+                <td className="text-start px-4 py-2 text-[#333333]">
                   {car?.trackerNo || "N/A"}
                 </td>
               )}
               {assignview && (
-                <td className="text-start px-4 py-2 text-black">
+                <td className="text-start px-4 py-2 text-[#333333]">
                   {car?.assignedDate
                     ? new Date(car?.assignedDate).toLocaleDateString()
                     : "N/A"}
                 </td>
               )}
-              <td className="text-start px-4 py-2 text-black">
+              <td className="text-start px-4 py-2 text-[#333333]">
                 <span
                   className={`px-4 py-1 rounded-full inline-block ${
                     car?.status === "Assigned"
@@ -341,7 +391,7 @@ export default function CarsTable({ searchQuery, assignview }) {
                   {car?.status || "Unassigned"}
                 </span>
               </td>
-              <td className=" px-4 py-2 space-x-2 text-black">
+              <td className=" px-4 py-2 space-x-2 text-[#333333]">
                 <button
                  onClick={() => {
                     const query = new URLSearchParams({
@@ -352,7 +402,7 @@ export default function CarsTable({ searchQuery, assignview }) {
                   // onClick={() => router.push(`/admin/cars/${car?.id}`)}
                   className=" px-2 py-2 rounded"
                 >
-                  <IoEyeOutline size={20} className="text-black" />
+                  <IoEyeOutline size={20} className="text-[#333333]" />
                 </button>
                 <button
                   onClick={() => openEditModal(car)}
@@ -373,7 +423,7 @@ export default function CarsTable({ searchQuery, assignview }) {
         </tbody>
       </table>
       
-      {filteredData?.length === 0 && (
+      {sortedData?.length === 0 && (
         <div className="text-center py-10">
           <p className="text-gray-500 text-lg">No vehicles found</p>
         </div>
@@ -382,10 +432,10 @@ export default function CarsTable({ searchQuery, assignview }) {
       {deleteId && (
         <div className="fixed inset-0 bg-black/50  flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded shadow-md w-full max-w-sm">
-            {/* <h3 className="text-lg text-black font-semibold mb-4">
+            {/* <h3 className="text-lg text-[#333333] font-semibold mb-4">
                           Confirm Delete
                         </h3> */}
-            <p className="mb-6 text-black">Are you sure you want to delete?</p>
+            <p className="mb-6 text-[#333333]">Are you sure you want to delete?</p>
             <div className="flex justify-end gap-4">
               <button
                 onClick={() => setDeleteId(null)}

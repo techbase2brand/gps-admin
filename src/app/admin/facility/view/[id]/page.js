@@ -1,94 +1,3 @@
-// "use client";
-
-// import { useParams } from "next/navigation";
-// import { useEffect, useState } from "react";
-// import GoogleMapReact from "google-map-react";
-// import useCRUD from "../../../../hooks/useCRUD";
-// import Sidebar from "../../../../components/Layout/Sidebar";
-// import Image from "next/image";
-
-// export default function ViewFacilityPage() {
-//   const { id } = useParams();
-//   const { data } = useCRUD("/api/facilities");
-//   const [facility, setFacility] = useState(null);
-//   const [coordinates, setCoordinates] = useState({ lat: 0, lng: 0 });
-
-//   useEffect(() => {
-//     const found = data.find((item) => String(item?.id) === id);
-//     setFacility(found);
-
-//     if (found?.address) {
-//       geocodeAddress(found?.address);
-//     }
-//   }, [data, id,coordinates]);
-
-//   useEffect(() => {
-//     if (facility?.address) {
-//       geocodeAddress(facility.address);
-//     }
-//   }, [facility]);
-
-//   const geocodeAddress = async (address) => {
-//     try {
-//       const response = await fetch(
-//         `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-//           address
-//         )}&key=${process.env.NEXT_PUBLIC_API_KEY}`
-//       );
-//       const json = await response.json();
-//       if (json.results[0]) {
-//         const location = json.results[0].geometry.location;
-//         setCoordinates({ lat: location.lat, lng: location.lng });
-//       } else {
-//         console.error("No results found");
-//       }
-//     } catch (error) {
-//       console.error("Geocode error:", error);
-//     }
-//   };
-//   if (!facility) return <p>Loading...</p>;
-//   const Marker = ({ text, address }) => (
-//     <div className="relative flex flex-col items-center">
-//       <Image src="/pin.svg" alt="Pin" width={40} height={40} />
-//       <div className="absolute bottom-full mb-2 bg-black text-white text-xs px-2 py-1 rounded opacity-90 whitespace-nowrap">
-//         {address}
-//       </div>
-//     </div>
-//   );
-//   return (
-//     <main>
-//       <div className="flex bg-[#f7f8fb]">
-//         <Sidebar />
-//         <div className="flex-1 p-4">
-//           <h1 className="text-2xl font-bold mb-4 text-black">
-//             {facility.name}
-//           </h1>
-//           <div style={{ height: "80vh", width: "100%" }}>
-//             {!facility || !coordinates.lat || !coordinates.lng ? (
-//               <p>Loading...</p>
-//             ) : (
-//               <GoogleMapReact
-//                 bootstrapURLKeys={{
-//                   key: process.env.NEXT_PUBLIC_API_KEY,
-//                 }}
-//                 center={coordinates}
-//                 zoom={15}
-//               >
-//                 <Marker
-//                   lat={coordinates.lat}
-//                   lng={coordinates.lng}
-//                   text={facility.number}
-//                   address={facility.address}
-//                 />
-//               </GoogleMapReact>
-//             )}
-//           </div>
-//         </div>
-//       </div>
-//     </main>
-//   );
-// }
-
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -280,7 +189,14 @@ export default function ViewFacilityPage() {
     setPendingNavigation(null);
   };
 
-  if (!facility) return <p>Loading...</p>;
+  if (!facility) return (
+    <div className="flex items-center justify-center min-h-screen w-full">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#003F65] mx-auto mb-4"></div>
+        <p className="text-[#333333] text-lg">Loading...</p>
+      </div>
+    </div>
+  );
 
   return (
     <main>
@@ -307,7 +223,7 @@ export default function ViewFacilityPage() {
             </div>
             
             <div className="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
-              <p className="text-gray-700 mb-1 font-medium">
+              <p className="text-[#333333] mb-1 font-medium">
                 You have marked <span className="font-bold text-red-600">{Array.isArray(polygonCoordinates) ? polygonCoordinates.length : (polygonCoordinates ? 1 : 0)} polygon{Array.isArray(polygonCoordinates) && polygonCoordinates.length > 1 ? 's' : ''}</span> but haven't saved them yet.
               </p>
               <p className="text-gray-600 text-sm">
@@ -318,7 +234,7 @@ export default function ViewFacilityPage() {
             <div className="flex gap-3 justify-end">
               <button
                 onClick={handleCancelWarning}
-                className="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium shadow-sm"
+                className="px-6 py-2.5 bg-[#F8F8F8] text-[#333333] rounded-lg hover:bg-[#F8F8F8] transition-colors font-medium shadow-sm"
               >
                 Cancel
               </button>
@@ -339,9 +255,9 @@ export default function ViewFacilityPage() {
         </div>
       )}
 
-      <div className="flex bg-gray-200">
+      <div className="flex bg-[#F8F8F8]">
         <Sidebar />
-        <div className="flex-1 p-4 bg-gray-200">
+        <div className="flex-1 p-4 bg-[#F8F8F8]">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-2xl font-bold text-black">{facility.name}</h1>
             <div className="flex items-center gap-3">
@@ -387,7 +303,12 @@ export default function ViewFacilityPage() {
               />
             ) : (
               <div className="flex items-center justify-center h-full">
-                <p>Loading map...</p>
+                <div className="flex items-center justify-center h-full w-full">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#003F65] mx-auto mb-3"></div>
+                    <p className="text-[#333333]">Loading map...</p>
+                  </div>
+                </div>
               </div>
             )}
           </div>

@@ -149,13 +149,20 @@ export default function ViewCarPage() {
     }
   };
 
-  if (!isLoaded || !car) return <p>Loading...</p>;
+  if (!isLoaded || !car) return (
+    <div className="flex items-center justify-center min-h-screen w-full">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#003F65] mx-auto mb-4"></div>
+        <p className="text-[#333333] text-lg">Loading...</p>
+      </div>
+    </div>
+  );
 
   return (
     <main>
       <div className="flex bg-[#f7f8fb]">
         <Sidebar />
-        <div className="flex-1 p-4 bg-gray-200">
+        <div className="flex-1 p-4 bg-[#F8F8F8]">
           <h1 className="text-2xl font-bold mb-4 text-black">
             Vehicle Details - {car.vin}
           </h1>
@@ -264,13 +271,13 @@ export default function ViewCarPage() {
                   <div className="mt-6 flex justify-end gap-3">
                     <button
                       onClick={() => setShowAssignModal(false)}
-                      className="px-4 py-2 rounded bg-gray-200 text-black hover:bg-gray-300"
+                      className="px-4 py-2 rounded bg-[#F8F8F8] text-black hover:bg-[#F8F8F8]"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleSubmitAssignChip}
-                      className="px-4 py-2 rounded bg-[#613EEA] text-white hover:opacity-90"
+                      className="px-4 py-2 rounded bg-[#003F65] text-white hover:opacity-90"
                     >
                       Assign
                     </button>

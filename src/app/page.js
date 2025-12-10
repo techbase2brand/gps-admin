@@ -1,58 +1,3 @@
-// "use client"
-// import { useRouter } from "next/navigation";
-// import { useState } from "react";
-// // import { useRouter } from "next/router";
-
-// export default function Home() {
-//   const router = useRouter();
-//   const [email, setEmail] = useState("");
-//   const [password, setPassword] = useState("");
-//   const [error, setError] = useState("");
-
-//   const handleSubmit = (e) => {
-//     e.preventDefault();
-//     if (!email || !password) {
-//       setError("All fields are required");
-//     } else if (!/^\S+@\S+\.\S+$/.test(email)) {
-//       setError("Invalid email format");
-//     } else if (password.length < 8) {
-//       setError("Password must be at least 8 characters");
-//     } else {
-//       setError("");
-//       router.push("/admin/dashboard");
-//     }
-//   };
-
-//   return (
-//     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-//       <form
-//         onSubmit={handleSubmit}
-//         className="bg-white p-8 rounded shadow w-80 space-y-4"
-//       >
-//         <h1 className="text-xl font-bold">Admin Login</h1>
-//         {error && <p className="text-red-500">{error}</p>}
-//         <input
-//           type="email"
-//           placeholder="Email"
-//           className="border p-2 w-full"
-//           value={email}
-//           onChange={(e) => setEmail(e.target.value)}
-//         />
-//         <input
-//           type="password"
-//           placeholder="Password"
-//           className="border p-2 w-full"
-//           value={password}
-//           onChange={(e) => setPassword(e.target.value)}
-//         />
-//         <button type="submit" className="bg-blue-500 text-white p-2 w-full rounded">
-//           Loginnn
-//         </button>
-//       </form>
-//     </div>
-//   );
-// }
-
 "use client";
 
 import { useState } from "react";
@@ -122,26 +67,69 @@ export default function LoginPage() {
       <motion.div
         animate={{ x: isLogin ? "100%" : "0%" }}
         transition={{ duration: 1 }}
-        className="flex w-1/2 flex-col items-center justify-center bg-[#613EEA] text-white z-99999 p-8"
+        className="flex w-1/2 flex-col items-center justify-center bg-[#003F65] text-white z-99999 p-8 relative overflow-hidden"
       >
-        <motion.h1
-          key={isLogin ? "Hello!" : "Welcome back!"}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-3xl font-semibold"
-        >
-          Welcome back!
-        </motion.h1>
-        <p className="my-6 text-center text-sm px-4">
-          Welcome to GPS Admin Dashboard. Please login with your admin credentials to access the system.
-        </p>
-        {/* Comment out signup toggle button */}
-        {/* <button
-          onClick={() => setIsLogin(!isLogin)}
-          className="rounded-full border border-white px-6 py-2 text-sm uppercase hover:bg-white hover:text-black transition"
-        >
-          {isLogin ? "Sign Up" : "Sign In"}
-        </button> */}
+        {/* Decorative Background Elements */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full -ml-24 -mb-24"></div>
+        
+        <div className="relative z-10 flex flex-col items-center justify-center h-full w-full px-8">
+          {/* Icon */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring" }}
+            className="mb-5"
+          >
+            <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/20">
+              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+          </motion.div>
+
+          {/* Title */}
+          <motion.h1
+            key={isLogin ? "Hello!" : "Welcome back!"}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="text-4xl font-bold mb-4 text-center"
+          >
+            Welcome back!
+          </motion.h1>
+          
+          {/* Description */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="text-center text-sm px-6 text-white/85 leading-relaxed max-w-md mb-6"
+          >
+            Please login with your admin credentials to access the system and manage your fleet efficiently.
+          </motion.p>
+
+          {/* Features List */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="mt-4 space-y-2.5 w-full max-w-sm"
+          >
+            <div className="flex items-center justify-center gap-3 text-sm text-white/90">
+              <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+              <span>Real-time vehicle tracking</span>
+            </div>
+            <div className="flex items-center justify-center gap-3 text-sm text-white/90">
+              <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+              <span>Facility management</span>
+            </div>
+            <div className="flex items-center justify-center gap-3 text-sm text-white/90">
+              <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+              <span>Comprehensive reporting</span>
+            </div>
+          </motion.div>
+        </div>
       </motion.div>
 
       {/* Form Section */}
@@ -151,14 +139,14 @@ export default function LoginPage() {
         className="flex w-1/2 flex-col items-center justify-center bg-white text-black p-8 z-10"
         onSubmit={handleSubmit}
       >
-        <motion.h1
+        {/* <motion.h1
           key={isLogin ? "Sign in" : "Create Account"}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="text-3xl font-semibold mb-6"
         >
           Sign in
-        </motion.h1>
+        </motion.h1> */}
 
         <div className="flex space-x-6 text-2xl mb-6">
           <Image
@@ -212,7 +200,7 @@ export default function LoginPage() {
         <button
           type="submit"
           onClick={handleSubmit}
-          className="mt-8 bg-[#613EEA] text-white rounded-full px-8 py-3 uppercase text-bold text-sm"
+          className="mt-8 bg-[#003F65] text-white rounded-full px-8 py-3 uppercase text-bold text-sm"
         >
           {loading ? (
             <Lottie

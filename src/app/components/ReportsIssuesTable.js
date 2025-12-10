@@ -5,8 +5,6 @@ import { FiEdit } from "react-icons/fi";
 import { MdDeleteOutline } from "react-icons/md";
 import useReportsIssuesCRUD from "../hooks/useReportsIssuesCRUD";
 
-// Table name - Change this if your Supabase table has a different name
-// Common variations: "report_issues", "reports_issues", "reports_and_issues", "reports", "issues"
 const TABLE_NAME = "report_issues";
 
 export default function ReportsIssuesTable({ searchQuery }) {
@@ -154,8 +152,11 @@ export default function ReportsIssuesTable({ searchQuery }) {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <p className="text-gray-500">Loading reports and issues...</p>
+      <div className="flex items-center justify-center min-h-[400px] w-full">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#003F65] mx-auto mb-4"></div>
+          <p className="text-[#333333] text-lg">Loading reports and issues...</p>
+        </div>
       </div>
     );
   }
@@ -170,7 +171,7 @@ export default function ReportsIssuesTable({ searchQuery }) {
             placeholder="Search issues..."
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
-            className="w-80 px-4 py-2 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:border-[#613EEA]"
+            className="w-80 px-4 py-2 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:border-[#003F65]"
           />
           {localSearch && (
             <button
@@ -388,7 +389,7 @@ export default function ReportsIssuesTable({ searchQuery }) {
                   value={adminNotes}
                   onChange={(e) => setAdminNotes(e.target.value)}
                   rows="6"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-[#613EEA]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-[#003F65]"
                   placeholder="Add admin notes here..."
                 />
               </div>
@@ -401,7 +402,7 @@ export default function ReportsIssuesTable({ searchQuery }) {
                   onChange={(e) =>
                     setEditingIssue({ ...editingIssue, status: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-[#613EEA]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-[#003F65]"
                 >
                   <option value="Open">Open</option>
                   <option value="Pending">Pending</option>
@@ -423,7 +424,7 @@ export default function ReportsIssuesTable({ searchQuery }) {
               </button>
               <button
                 onClick={handleSaveEdit}
-                className="px-4 py-2 bg-[#613EEA] text-white rounded hover:bg-[#5030d0]"
+                className="px-4 py-2 bg-[#003F65] text-white rounded hover:bg-[#003F65]"
               >
                 Save Changes
               </button>

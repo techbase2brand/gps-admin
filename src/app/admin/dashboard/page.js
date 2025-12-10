@@ -1,19 +1,3 @@
-// import Sidebar from "../../components/Layout/Sidebar";
-// import dynamic from "next/dynamic";
-
-// const Map = dynamic(() => import("../../components/ParkingYardsMap"), { ssr: false });
-
-// export default function Dashboard() {
-//   return (
-//     <div className="flex">
-//       <Sidebar />
-//       <div className="flex-1 p-4">
-//         <h1 className="text-2xl font-bold mb-4">Parking Yards</h1>
-//         <Map />
-//       </div>
-//     </div>
-//   );
-// }
 "use client";
 import Sidebar from "../../components/Layout/Sidebar";
 import useCRUD from "../../hooks/useCRUD";
@@ -33,6 +17,10 @@ export default function Home() {
   const [collapsed, setCollapsed] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [searchVin, setSearchVin] = useState("");
+  const [facilitySortConfig, setFacilitySortConfig] = useState({ column: null, direction: 'asc' });
+  const [vehicleSortConfig, setVehicleSortConfig] = useState({ column: null, direction: 'asc' });
+  const [cityFilter, setCityFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   // Debug: Check status counts
   const assignedCount = carData?.filter((car) => car?.status === "Assigned")?.length || 0;
@@ -45,6 +33,94 @@ export default function Home() {
   console.log("All Cars Status:", carData?.map(car => ({ vin: car.vin, chip: car.chip, status: car.status })));
 
   const toggleSidebar = () => setCollapsed(!collapsed);
+
+  // Helper function to get facility name
+  const getFacilityName = (facilityId) => {
+    const facility = data?.find(f => f.id.toString() === facilityId?.toString());
+    return facility?.name || '-';
+  };
+
+  // Handle facility sorting
+  const handleFacilitySort = (column) => {
+    let direction = 'asc';
+    if (facilitySortConfig.column === column && facilitySortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setFacilitySortConfig({ column, direction });
+  };
+
+  // Handle vehicle sorting
+  const handleVehicleSort = (column) => {
+    let direction = 'asc';
+    if (vehicleSortConfig.column === column && vehicleSortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setVehicleSortConfig({ column, direction });
+  };
+
+  // Filter and sort facilities
+  const filteredFacilities = data?.filter((facility) => {
+    return cityFilter === "all" || facility.city === cityFilter;
+  });
+
+  const sortedFacilities = [...(filteredFacilities || [])].sort((a, b) => {
+    if (!facilitySortConfig.column) return 0;
+    let aValue, bValue;
+    switch (facilitySortConfig.column) {
+      case 'name':
+        aValue = a.name || '';
+        bValue = b.name || '';
+        break;
+      case 'city':
+        aValue = a.city || '';
+        bValue = b.city || '';
+        break;
+      case 'parkingSlots':
+        aValue = parseInt(a.parkingSlots) || 0;
+        bValue = parseInt(b.parkingSlots) || 0;
+        return facilitySortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+      default:
+        return 0;
+    }
+    if (facilitySortConfig.column === 'parkingSlots') {
+      return facilitySortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+    }
+    return facilitySortConfig.direction === 'asc'
+      ? aValue.localeCompare(bValue)
+      : bValue.localeCompare(aValue);
+  });
+
+  // Filter and sort vehicles
+  const filteredVehicles = carData?.filter((car) => {
+    return statusFilter === "all" || car.status === statusFilter;
+  });
+
+  const sortedVehicles = [...(filteredVehicles || [])].sort((a, b) => {
+    if (!vehicleSortConfig.column) return 0;
+    let aValue, bValue;
+    switch (vehicleSortConfig.column) {
+      case 'vin':
+        aValue = a.vin || '';
+        bValue = b.vin || '';
+        break;
+      case 'chip':
+        aValue = a.chip || '';
+        bValue = b.chip || '';
+        break;
+      case 'status':
+        aValue = a.status || 'Unassigned';
+        bValue = b.status || 'Unassigned';
+        break;
+      default:
+        return 0;
+    }
+    return vehicleSortConfig.direction === 'asc'
+      ? aValue.localeCompare(bValue)
+      : bValue.localeCompare(aValue);
+  });
+
+  // Get unique cities
+  const uniqueCities = [...new Set(data?.map(f => f.city).filter(Boolean))];
   return (
     <div className="flex bg-[#fff] min-h-screen">
       <Sidebar collapsed={collapsed} />
@@ -55,14 +131,14 @@ export default function Home() {
           toggleSidebar={toggleSidebar}
         />
         <div
-          className={`flex-1 p-4 bg-gray-200 rounded-2xl ${
+          className={`flex-1 p-4 bg-[#F8F8F8] rounded-2xl ${
             collapsed ? "w-[95vw]" : "w-[87vw]"
           } min-h-[calc(100vh-80px)] overflow-y-auto`}
         >
           <div className="flex justify-end">
             <button
               onClick={() => setShowModal(true)}
-              className="bg-[#613EEA] flex items-center justify-center text-bold text-white px-4 py-2 gap-2 rounded-full my-4"
+              className="bg-[#003F65] flex items-center justify-center text-bold text-white px-4 py-2 gap-2 rounded-full my-4"
             >
               <FaMapMarkerAlt size={19} className="text-White" /> Track Vehicle
             </button>
@@ -82,7 +158,7 @@ export default function Home() {
                   <div className="flex justify-end gap-4">
                     <button
                       onClick={() => setShowModal(false)}
-                      className="px-4 py-2 rounded bg-gray-300 text-black"
+                      className="px-4 py-2 rounded bg-[#F8F8F8] text-[#333333]"
                     >
                       Cancel
                     </button>
@@ -110,7 +186,7 @@ export default function Home() {
                           alert("Vehicle not found");
                         }
                       }}
-                      className="px-4 py-2 rounded bg-[#613EEA] text-white"
+                      className="px-4 py-2 rounded bg-[#003F65] text-white"
                     >
                       Search
                     </button>
@@ -123,14 +199,14 @@ export default function Home() {
             <DashboardCard
               title="Total Facilities"
               count={data?.length}
-              iconSrc={<FaBuilding size={24} className="text-blue-500" />}
-              progressColor="bg-blue-500"
+              iconSrc={<FaBuilding size={24} className="text-[#003F65]" />}
+              progressColor="bg-[#003F65]"
             />
             <DashboardCard
               title="Total Cars"
               count={carData?.length}
-              iconSrc={<FaCar size={24} className="text-purple-600" />}
-              progressColor="bg-purple-600"
+              iconSrc={<FaCar size={24} className="text-[#003F65]" />}
+              progressColor="bg-[#003F65]"
             />
             <DashboardCard
               title="Assigned Trackers"
@@ -147,92 +223,186 @@ export default function Home() {
             <DashboardCard
               title="Total Staff"
               count={staffData?.length || 0}
-              iconSrc={<FaUsers size={24} className="text-orange-500" />}
-              progressColor="bg-orange-500"
+              iconSrc={<FaUsers size={24} className="text-[#003F65]" />}
+              progressColor="bg-[#003F65]"
             />
           </div>
           {loading ? (
-            <div>Loading........</div>
+            <div className="flex items-center justify-center min-h-[400px] w-full">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#003F65] mx-auto mb-4"></div>
+                <p className="text-[#333333] text-lg">Loading...</p>
+              </div>
+            </div>
           ) : (
             <>
-              <div className="flex flex-wrap gap-6 p-6 bg-gray-200">
+              <div className="flex flex-wrap gap-6 p-6 bg-[#F8F8F8]">
                 {/* Recent Added Facility */}
                 <div className="bg-white rounded-xl p-6 flex-1 min-w-[350px]">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold text-black">
+                    <h2 className="text-xl font-bold text-[#333333]">
                       Recent added Facility
                     </h2>
-                    <div className="flex items-center gap-4">
-                      {/* <FiSearch className="text-gray-500" />
-                      <FiFilter className="text-gray-500" /> */}
+                    <div className="flex items-center gap-2">
+                      {uniqueCities.length > 0 && (
+                        <select
+                          value={cityFilter}
+                          onChange={(e) => setCityFilter(e.target.value)}
+                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-[#333333] focus:outline-none focus:border-[#003F65] appearance-none bg-white"
+                        >
+                          <option value="all">All Cities</option>
+                          {uniqueCities.map((city, idx) => (
+                            <option key={idx} value={city}>{city}</option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                   </div>
                   {/* <button className="flex items-center gap-2 bg-[#613EEA] text-white font-600 px-4 py-2 rounded-full mb-4">
                   <FiPlus />
                   Add Facility
                 </button> */}
-                  {data?.length > 0 ? (
+                  {sortedFacilities?.length > 0 ? (
                     <table className="w-full text-left">
                       <thead>
-                        <tr className="text-sm font-bold text-gray-600 border-b">
-                          <th className="py-2">Name</th>
+                        <tr className="text-sm font-bold text-[#666666] border-b">
+                          <th 
+                            className="py-2 cursor-pointer hover:bg-gray-100 select-none"
+                            onClick={() => handleFacilitySort('name')}
+                          >
+                            <div className="flex items-center gap-1">
+                              Name
+                              {facilitySortConfig.column === 'name' && (
+                                <span className="text-[#003F65] text-xs">
+                                  {facilitySortConfig.direction === 'asc' ? '↑' : '↓'}
+                                </span>
+                              )}
+                            </div>
+                          </th>
                           <th className="py-2 px-8">Number</th>
-                          <th className="py-2">City</th>
+                          <th 
+                            className="py-2 cursor-pointer hover:bg-gray-100 select-none"
+                            onClick={() => handleFacilitySort('city')}
+                          >
+                            <div className="flex items-center gap-1">
+                              City
+                              {facilitySortConfig.column === 'city' && (
+                                <span className="text-[#003F65] text-xs">
+                                  {facilitySortConfig.direction === 'asc' ? '↑' : '↓'}
+                                </span>
+                              )}
+                            </div>
+                          </th>
                           <th className="py-2 px-8">Address</th>
-                          <th className="py-2 px-8">Parking Slots</th>
+                          <th 
+                            className="py-2 px-8 cursor-pointer hover:bg-gray-100 select-none"
+                            onClick={() => handleFacilitySort('parkingSlots')}
+                          >
+                            <div className="flex items-center gap-1">
+                              Parking Slots
+                              {facilitySortConfig.column === 'parkingSlots' && (
+                                <span className="text-[#003F65] text-xs">
+                                  {facilitySortConfig.direction === 'asc' ? '↑' : '↓'}
+                                </span>
+                              )}
+                            </div>
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
-                        {data?.map((f, idx) => (
+                        {sortedFacilities?.map((f, idx) => (
                           <tr key={idx} className="border-b">
-                            <td className="py-2 flex  text-black items-center gap-2">
+                            <td className="py-2 flex  text-[#333333] items-center gap-2">
                               {f.name || '-'}
                             </td>
-                            <td className="py-2 text-black  px-8">
+                            <td className="py-2 text-[#333333]  px-8">
                               {f.number || '-'}
                             </td>
-                            <td className="py-2 flex  text-black items-center gap-2">
+                            <td className="py-2 flex  text-[#333333] items-center gap-2">
                               {f.city || '-'}
                             </td>
-                            <td className="py-2 text-black px-8">
-                              {f.address || '-'}
+                            <td className="py-2 text-[#333333] px-8">
+                              {f.address || "-"}
                             </td>
-                            <td className="py-2 text-black px-8">
-                              {f.parkingSlots || '-'}
+                            <td className="py-2 text-[#333333] px-8">
+                              {f.parkingSlots || "-"}
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   ) : (
-                    <div className="text-black">No Data Found :</div>
+                    <div className="text-[#333333]">No Data Found :</div>
                   )}
                 </div>
 
                 {/* Todos */}
                 <div className="bg-white rounded-xl p-6 flex-1 min-w-[300px]">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold text-black">Vehicles</h2>
-                    <div className="flex items-center gap-4">
-                      {/* <FiPlus className="text-gray-500" />
-                      <FiFilter className="text-gray-500" /> */}
+                    <h2 className="text-xl font-bold text-[#333333]">Vehicles</h2>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-[#333333] focus:outline-none focus:border-[#003F65] appearance-none bg-white"
+                      >
+                        <option value="all">All Status</option>
+                        <option value="Assigned">Assigned</option>
+                        <option value="Unassigned">Unassigned</option>
+                      </select>
                     </div>
                   </div>
                   <table className="w-full text-left">
                     <thead>
                       <tr className="text-sm font-bold text-gray-600 border-b">
-                        <th className="py-2">Vin</th>
-                        <th className="py-2 px-8">Chip</th>
-                        <th className="py-2">Status</th>
+                        <th 
+                          className="py-2 cursor-pointer hover:bg-gray-100 select-none"
+                          onClick={() => handleVehicleSort('vin')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Vin
+                            {vehicleSortConfig.column === 'vin' && (
+                              <span className="text-[#003F65] text-xs">
+                                {vehicleSortConfig.direction === 'asc' ? '↑' : '↓'}
+                              </span>
+                            )}
+                          </div>
+                        </th>
+                        <th 
+                          className="py-2 px-8 cursor-pointer hover:bg-gray-100 select-none"
+                          onClick={() => handleVehicleSort('chip')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Chip
+                            {vehicleSortConfig.column === 'chip' && (
+                              <span className="text-[#003F65] text-xs">
+                                {vehicleSortConfig.direction === 'asc' ? '↑' : '↓'}
+                              </span>
+                            )}
+                          </div>
+                        </th>
+                        <th 
+                          className="py-2 cursor-pointer hover:bg-gray-100 select-none"
+                          onClick={() => handleVehicleSort('status')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Status
+                            {vehicleSortConfig.column === 'status' && (
+                              <span className="text-[#003F65] text-xs">
+                                {vehicleSortConfig.direction === 'asc' ? '↑' : '↓'}
+                              </span>
+                            )}
+                          </div>
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {carData?.map((f, idx) => (
+                      {sortedVehicles?.map((f, idx) => (
                         <tr key={idx} className="border-b">
-                          <td className="py-2 flex  text-black items-center gap-2">
-                            {f.vin}
+                          <td className="py-2 flex  text-[#333333] items-center gap-2">
+                            {f.vin || "-"}
                           </td>
-                          <td className="py-2 text-black  px-8">{f.chip}</td>
+                          <td className="py-2 text-[#333333]  px-8">{f.chip || "-"}</td>
                           <td
                             className={`py-2 flex   h-6 px-6 w-32 ${
                               f?.status == "Assigned"

@@ -18,7 +18,7 @@ export default function Header({ searchQuery, setSearchQuery }) {
           placeholder="Search..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="border border-black px-3 py-2 text-black rounded w-full placeholder-black"
+          className="border border-[#666666] px-3 py-2 text-[#333333] rounded w-full placeholder-[#666666]"
         />
       </div>
 
