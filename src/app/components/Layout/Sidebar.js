@@ -64,10 +64,12 @@ export default function Sidebar({ collapsed }) {
             } text-2xl font-bold text-[#003F65] h-14 px-4 ${collapsed ?"mt-1" :"mt-5"}`}
           >
             <Image
-              src="/assest/dashboard_ion.png"
+              src="/dashboard_ion.png"
               alt="GPS Dashboard"
               width={collapsed ? 60 : 140}
               height={32}
+              unoptimized
+              priority
             />
           </Link>
 

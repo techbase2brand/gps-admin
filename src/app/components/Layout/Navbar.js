@@ -177,11 +177,12 @@ export default function Navbar({ title, toggleSidebar, collapsed }) {
       </button>
       
       <Image
-        src="/assest/dashboard_ion.png"
+        src="/dashboard_ion.png"
         alt="Profile"
         width={36}
         height={36}
         className="rounded-full object-cover"
+        unoptimized
       />
 
       {/* Logout Confirmation Modal */}

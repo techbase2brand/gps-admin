@@ -150,10 +150,12 @@ export default function LoginPage() {
 
         <div className="flex space-x-6 text-2xl mb-6">
           <Image
-            src="/assest/dashboard_ion.png"
+            src="/dashboard_ion.png"
             alt="GPS Dashboard"
             width={160}
             height={35}
+            unoptimized
+            priority
           />
         </div>
 
