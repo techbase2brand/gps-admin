@@ -26,11 +26,11 @@ export default function Home() {
   const assignedCount = carData?.filter((car) => car?.status === "Assigned")?.length || 0;
   const unassignedCount = carData?.filter((car) => car?.status === "Unassigned")?.length || 0;
   
-  console.log("=== Dashboard Debug ===");
-  console.log("Total Cars:", carData?.length);
-  console.log("Assigned Count:", assignedCount);
-  console.log("Unassigned Count:", unassignedCount);
-  console.log("All Cars Status:", carData?.map(car => ({ vin: car.vin, chip: car.chip, status: car.status })));
+  // console.log("=== Dashboard Debug ===");
+  // console.log("Total Cars:", carData?.length);
+  // console.log("Assigned Count:", assignedCount);
+  // console.log("Unassigned Count:", unassignedCount);
+  // console.log("All Cars Status:", carData?.map(car => ({ vin: car.vin, chip: car.chip, status: car.status })));
 
   const toggleSidebar = () => setCollapsed(!collapsed);
 
