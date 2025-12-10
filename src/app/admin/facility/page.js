@@ -15,16 +15,18 @@ export default function Home() {
   const { carData } = useCarsCRUD("/api/cars");
   const [searchQuery, setSearchQuery] = useState("");
   const [collapsed, setCollapsed] = useState(false);
+  const [isNavbarLogoutModalOpen, setIsNavbarLogoutModalOpen] = useState(false);
 
   const toggleSidebar = () => setCollapsed(!collapsed);
   return (
     <div className="flex bg-[#fff] min-h-screen">
-      <Sidebar collapsed={collapsed} />
+      <Sidebar collapsed={collapsed} isLogoutModalOpen={isNavbarLogoutModalOpen} />
       <div className="flex flex-col flex-1 min-h-screen bg-[#fff]">
         <Navbar
           title={" Facility Management"}
           collapsed={collapsed}
           toggleSidebar={toggleSidebar}
+          onLogoutModalChange={setIsNavbarLogoutModalOpen}
         />
         <div
           className={`flex-1 p-4 bg-[#F8F8F8] rounded-2xl ${

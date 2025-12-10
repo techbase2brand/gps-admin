@@ -21,6 +21,7 @@ export default function Home() {
   const [vehicleSortConfig, setVehicleSortConfig] = useState({ column: null, direction: 'asc' });
   const [cityFilter, setCityFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [isNavbarLogoutModalOpen, setIsNavbarLogoutModalOpen] = useState(false);
 
   // Debug: Check status counts
   const assignedCount = carData?.filter((car) => car?.status === "Assigned")?.length || 0;
@@ -123,12 +124,13 @@ export default function Home() {
   const uniqueCities = [...new Set(data?.map(f => f.city).filter(Boolean))];
   return (
     <div className="flex bg-[#fff] min-h-screen">
-      <Sidebar collapsed={collapsed} />
+      <Sidebar collapsed={collapsed} isLogoutModalOpen={isNavbarLogoutModalOpen} />
       <div className="flex flex-col flex-1 min-h-screen bg-[#fff]">
         <Navbar
           title={"Dashboard"}
           collapsed={collapsed}
           toggleSidebar={toggleSidebar}
+          onLogoutModalChange={setIsNavbarLogoutModalOpen}
         />
         <div
           className={`flex-1 p-4 bg-[#F8F8F8] rounded-2xl ${

@@ -8,10 +8,13 @@ import { FaCar, FaParking, FaUsers, FaComments } from "react-icons/fa";
 import { FiLogOut } from "react-icons/fi";
 import Image from "next/image";
 
-export default function Sidebar({ collapsed }) {
+export default function Sidebar({ collapsed, isLogoutModalOpen }) {
   const pathname = usePathname();
   const router = useRouter();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  
+  // Check if any logout modal is open (from sidebar or navbar)
+  const isAnyLogoutModalOpen = showLogoutConfirm || isLogoutModalOpen;
 
   const handleLogout = () => {
     localStorage.removeItem("isLoggedIn");
@@ -53,7 +56,9 @@ export default function Sidebar({ collapsed }) {
         id="sidebar"
         className={`${
           collapsed ? "w-[80px]" : "w-[220px]"
-        } min-h-[100vh] bg-white z-[2000] transition-all duration-300 ease-in-out overflow-x-hidden flex flex-col`}
+        } min-h-[100vh] bg-white z-[2000] transition-all duration-300 ease-in-out overflow-x-hidden flex flex-col ${
+          isAnyLogoutModalOpen ? "pointer-events-none blur-sm opacity-60" : ""
+        }`}
       >
         {/* Brand */}
         <div className="flex-shrink-0">
@@ -123,8 +128,9 @@ export default function Sidebar({ collapsed }) {
       {/* Logout Confirmation Modal - Outside sidebar to prevent re-render issues */}
       {showLogoutConfirm && (
         <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] animate-fadeIn"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[99999] animate-fadeIn"
           onClick={() => setShowLogoutConfirm(false)}
+          style={{ width: '100vw', height: '100vh' }}
         >
           <div 
             className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 transform transition-all animate-fadeIn"

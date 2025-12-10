@@ -6,12 +6,19 @@ import Image from "next/image";
 import useGlobalSearch from "../../hooks/useGlobalSearch";
 import { useRouter } from "next/navigation";
 
-export default function Navbar({ title, toggleSidebar, collapsed }) {
+export default function Navbar({ title, toggleSidebar, collapsed, onLogoutModalChange }) {
   const router = useRouter();
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [query, setQuery] = useState("");
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { results, loading, searchAllTables } = useGlobalSearch();
+
+  // Notify parent when logout modal state changes
+  useEffect(() => {
+    if (onLogoutModalChange) {
+      onLogoutModalChange(showLogoutConfirm);
+    }
+  }, [showLogoutConfirm, onLogoutModalChange]);
 
   // Logout function
   const handleLogout = () => {
@@ -188,8 +195,9 @@ export default function Navbar({ title, toggleSidebar, collapsed }) {
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] animate-fadeIn"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[99999] animate-fadeIn"
           onClick={() => setShowLogoutConfirm(false)}
+          style={{ width: '100vw', height: '100vh' }}
         >
           <div 
             className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 transform transition-all animate-fadeIn"
