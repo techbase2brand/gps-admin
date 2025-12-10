@@ -177,7 +177,7 @@ export default function Navbar({ title, toggleSidebar, collapsed }) {
       </button>
       
       <Image
-        src="/dashboard_ion.png"
+        src="/assest/dashboard_ion.png"
         alt="Profile"
         width={36}
         height={36}
