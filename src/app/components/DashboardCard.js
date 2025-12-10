@@ -1,5 +1,4 @@
-import Image from "next/image";
-import { FiCalendar } from "react-icons/fi";
+
 export default function DashboardCard({ title, count, iconSrc, progressColor }) {
   return (
 
