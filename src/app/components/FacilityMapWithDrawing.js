@@ -85,346 +85,178 @@ function MapControls({ mapCenter, onShapeCreated }) {
 }
 
 // Component to handle drawing controls
-function DrawingControls({ onPolygonCreated, onPolygonEdited, onPolygonDeleted, existingPolygon, allowMultiple }) {
+function DrawingControls({ onPolygonCreated, onPolygonEdited, onPolygonDeleted, existingPolygon, allowMultiple,setAllPolygons,onPolygonChange }) {
   const map = useMap();
   const featureGroupRef = useRef(L.featureGroup());
   const drawControlRef = useRef(null);
-  const polygonLayersRef = useRef([]); // Store all polygon layers
+  const polygonLayersRef = useRef([]);
 
+  // --- 1. SYNC BLOCK (Atomic Redraw) ---
+  useEffect(() => {
+    if (!map) return;
+    if (!map.hasLayer(featureGroupRef.current)) featureGroupRef.current.addTo(map);
+
+    // Physical wipe taaki ghosting na hovey
+    featureGroupRef.current.clearLayers();
+    polygonLayersRef.current = [];
+
+    if (existingPolygon && Array.isArray(existingPolygon) && existingPolygon.length > 0) {
+      try {
+        // Slot-based format handling
+        if (existingPolygon[0]?.slot !== undefined) {
+          existingPolygon.forEach((polyData) => {
+            if (polyData.coordinates) {
+              const leafletCoords = polyData.coordinates.map(coord => [
+                coord.lat ?? coord.latitude, 
+                coord.lng ?? coord.longitude
+              ]);
+              const polygon = L.polygon(leafletCoords, {
+                color: "#FF5E62", fillColor: "#FF5E62", fillOpacity: 0.1, weight: 3,
+              }).addTo(featureGroupRef.current);
+              polygonLayersRef.current.push(polygon);
+            }
+          });
+        } 
+        // Array format handling
+        else {
+          const normalized = Array.isArray(existingPolygon[0]) && typeof existingPolygon[0][0] === 'number' 
+            ? [existingPolygon] : existingPolygon;
+
+          normalized.forEach((polyCoords) => {
+            const polygon = L.polygon(polyCoords, {
+              color: "#FF5E62", fillColor: "#FF5E62", fillOpacity: 0.1, weight: 3,
+            }).addTo(featureGroupRef.current);
+            polygonLayersRef.current.push(polygon);
+          });
+        }
+      } catch (err) { console.error("Sync error:", err); }
+    }
+  }, [existingPolygon, map]);
+
+  // --- 2. TOOLBAR & CUSTOM MARKERS ---
   useEffect(() => {
     if (!map) return;
 
-    // Initialize feature group if not already done
-    if (!featureGroupRef.current) {
-      featureGroupRef.current = L.featureGroup();
-    }
-
-    // Add feature group to map - this ensures all layers added to it are visible
-    if (!map.hasLayer(featureGroupRef.current)) {
-      featureGroupRef.current.addTo(map);
-    }
-
-    // If existing polygon, add it to the feature group
-    // Handle existingPolygon - can be in multiple formats
-    if (existingPolygon && Array.isArray(existingPolygon) && existingPolygon.length > 0) {
-      try {
-        // Check if it's slot-based format: [{ slot: 1, coordinates: [...] }, ...]
-        if (existingPolygon[0] && typeof existingPolygon[0] === 'object' && 'slot' in existingPolygon[0] && 'coordinates' in existingPolygon[0]) {
-          // Slot-based format - extract coordinates and convert to Leaflet format
-          existingPolygon.forEach((polyData) => {
-            if (polyData.coordinates && Array.isArray(polyData.coordinates) && polyData.coordinates.length > 0) {
-              // Convert Google format [{lat, lng}, ...] to Leaflet format [[lat, lng], ...]
-              const leafletCoords = polyData.coordinates.map(coord => {
-                if (coord.lat !== undefined && coord.lng !== undefined) {
-                  return [coord.lat, coord.lng];
-                } else if (coord.latitude !== undefined && coord.longitude !== undefined) {
-                  return [coord.latitude, coord.longitude];
-                }
-                return null;
-              }).filter(coord => coord !== null);
-
-              if (leafletCoords.length > 0) {
-                const polygon = L.polygon(leafletCoords, {
-                  color: "#FF5E62",
-                  fillColor: "#FF5E62",
-                  fillOpacity: 0.05, // Transparent inside color
-                  weight: 3,
-                  opacity: 1,
-                });
-                if (featureGroupRef.current) {
-                  polygon.addTo(featureGroupRef.current);
-                  polygonLayersRef.current.push(polygon);
-                }
-              }
-            }
-          });
-        }
-        // Check if it's a single polygon in Leaflet format [[lat, lng], [lat, lng], ...]
-        else if (Array.isArray(existingPolygon[0]) && typeof existingPolygon[0][0] === 'number') {
-          const polygon = L.polygon(existingPolygon, {
-            color: "#FF5E62",
-            fillColor: "#FF5E62",
-            fillOpacity: 0.05, // Transparent inside color
-            weight: 3,
-            opacity: 1,
-          });
-          if (featureGroupRef.current) {
-            polygon.addTo(featureGroupRef.current);
-            polygonLayersRef.current.push(polygon);
-          }
-        }
-        // Check if it's multiple polygons in Leaflet format
-        else if (Array.isArray(existingPolygon[0]) && Array.isArray(existingPolygon[0][0])) {
-          existingPolygon.forEach((polyCoords) => {
-            if (Array.isArray(polyCoords) && polyCoords.length > 0) {
-              const polygon = L.polygon(polyCoords, {
-                color: "#FF5E62",
-                fillColor: "#FF5E62",
-                fillOpacity: 0.05, // Transparent inside color
-                weight: 3,
-                opacity: 1,
-              });
-              if (featureGroupRef.current) {
-                polygon.addTo(featureGroupRef.current);
-                polygonLayersRef.current.push(polygon);
-              }
-            }
-          });
-        }
-        // Check if it's Google format [{lat, lng}, ...] - single polygon
-        else if (existingPolygon[0] && typeof existingPolygon[0] === 'object' && ('lat' in existingPolygon[0] || 'latitude' in existingPolygon[0])) {
-          const leafletCoords = existingPolygon.map(coord => {
-            if (coord.lat !== undefined && coord.lng !== undefined) {
-              return [coord.lat, coord.lng];
-            } else if (coord.latitude !== undefined && coord.longitude !== undefined) {
-              return [coord.latitude, coord.longitude];
-            }
-            return null;
-          }).filter(coord => coord !== null);
-
-          if (leafletCoords.length > 0) {
-            const polygon = L.polygon(leafletCoords, {
-              color: "#FF5E62",
-              fillColor: "#FF5E62",
-              fillOpacity: 0.05, // Transparent inside color
-              weight: 3,
-              opacity: 1,
-            });
-            if (featureGroupRef.current) {
-              polygon.addTo(featureGroupRef.current);
-              polygonLayersRef.current.push(polygon);
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error adding existing polygon:", error);
-      }
-    }
-
-    // Configure drawing options
     const drawControl = new L.Control.Draw({
       position: "topright",
       draw: {
         polygon: {
           allowIntersection: false,
-          drawError: {
-            color: "#e1e100",
-            message: "<strong>Oh snap!</strong> you can't draw that!",
-          },
-          shapeOptions: {
-            color: "#FF5E62",
-            fillColor: "#FF5E62",
-            fillOpacity: 0.05, // Transparent inside color
-            weight: 3,
-          },
-          // Hide guide lines during drawing
-          showArea: false,
-          metric: false,
-          guideLayers: [],
+          shapeOptions: { color: "#FF5E62", fillColor: "#FF5E62", fillOpacity: 0.1, weight: 3 },
+          showArea: false, metric: false,
         },
-        polyline: false,
-        rectangle: false,
-        circle: false,
-        circlemarker: false,
-        marker: false,
+        polyline: false, rectangle: false, circle: false, marker: false, circlemarker: false
       },
-      edit: {
-        featureGroup: featureGroupRef.current,
-        remove: true,
-      },
+      edit: { featureGroup: featureGroupRef.current, remove: true }
     });
 
-    // Add drawing control to map
     map.addControl(drawControl);
     drawControlRef.current = drawControl;
 
-    // Customize drawing markers to blue/green dots
-    const customizeDrawingMarkers = () => {
-      // Find all drawing markers and convert them to dots
-      const markers = document.querySelectorAll('.leaflet-draw-tooltip-marker');
-      markers.forEach((marker, index) => {
-        // Alternate between blue and green
-        const color = index % 2 === 0 ? '#3B82F6' : '#10B981'; // Blue or Green
-        marker.style.width = '10px';
-        marker.style.height = '10px';
-        marker.style.borderRadius = '50%';
-        marker.style.backgroundColor = color;
-        marker.style.border = '2px solid white';
-        marker.style.boxShadow = `0 0 0 2px ${color}`;
-        marker.style.marginLeft = '-5px';
-        marker.style.marginTop = '-5px';
+    const customizeMarkers = () => {
+      document.querySelectorAll('.leaflet-draw-tooltip-marker').forEach((marker, index) => {
+        const color = index % 2 === 0 ? '#3B82F6' : '#10B981';
+        Object.assign(marker.style, {
+          width: '10px', height: '10px', borderRadius: '50%', backgroundColor: color,
+          border: '2px solid white', boxShadow: `0 0 0 2px ${color}`, marginLeft: '-5px', marginTop: '-5px'
+        });
       });
     };
 
-    // Event handlers
+    // --- 3. EVENT HANDLERS (THE FIX) ---
     map.on(L.Draw.Event.CREATED, (e) => {
       const { layer } = e;
       
-      // Ensure polygon is properly styled and visible in RED color
-      layer.setStyle({
-        color: "#FF5E62",
-        fillColor: "#FF5E62",
-        fillOpacity: 0.05, // Transparent inside color
-        weight: 3,
-        opacity: 1,
-      });
-      
-      // Make sure polygon is interactive and visible
-      layer.options.interactive = true;
-      layer.options.bubblingMouseEvents = true;
-      
-  
-      
-      // Check if layer is already in featureGroup (shouldn't be, but check)
-      if (!featureGroupRef.current.hasLayer(layer)) {
-        featureGroupRef.current.addLayer(layer);
-      }
-      
-      // If layer was added directly to map by Leaflet Draw, remove it
-      if (map.hasLayer(layer) && !featureGroupRef.current.hasLayer(layer)) {
-        map.removeLayer(layer);
-        // Now add to featureGroup
-        featureGroupRef.current.addLayer(layer);
-      }
-      
-      // Store layer reference for tracking
-      if (!polygonLayersRef.current.includes(layer)) {
-        polygonLayersRef.current.push(layer);
-      }
-      
-      // Force layer to be visible by bringing it to front
-      layer.bringToFront();
-      
-      // Verify all layers in featureGroup are still on map
-      setTimeout(() => {
-        // Ensure featureGroup is on map
-        if (!map.hasLayer(featureGroupRef.current)) {
-          featureGroupRef.current.addTo(map);
-        }
-        
-        // Ensure all layers in featureGroup are visible
-        featureGroupRef.current.eachLayer((l) => {
-          if (!map.hasLayer(l)) {
-            // This shouldn't happen, but ensure it's visible
-            l.addTo(map);
-          }
-        });
-        
-        map.invalidateSize();
-      }, 100);
-      
-      // Ensure map bounds include ALL polygons
-      setTimeout(() => {
-        try {
-          const allLayers = featureGroupRef.current.getLayers();
-          if (allLayers.length > 0) {
-            const bounds = featureGroupRef.current.getBounds();
-            if (bounds && bounds.isValid && bounds.isValid()) {
-              map.fitBounds(bounds.pad(0.1));
-            }
-          } else {
-            // Fallback to layer bounds
-            const layerBounds = layer.getBounds();
-            if (layerBounds && layerBounds.isValid && layerBounds.isValid()) {
-              map.fitBounds(layerBounds.pad(0.1));
-            }
-          }
-        } catch (err) {
-          console.log("Bounds error:", err);
-        }
-      }, 200);
-      
+      // GHOST KILLER: Remove Leaflet's internal layer immediately
+      // React will redraw it from state in "Red" color
+      map.removeLayer(layer); 
+
       const latlngs = layer.getLatLngs()[0];
-      const coordinates = latlngs.map((ll) => [ll.lat, ll.lng]);
-      
-      if (onPolygonCreated) {
-        onPolygonCreated(coordinates, layer);
-      }
+      const coordinates = latlngs.map(ll => [ll.lat, ll.lng]);
+      if (onPolygonCreated) onPolygonCreated(coordinates);
     });
 
-    // Hide guide lines when drawing starts
     map.on(L.Draw.Event.DRAWSTART, () => {
       setTimeout(() => {
-        customizeDrawingMarkers();
-        // Hide all guide lines
-        const guideLines = document.querySelectorAll('.leaflet-draw-guide-dash, .leaflet-draw-tooltip-guide');
-        guideLines.forEach(line => {
-          line.style.display = 'none';
-          line.style.opacity = '0';
-        });
+        customizeMarkers();
+        document.querySelectorAll('.leaflet-draw-guide-dash').forEach(l => l.style.display = 'none');
       }, 100);
     });
 
-    // Customize markers and hide guide lines during drawing
-    map.on(L.Draw.Event.DRAWVERTEX, () => {
-      setTimeout(() => {
-        customizeDrawingMarkers();
-        // Hide guide lines
-        const guideLines = document.querySelectorAll('.leaflet-draw-guide-dash, .leaflet-draw-tooltip-guide');
-        guideLines.forEach(line => {
-          line.style.display = 'none';
-          line.style.opacity = '0';
-        });
-      }, 50);
-    });
+    map.on(L.Draw.Event.DRAWVERTEX, () => setTimeout(customizeMarkers, 50));
 
     map.on(L.Draw.Event.EDITED, (e) => {
       const layers = e.layers;
-      layers.eachLayer((layer) => {
-        // Ensure polygon remains visible after edit
-        layer.setStyle({
-          color: "#FF5E62",
-          fillColor: "#FF5E62",
-          fillOpacity: 0.05, // Transparent inside color
-          weight: 3,
-          opacity: 1,
+      
+      // Create a deep copy of current polygons to avoid mutating state directly
+      setAllPolygons((prevPolygons) => {
+        const nextPolygons = [...prevPolygons];
+    
+        layers.eachLayer((layer) => {
+          // 1. Find the index of the polygon that was just dragged
+          const index = polygonLayersRef.current.indexOf(layer);
+    
+          if (index !== -1) {
+            // 2. Extract the NEW coordinates from the Leaflet layer
+            const latlngs = layer.getLatLngs()[0];
+            const newCoordinates = latlngs.map((ll) => ({
+              lat: roundTo6Decimals(ll.lat),
+              lng: roundTo6Decimals(ll.lng)
+            }));
+    
+            // 3. Deep update the specific index in the array
+            nextPolygons[index] = newCoordinates;
+            console.log(`Deep Sync: Polygon ${index} updated successfully.`);
+          }
         });
-        
-        const latlngs = layer.getLatLngs()[0];
-        const coordinates = latlngs.map((ll) => [ll.lat, ll.lng]);
-        
-        // Find index of edited layer
-        const index = polygonLayersRef.current.findIndex(l => l === layer);
-        
-        if (onPolygonEdited) {
-          onPolygonEdited(coordinates, index);
+    
+        // 4. Notify parent state immediately so the "Save Polygons" button has fresh data
+        if (onPolygonChange) {
+          const slotFormat = nextPolygons.map((poly, i) => ({
+            slot: i + 1,
+            coordinates: poly
+          }));
+          onPolygonChange(slotFormat);
         }
+    
+        return nextPolygons;
       });
     });
 
     map.on(L.Draw.Event.DELETED, (e) => {
       const layers = e.layers;
+      
+   
       layers.eachLayer((layer) => {
-        // Remove from tracking array
-        const index = polygonLayersRef.current.findIndex(l => l === layer);
+        const index = polygonLayersRef.current.indexOf(layer);
         if (index !== -1) {
           polygonLayersRef.current.splice(index, 1);
         }
-        
-        if (onPolygonDeleted) {
-          onPolygonDeleted(index);
-        }
       });
+    
+      if (featureGroupRef.current.getLayers().length === 0) {
+        console.log("Default Clear All trigger ");
+        if (onPolygonDeleted) {
+          onPolygonDeleted(-1); 
+        }
+      } else {
+        
+        if (onPolygonDeleted) onPolygonDeleted(); 
+      }
     });
 
-    // Cleanup
     return () => {
-      if (drawControlRef.current) {
-        map.removeControl(drawControlRef.current);
-      }
-      // Don't remove featureGroup on cleanup - we want to keep all polygons visible
-      // Only cleanup event listeners
+      map.removeControl(drawControl);
       map.off(L.Draw.Event.CREATED);
       map.off(L.Draw.Event.EDITED);
       map.off(L.Draw.Event.DELETED);
-      map.off(L.Draw.Event.DRAWSTART);
-      map.off(L.Draw.Event.DRAWVERTEX);
-      // Don't clear polygonLayersRef - we need to track all polygons
     };
-  }, [map, existingPolygon, onPolygonCreated, onPolygonEdited, onPolygonDeleted, allowMultiple]);
+  }, [map, onPolygonCreated, onPolygonEdited, onPolygonDeleted]);
 
   return null;
 }
+
+
 
 // Shape Creator Form Component
 function ShapeCreatorForm({ mapCenter }) {
@@ -624,15 +456,30 @@ export default function FacilityMapWithDrawing({
   };
 
   const handlePolygonDeleted = (index) => {
+    // console.log("test handlePolygonDeleted", index);
+  
+    // --- NEW: Handle Clear All Case ---
+    if (index === "CLEAR_ALL") {
+      setAllPolygons([]);
+      setPolygonCoordinates(allowMultiple ? [] : null);
+      
+      if (onPolygonChange) {
+        onPolygonChange(null);
+      }
+      return; // Exit early
+    }
+  
+    // --- EXISTING: Handle Single Delete Case ---
     if (allowMultiple && index !== undefined && index !== -1) {
       const updated = allPolygons.filter((_, i) => i !== index);
       setAllPolygons(updated);
+  
       if (updated.length === 0) {
         setPolygonCoordinates(null);
       }
+  
       if (onPolygonChange) {
         if (updated.length > 0) {
-          // Convert to slot-based format for saving
           const slotBasedFormat = updated.map((polygon, index) => ({
             slot: index + 1,
             coordinates: polygon,
@@ -752,7 +599,7 @@ export default function FacilityMapWithDrawing({
   const existingPolygonLeaflet = existingPolygon
     ? (Array.isArray(existingPolygon) && existingPolygon.length > 0)
       ? (existingPolygon[0] && typeof existingPolygon[0] === 'object' && 'slot' in existingPolygon[0] && 'coordinates' in existingPolygon[0])
-        ? existingPolygon.map(poly => googleToLeaflet(poly.coordinates || [])) // Slot-based format
+        ? existingPolygon.map(poly => googleToLeaflet(poly?.coordinates || [])) // Slot-based format
         : (existingPolygon[0] && typeof existingPolygon[0] === 'object' && 'lat' in existingPolygon[0])
           ? (Array.isArray(existingPolygon[0]) && existingPolygon[0][0] && typeof existingPolygon[0][0] === 'object' && 'lat' in existingPolygon[0][0])
             ? existingPolygon.map(poly => googleToLeaflet(poly)) // Multiple polygons in Google format
@@ -827,7 +674,9 @@ export default function FacilityMapWithDrawing({
           onPolygonEdited={handlePolygonEdited}
           onPolygonDeleted={handlePolygonDeleted}
           existingPolygon={existingPolygonLeaflet}
+          setAllPolygons={setAllPolygons}
           allowMultiple={allowMultiple}
+          onPolygonChange={onPolygonChange}
         />
       </MapContainer>
     </div>

@@ -256,18 +256,8 @@ export default function FacilityTable({
                 )}
               </div>
             </th>
-            <th 
-              className="px-4 text-start py-2 text-[#333333] cursor-pointer hover:bg-gray-200 select-none"
-              onClick={() => handleSort('city')}
-            >
-              <div className="flex items-center gap-2">
-                City
-                {sortConfig.column === 'city' && (
-                  <span className="text-[#003F65]">
-                    {sortConfig.direction === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
-              </div>
+            <th className="px-4 text-start py-2 text-[#333333]">
+              City
             </th>
             <th className="px-4 text-start py-2 text-[#333333]">Address</th>
             <th 

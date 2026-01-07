@@ -283,44 +283,14 @@ export default function CarsTable({ searchQuery, assignview }) {
       <table className="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
         <thead>
           <tr className="text-left border-b bg-gray-300">
-            <th 
-              className="text-start px-4 py-2 text-[#333333] cursor-pointer hover:bg-gray-200 select-none"
-              onClick={() => handleSort('vin')}
-            >
-              <div className="flex items-center gap-2">
-                VIN
-                {sortConfig.column === 'vin' && (
-                  <span className="text-[#003F65]">
-                    {sortConfig.direction === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
-              </div>
+            <th className="text-start px-4 py-2 text-[#333333]">
+              VIN
             </th>
-            <th 
-              className="text-start px-4 py-2 text-[#333333] cursor-pointer hover:bg-gray-200 select-none"
-              onClick={() => handleSort('chip')}
-            >
-              <div className="flex items-center gap-2">
-                Chip
-                {sortConfig.column === 'chip' && (
-                  <span className="text-[#003F65]">
-                    {sortConfig.direction === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
-              </div>
+            <th className="text-start px-4 py-2 text-[#333333]">
+              Chip
             </th>
-            <th 
-              className="text-start px-4 py-2 text-[#333333] cursor-pointer hover:bg-gray-200 select-none"
-              onClick={() => handleSort('facility')}
-            >
-              <div className="flex items-center gap-2">
-                Yard Name
-                {sortConfig.column === 'facility' && (
-                  <span className="text-[#003F65]">
-                    {sortConfig.direction === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
-              </div>
+            <th className="text-start px-4 py-2 text-[#333333]">
+              Yard Name
             </th>
             <th 
               className="text-start px-4 py-2 text-[#333333] cursor-pointer hover:bg-gray-200 select-none"

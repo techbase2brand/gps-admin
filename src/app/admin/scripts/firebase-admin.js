@@ -3,7 +3,7 @@ import fs from "fs";
 
 // Load service account key
 const serviceAccount = JSON.parse(
-  fs.readFileSync("/Users/rakeshroshan/Desktop/gpsApp/gps-admin/src/app/admin/scripts/firebase-key.json", "utf8")
+  fs.readFileSync("I:\code\trackingApp\tracking\gps-admin\src\app\admin\scripts\firebase-key.json", "utf8")
 );
 
 if (!admin.apps.length) {
