@@ -383,6 +383,12 @@ export default function FacilityMapWithDrawing({
 
   // Initialize polygons from existing data
   useEffect(() => {
+    if (!existingPolygon || (Array.isArray(existingPolygon) && existingPolygon.length === 0)) {
+      setAllPolygons([]); // Clear the internal map state
+      setPolygonCoordinates(null); // Clear single polygon state
+      return; // Stop here
+    }
+    
     if (allowMultiple && existingPolygon) {
       // If existingPolygon is an array of polygons
       if (Array.isArray(existingPolygon) && existingPolygon.length > 0) {
@@ -409,6 +415,7 @@ export default function FacilityMapWithDrawing({
         }
       }
     }
+
   }, [existingPolygon, allowMultiple]);
 
   const handlePolygonCreated = (coordinates, layer) => {

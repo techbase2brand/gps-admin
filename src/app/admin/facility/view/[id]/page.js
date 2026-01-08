@@ -141,6 +141,29 @@ export default function ViewFacilityPage() {
   //     setIsAiDrawing(false);
   //   }
   // };
+  const handleDelete = (type = "all") => {
+    setPolygonCoordinates((prev) => {
+      let updated;
+      if (type === "one") {
+        // If there's nothing to delete, just return
+        if (!prev || prev.length === 0) return [];
+        updated = prev.slice(0, -1);
+      } else {
+        // Delete All
+        updated = [];
+      }
+  
+      // IMPORTANT: Even if the array is empty, if it's different from 
+      // what is in the database (savedPolygonCoordinates), we must allow saving!
+      const hasChanges = JSON.stringify(updated) !== JSON.stringify(savedPolygonCoordinates);
+      setHasUnsavedPolygons(hasChanges);
+  
+      return updated;
+    });
+  
+    setSaveMessage(type === "one" ? "Removed last" : "Cleared all");
+    setTimeout(() => setSaveMessage(""), 2000);
+  };
 
   const handleAiClick = async (pattern) => {
     // 1. Safe access to coordinates
@@ -182,7 +205,13 @@ export default function ViewFacilityPage() {
       const apiUrl = `${process.env.NEXT_PUBLIC_AI_BACKEND_URL}/coordinates?p1=${p[0]}&p2=${p[1]}&p3=${p[2]}&p4=${p[3]}&pattern=${pattern}`;
 
       const response = await fetch(apiUrl, {
-        headers: { "ngrok-skip-browser-warning": "true" },
+        method: "GET", // Be explicit
+        mode: "cors", // Force CORS mode
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+          "bypass-tunnel-reminder": "true", // For Cloudflare/Tunnel bypass
+          Accept: "application/json",
+        },
       });
       const result = await response.json();
 
@@ -194,7 +223,15 @@ export default function ViewFacilityPage() {
         }));
 
         // 4. Update state
-        setPolygonCoordinates(aiPolygons);
+        // setPolygonCoordinates(aiPolygons);
+        setPolygonCoordinates((prev) => {
+          const currentPolygons = Array.isArray(prev) ? prev : [];
+
+          // This removes the last item (the big guidance box you just drew)
+          const previousWithoutGuidanceBox = currentPolygons.slice(0, -1);
+
+          return [...previousWithoutGuidanceBox, ...aiPolygons];
+        });
         setHasUnsavedPolygons(true);
         setSaveMessage(`AI detected ${aiPolygons.length} ${pattern} slots!`);
       } else {
@@ -450,10 +487,7 @@ export default function ViewFacilityPage() {
               <button
                 onClick={handleSavePolygon}
                 disabled={
-                  isSaving ||
-                  !polygonCoordinates ||
-                  (Array.isArray(polygonCoordinates) &&
-                    polygonCoordinates.length === 0)
+                  isSaving || !hasUnsavedPolygons // Only disable if it's currently saving or no changes made
                 }
                 className={`px-4 py-2 rounded transition-colors font-medium ${
                   hasUnsavedPolygons
@@ -464,17 +498,31 @@ export default function ViewFacilityPage() {
                 {isSaving
                   ? "Saving..."
                   : hasUnsavedPolygons
-                  ? "Save Polygons ⚠️"
-                  : "Save Polygon"}
+                  ? "Save Changes ⚠️"
+                  : "Saved"}
               </button>
               <button
-                onClick={() =>handleAiClick("row")} // Added arrow function
+                onClick={() => handleAiClick("row")} // Added arrow function
                 className={`px-4 py-2 rounded font-medium text-white transition-all ${
                   isAiDrawing ? "bg-red-600 animate-pulse" : "bg-purple-600"
                 }`}
               >
                 {isAiDrawing ? "Stop" : "AI Grouping"}
               </button>
+
+              <button
+                onClick={() => handleDelete("one")}
+                className="px-4 py-2 rounded font-medium text-white transition-all bg-orange-500 hover:bg-orange-600"
+              >
+                Delete Previous
+              </button>
+
+              {/* <button
+                onClick={() => handleDelete("all")}
+                className="px-4 py-2 rounded font-medium text-white transition-all bg-red-600 hover:bg-red-700"
+              >
+                Delete All
+              </button> */}
 
               {/* Vertical Button */}
               <button
