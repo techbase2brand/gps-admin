@@ -259,6 +259,23 @@ function checkCarInsideFacility(currentLat, currentLng, facilityPolygons, facili
  */
 async function sendNotification(chipId, facilityName, carData, slotNumber) {
   
+  const { count, error: lockError } = await supabase
+      .from('cars')
+      .update({ notification_sent_check: true })
+      .eq('id', carData.id)
+      .eq('notification_sent_check', false); // EH ZAROORI HAI: Sirf tan update hove je pehla false si
+
+    if (lockError) {
+      console.error(`[${chipId}] Error locking notification status:`, lockError.message);
+      return false;
+    }
+
+    // Je count 0 hai, matlab status pehla hi true ho chuka hai (duji call ne kar dita)
+    if (count === 0) {
+      console.log(`[${chipId}] Notification already processed by another instance. Skipping.`);
+      return false;
+    }
+
   let finalSlotNumber = slotNumber ?? 'Unknown'; // Ensure it's not null/undefined for the message
   try {
     const message = `Car with VIN ${carData?.vin} and chip id ${carData?.chip} has left ${facilityName}, Slot ${finalSlotNumber}.`;

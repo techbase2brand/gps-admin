@@ -1,9 +1,9 @@
 import admin from "firebase-admin";
 import fs from "fs";
-
+let serviceAccountPath="I:\\code\\trackingApp\\tracking\\gps-admin\\src\\app\\admin\\scripts\\firebase-key.json";
 // Load service account key
 const serviceAccount = JSON.parse(
-  fs.readFileSync("I:\code\trackingApp\tracking\gps-admin\src\app\admin\scripts\firebase-key.json", "utf8")
+  fs.readFileSync(serviceAccountPath, "utf8")
 );
 
 if (!admin.apps.length) {
