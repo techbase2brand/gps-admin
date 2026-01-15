@@ -24,6 +24,7 @@ export default function ViewFacilityPage() {
   } = useFacilityPolygons(id);
   const [isAiDrawing, setIsAiDrawing] = useState(false);
   const [isAiDrawingVertical, setIsAiDrawingVertical] = useState(false);
+  const [isRoute,setIsRoute]=useState(false);
   const [facility, setFacility] = useState(null);
   const [coordinates, setCoordinates] = useState({ lat: 0, lng: 0 });
   const [polygonCoordinates, setPolygonCoordinates] = useState(null);
@@ -81,6 +82,10 @@ export default function ViewFacilityPage() {
     }
   };
 
+  const handleRouteClick=()=>{
+    console.log("hanle route is clicked");
+    router.push(`/admin/facility/route/${id}`);
+  }
   // const handleAiClick = async () => {
   //   // 1. Safe access to coordinates
   //   if (!polygonCoordinates || polygonCoordinates.length === 0) {
@@ -535,6 +540,19 @@ export default function ViewFacilityPage() {
               >
                 {isAiDrawingVertical ? "Stop" : "AI vertical"}
               </button>
+
+
+              <button
+                onClick={() => handleRouteClick()} // Added arrow function
+                className={`px-4 py-2 rounded font-medium text-white transition-all ${
+                  isRoute
+                    ? "bg-red-600 animate-pulse"
+                    : "bg-purple-600"
+                }`}
+              >
+                {isRoute ? "Stop" : "Route"}
+              </button>
+
             </div>
           </div>
           <div style={{ height: "80vh", width: "100%" }}>
