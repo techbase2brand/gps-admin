@@ -1,128 +1,318 @@
 "use client";
-import { useState, useRef, useMemo } from "react";
-import { MapContainer, TileLayer, useMap, CircleMarker, Polyline, Tooltip, useMapEvents } from "react-leaflet";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import {
+  MapContainer,
+  TileLayer,
+  CircleMarker,
+  Polyline,
+  Tooltip,
+  useMapEvents,
+} from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-
+// import supabase from "../admin/scripts/mqttWorker"
+import supabase from "../api/client";
+import { useParams } from "next/navigation";
 // Utility to calculate real-world distance
-function getDistance(p1, p2) {
-  return L.latLng(p1).distanceTo(L.latLng(p2));
-}
+const getDistance = (p1, p2) => L.latLng(p1).distanceTo(L.latLng(p2));
 
-function GraphEvents({ onMapClick, onMouseMove, activeNode }) {
+function MapEvents({ onMapClick, onMouseMove, isDrawing }) {
   useMapEvents({
     click(e) {
-      onMapClick(e.latlng);
+      if (!isDrawing) {
+        console.log("Map clicked: Adding new node at", e.latlng);
+        onMapClick(e.latlng);
+      }
     },
     mousemove(e) {
-      if (activeNode) onMouseMove(e.latlng);
-    }
+      if (isDrawing) onMouseMove(e.latlng);
+    },
   });
   return null;
 }
 
-export default function RouteMapComponent({ center = [35.966944, -86.493056] }) {
-  const [nodes, setNodes] = useState([]); // {id, lat, lng}
-  const [links, setLinks] = useState([]); // {sourceId, targetId}
-  const [dragStartNode, setDragStartNode] = useState(null);
+export default function RouteMapComponent() {
+  const params = useParams();
+  const facilityId = params.id;
+  const [nodes, setNodes] = useState([]);
+  const [links, setLinks] = useState([]);
+  const [drawingFromId, setDrawingFromId] = useState(null);
   const [mousePos, setMousePos] = useState(null);
+  const [isBlockingClick, setIsBlockingClick] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [lastSavedData, setLastSavedData] = useState(null);
 
-  // --- ADD NODE ---
-  const handleMapClick = (latlng) => {
-    if (dragStartNode) return;
-    const newNode = { id: Date.now(), lat: latlng.lat, lng: latlng.lng };
-    setNodes((prev) => [...prev, newNode]);
-    console.log("list of the node draged",dragStartNode);
-  };
+  // Compare current state to last saved state
+  const hasChanges = useMemo(() => {
+    const currentData = JSON.stringify({ nodes, links });
+    return currentData !== lastSavedData;
+  }, [nodes, links, lastSavedData]);
 
-  // --- DELETE NODE & LINKS ---
-  const deleteNode = (e, nodeId) => {
-    L.DomEvent.stopPropagation(e);
-    setNodes((prev) => prev.filter((n) => n.id !== nodeId));
-    setLinks((prev) => prev.filter((l) => l.source !== nodeId && l.target !== nodeId));
-  };
+  const saveRouteData = async () => {
+    if (nodes.length === 0) return alert("Add some nodes first!");
 
-  // --- DRAG NODE (MOVE POSITION) ---
-  const handleNodeDrag = (nodeId, newLatlng) => {
-    setNodes((prev) =>
-      prev.map((n) => (n.id === nodeId ? { ...n, lat: newLatlng.lat, lng: newLatlng.lng } : n))
-    );
-  };
+    setIsSaving(true);
+    try {
+      const graph_data = {
+        nodes: nodes,
+        links: links,
+        adjacency_matrix: matrix,
+      };
 
-  // --- LINK NODES (MOUSE DOWN/UP) ---
-  const startDrawingLink = (e, nodeId) => {
-    L.DomEvent.stopPropagation(e);
-    // Disable map dragging while drawing a link
-    e.target._map.dragging.disable();
-    setDragStartNode(nodeId);
-  };
-
-  const endDrawingLink = (e, targetId) => {
-    L.DomEvent.stopPropagation(e);
-    const map = e.target._map;
-    map.dragging.enable();
-
-    if (dragStartNode && dragStartNode !== targetId) {
-      const exists = links.some(
-        (l) => (l.source === dragStartNode && l.target === targetId) || (l.source === targetId && l.target === dragStartNode)
-      );
-      if (!exists) {
-        setLinks((prev) => [...prev, { source: dragStartNode, target: targetId }]);
+      // Replace 'current_facility_id' with the actual ID from your facility table
+      const { data, error } = await supabase.from("route").upsert(
+        {
+          facility_id: facilityId,
+          graph_data: graph_data,
+        },
+        { onConflict: "facility_id" }
+      ); // Updates if facility already has a route
+      console.log("graph_data", graph_data);
+      if (error) throw error;
+      if (!error) {
+        setLastSavedData(JSON.stringify({ nodes, links })); // Lock the button again
+        alert("Saved!");
       }
+    } catch (err) {
+      console.error("Error saving route:", err.message);
+      alert("Failed to save: " + err.message);
+    } finally {
+      setIsSaving(false);
     }
-    setDragStartNode(null);
-    setMousePos(null);
   };
 
-  // --- MATRIX CALCULATION ---
+  // 1. Fetch only once when the page loads
+  useEffect(() => {
+    const fetchSavedRoute = async () => {
+      if (!facilityId) return;
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("route")
+          .select("graph_data")
+          .eq("facility_id", facilityId)
+          .single();
+
+        if (error && error.code !== "PGRST116") throw error;
+
+        if (data?.graph_data) {
+          // Just set the data; don't filter here yet
+          setNodes(data.graph_data.nodes || []);
+          setLinks(data.graph_data.links || []);
+          setLastSavedData(JSON.stringify(data.graph_data));
+        }
+      } catch (err) {
+        console.error("Error fetching route:", err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchSavedRoute();
+  }, [facilityId]); // ONLY facilityId here
+
+  // 2. Automatically clean up links when nodes are deleted (Undo)
+  useEffect(() => {
+    setLinks((prevLinks) =>
+      prevLinks.filter(
+        (link) =>
+          nodes.some((n) => n.id === link.source) &&
+          nodes.some((n) => n.id === link.target)
+      )
+    );
+  }, [nodes]);
+  // --- ADD NODE ---
+  const addNode = useCallback((latlng) => {
+    setNodes((prev) => [
+      ...prev,
+      {
+        id: Date.now(), // Unique ID use kiti hai
+        nmae: `Node ${prev.length}`,
+        lat: latlng.lat,
+        lng: latlng.lng,
+      },
+    ]);
+  }, []);
+
+  // --- START DRAWING ---
+  const startDrawing = (e, id) => {
+    L.DomEvent.stopPropagation(e);
+    console.log(
+      `%c Drawing started from Node: ${id}`,
+      "color: #00f2ff; font-weight: bold"
+    );
+    e.target._map.dragging.disable();
+    setDrawingFromId(id);
+    setIsBlockingClick(true);
+  };
+
+  // --- FINISH DRAWING ---
+  const finishDrawing = (e, targetId) => {
+    L.DomEvent.stopPropagation(e);
+    console.log(
+      `%c Attempting connection to Node: ${targetId}`,
+      "color: #ffff00; font-weight: bold"
+    );
+
+    if (e.target._map) e.target._map.dragging.enable();
+
+    if (drawingFromId !== null && drawingFromId !== targetId) {
+      const sourceNode = nodes.find((n) => n.id === drawingFromId);
+      const targetNode = nodes.find((n) => n.id === targetId);
+
+      const exists = links.some(
+        (l) =>
+          (l.source === drawingFromId && l.target === targetId) ||
+          (l.source === targetId && l.target === drawingFromId)
+      );
+
+      if (!exists && sourceNode && targetNode) {
+        const dist = getDistance(
+          [sourceNode.lat, sourceNode.lng],
+          [targetNode.lat, targetNode.lng]
+        );
+        console.log(
+          `%c Success: Edge created! Distance: ${dist.toFixed(2)}m`,
+          "color: #00ff00"
+        );
+        setLinks((prev) => [
+          ...prev,
+          { source: drawingFromId, target: targetId, weight: dist },
+        ]);
+      } else if (exists) {
+        console.warn("Edge already exists!");
+      }
+    } else {
+      console.warn("Connection cancelled: Same node or invalid target.");
+    }
+
+    // Reset States
+    setDrawingFromId(null);
+    setMousePos(null);
+    setTimeout(() => setIsBlockingClick(false), 200);
+  };
+
+  // --- MATRIX CALCULATION (BINARY 1/0) ---
   const matrix = useMemo(() => {
     const size = nodes.length;
-    const mat = Array(size).fill(0).map(() => Array(size).fill(Infinity));
-    nodes.forEach((_, i) => (mat[i][i] = 0));
-
+    const mat = Array(size)
+      .fill(0)
+      .map(() => Array(size).fill(0));
     links.forEach((link) => {
       const sIdx = nodes.findIndex((n) => n.id === link.source);
       const tIdx = nodes.findIndex((n) => n.id === link.target);
       if (sIdx !== -1 && tIdx !== -1) {
-        const dist = getDistance([nodes[sIdx].lat, nodes[sIdx].lng], [nodes[tIdx].lat, nodes[tIdx].lng]);
-        mat[sIdx][tIdx] = mat[tIdx][sIdx] = parseFloat(dist.toFixed(2));
+        mat[sIdx][tIdx] = 1;
+        mat[tIdx][sIdx] = 1;
       }
     });
     return mat;
   }, [nodes, links]);
 
-  const activeNodeData = nodes.find(n => n.id === dragStartNode);
+  const activeNode = nodes.find((n) => n.id === drawingFromId);
 
+  if (isLoading) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-slate-900 text-cyan-400 font-mono">
+        <div className="animate-pulse">LOADING FACILITY GRAPH...</div>
+      </div>
+    );
+  }
   return (
-    <div className="flex flex-col h-screen w-full bg-gray-900 text-white p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-cyan-400">Satellite Graph Tool v2</h2>
-        <button onClick={() => console.log({ nodes, links, matrix })} className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded font-bold">
-          Save Data
-        </button>
+    <div className="flex flex-col h-screen bg-slate-900 text-white overflow-hidden font-sans">
+      <div className="p-4 bg-slate-800 flex justify-between items-center border-b border-cyan-500 z-[1000] shadow-xl">
+        <h1 className="text-xl font-bold text-cyan-400 tracking-tight">
+          PRO SATELLITE GRAPH TOOL
+        </h1>
+        <div className="flex gap-2">
+          <button
+            onClick={saveRouteData}
+            disabled={isSaving || !hasChanges} // Disable if no changes
+            className={`px-4 py-2 rounded font-bold transition ${
+              !hasChanges
+                ? "bg-slate-600 cursor-not-allowed"
+                : "bg-green-600 hover:bg-green-700"
+            }`}
+          >
+            {isSaving ? "Saving..." : "Save Route"}
+          </button>
+          <button
+            onClick={() => setNodes(nodes.slice(0, -1))}
+            className="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded font-bold transition"
+          >
+            Undo Node
+          </button>
+          <button
+            onClick={() => setLinks(links.slice(0, -1))}
+            className="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded font-bold transition"
+          >
+            Undo Edge
+          </button>
+          <button
+            onClick={() => {
+              setNodes([]);
+              setLinks([]);
+            }}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded font-bold transition"
+          >
+            Clear All
+          </button>
+        </div>
       </div>
 
-      <div className="flex flex-1 gap-4 overflow-hidden">
-        <div className="relative flex-[3] rounded-lg border-2 border-cyan-500 overflow-hidden">
-          <MapContainer center={center} zoom={18} style={{ height: "100%", width: "100%" }}>
-            <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" attribution="Esri" maxZoom={20} />
-            
-            <GraphEvents 
-                onMapClick={handleMapClick} 
-                onMouseMove={(coords) => setMousePos(coords)} 
-                activeNode={dragStartNode} 
+      <div className="flex flex-1 overflow-hidden">
+        <div className="flex-[3] relative">
+          <MapContainer
+            center={[35.966944, -86.493056]}
+            zoom={18}
+            className="h-full w-full"
+          >
+            <TileLayer
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              attribution="Esri"
+              maxZoom={20}
             />
 
-            {/* Ghost Line (While drawing link) */}
-            {activeNodeData && mousePos && (
-              <Polyline positions={[[activeNodeData.lat, activeNodeData.lng], [mousePos.lat, mousePos.lng]]} pathOptions={{ color: "white", weight: 2, dashArray: "5, 10" }} />
+            <MapEvents
+              onMapClick={addNode}
+              onMouseMove={setMousePos}
+              isDrawing={drawingFromId !== null || isBlockingClick}
+            />
+
+            {/* Ghost Line (Interactive: false is the fix!) */}
+            {activeNode && mousePos && (
+              <Polyline
+                positions={[
+                  [activeNode.lat, activeNode.lng],
+                  [mousePos.lat, mousePos.lng],
+                ]}
+                pathOptions={{
+                  color: "white",
+                  weight: 2,
+                  dashArray: "10, 10",
+                  interactive: false,
+                }}
+              />
             )}
 
-            {/* Permanent Links */}
+            {/* Permanent Edges */}
             {links.map((link, idx) => {
               const s = nodes.find((n) => n.id === link.source);
               const t = nodes.find((n) => n.id === link.target);
-              return s && t ? <Polyline key={idx} positions={[[s.lat, s.lng], [t.lat, t.lng]]} pathOptions={{ color: "yellow", weight: 4 }} /> : null;
+              return s && t ? (
+                <Polyline
+                  key={`edge-${idx}`}
+                  positions={[
+                    [s.lat, s.lng],
+                    [t.lat, t.lng],
+                  ]}
+                  pathOptions={{
+                    color: "#ffff00",
+                    weight: 4,
+                    interactive: false,
+                  }}
+                />
+              ) : null;
             })}
 
             {/* Nodes */}
@@ -130,39 +320,61 @@ export default function RouteMapComponent({ center = [35.966944, -86.493056] }) 
               <CircleMarker
                 key={node.id}
                 center={[node.lat, node.lng]}
-                radius={10}
-                draggable={true}
+                radius={12}
                 eventHandlers={{
-                  mousedown: (e) => startDrawingLink(e, node.id),
-                  mouseup: (e) => endDrawingLink(e, node.id),
-                  contextmenu: (e) => deleteNode(e, node.id),
-                  dragend: (e) => handleNodeDrag(node.id, e.target.getLatLng()),
+                  mousedown: (e) => startDrawing(e, node.id),
+                  mouseup: (e) => finishDrawing(e, node.id),
                 }}
-                pathOptions={{ fillColor: "#00f2ff", fillOpacity: 1, color: "white", weight: 2 }}
+                pathOptions={{
+                  fillColor: "#00f2ff",
+                  fillOpacity: 1,
+                  color: "white",
+                  weight: 2,
+                }}
               >
-                <Tooltip direction="top" permanent>Node {idx}</Tooltip>
+                <Tooltip
+                  permanent
+                  direction="top"
+                  offset={[0, -10]}
+                  className="node-tooltip"
+                >
+                  Node {idx}
+                </Tooltip>
               </CircleMarker>
             ))}
           </MapContainer>
         </div>
 
         {/* Matrix Sidebar */}
-        <div className="flex-1 bg-black p-4 rounded-lg font-mono text-xs overflow-auto border border-cyan-900">
-          <h3 className="text-cyan-400 mb-4 border-b border-cyan-900 pb-2">Adjacency Matrix (Meters)</h3>
-          {nodes.length === 0 ? <p className="text-gray-500 italic">Click map to add nodes...</p> : 
+        <div className="flex-1 p-6 bg-black overflow-y-auto border-l border-slate-800 font-mono text-xs shadow-inner">
+          <h2 className="text-cyan-400 mb-6 border-b border-slate-800 pb-2 uppercase tracking-tighter font-black">
+            Adjacency Matrix (Binary)
+          </h2>
+          {nodes.length === 0 ? (
+            <p className="text-slate-600 italic">Click map to add nodes...</p>
+          ) : (
             matrix.map((row, i) => (
-              <div key={i} className="mb-2">
-                <span className="text-cyan-500 mr-2">N{i}:</span>
-                [{row.map((val, j) => (
-                  <span key={j} className={val === Infinity ? "text-gray-700" : "text-green-400"}>
-                    {val === Infinity ? " ∞" : ` ${val}`}
-                  </span>
-                ))}]
+              <div key={i} className="mb-3 flex items-center">
+                <span className="text-cyan-800 mr-3 font-bold">N{i}:</span>
+                <span className="text-green-500 bg-slate-900 px-3 py-1 rounded tracking-[0.3em] font-bold">
+                  [ {row.join(" ")} ]
+                </span>
               </div>
             ))
-          }
+          )}
         </div>
       </div>
+
+      <style jsx global>{`
+        .node-tooltip {
+          background: transparent !important;
+          border: none !important;
+          box-shadow: none !important;
+          color: #00f2ff !important;
+          font-weight: 800 !important;
+          text-shadow: 2px 2px 4px black;
+        }
+      `}</style>
     </div>
   );
 }
