@@ -245,7 +245,7 @@ function checkCarInsideFacility(currentLat, currentLng, facilityPolygons, facili
     // Log details of the check
     const facilityIdString = facilityId || 'Unknown Facility ID';
     // Use the collected details for the final failure log
-    console.log(`   ❌ OUTSIDE all polygons for Facility ${facilityIdString}. Checked: ${checkedPolygons.join(', ')}`);
+    console.log(`   OUTSIDE all polygons for Facility ${facilityIdString}. Checked: ${checkedPolygons.join(', ')}`);
   }
   return { inside: false, facilityIdCheck: null, slotNumber: null, cpSlotId: null };
 }
@@ -263,7 +263,7 @@ async function sendNotification(chipId, facilityName, carData, slotNumber) {
       .from('cars')
       .update({ notification_sent_check: true })
       .eq('id', carData.id)
-      .eq('notification_sent_check', false); // EH ZAROORI HAI: Sirf tan update hove je pehla false si
+      .eq('notification_sent_check', false); 
 
     if (lockError) {
       console.error(`[${chipId}] Error locking notification status:`, lockError.message);
@@ -409,55 +409,59 @@ async function sendParkedNotification(chipId, facilityName, carData, slotNumber)
         console.log(`++++ Fetched ${tokensToSend.length} tokens for PARKED broadcast.`);
 
         if (tokensToSend.length > 0) {
-            const response = await admin.messaging().sendEachForMulticast({
-                tokens: tokensToSend,
+            // const response = await admin.messaging().sendEachForMulticast({
+            //     tokens: tokensToSend,
                 
-                // UI notification (Android + iOS)
-                notification: {
-                    title,
-                    body: message,
-                },
+            //     // UI notification (Android + iOS)
+            //     notification: {
+            //         title,
+            //         body: message,
+            //     },
 
-                // Data payload
-                data: {
-                    chip_id: chipId.toString(),
-                    facility: facilityName,
-                    slot: String(slotNumber),
-                    title,
-                    body: message,
-                    type: 'car_parked_confirmed'
-                },
+            //     // Data payload
+            //     data: {
+            //         chip_id: chipId.toString(),
+            //         facility: facilityName,
+            //         slot: String(slotNumber),
+            //         title,
+            //         body: message,
+            //         type: 'car_parked_confirmed'
+            //     },
                 
-                // Android specific
-                android: {
-                    priority: 'high',
-                    notification: {
-                        channelId: 'default-channel-id',
-                        sound: 'default',
-                    },
-                },
+            //     // Android specific
+            //     android: {
+            //         priority: 'high',
+            //         notification: {
+            //             channelId: 'default-channel-id',
+            //             sound: 'default',
+            //         },
+            //     },
                 
-                // iOS / APNs config
-                apns: {
-                    headers: {
-                        'apns-priority': '10', // Immediate delivery
-                    },
-                    payload: {
-                        aps: {
-                            alert: {
-                                title,
-                                body: message,
-                            },
-                            sound: 'default',
-                            'content-available': 1,
-                        },
-                    },
-                },
-            });
+            //     // iOS / APNs config
+            //     apns: {
+            //         headers: {
+            //             'apns-priority': '10', // Immediate delivery
+            //         },
+            //         payload: {
+            //             aps: {
+            //                 alert: {
+            //                     title,
+            //                     body: message,
+            //                 },
+            //                 sound: 'default',
+            //                 'content-available': 1,
+            //             },
+            //         },
+            //     },
+            // });
 
-            console.log(`FCM Broadcast (Parked) Sent successfully to ${response.successCount} tokens.`);
+            // console.log(`FCM Broadcast (Parked) Sent successfully to ${response.successCount} tokens.`);
 
             // 2. Update parkedNotification flag only upon successful sending
+            
+            console.log("car location parked have send ============= ");
+            
+            
             const { error: updateError } = await supabase
                 .from("cars")
                 .update({
@@ -537,20 +541,38 @@ async function checkParkedStability(chipId) {
         const slotNumber = slotPolygons[0].slot_number;
         const facilityName = await getFacilityName(facilityId); // Use the main facilityId for name
         
-        console.log(`\n ✅ [${chipId}] PARKED CONFIRMATION: Stable and inside facility slot ${slotNumber}.`);
+        console.log(`\n  [${chipId}] PARKED CONFIRMATION: Stable and inside facility slot ${slotNumber}.`);
         
+        const { error: updateError } = await supabase
+                .from("cars")
+                .update({
+                    parkedNotification: true
+                })
+                .eq("id", carData.id);
+
+                if (updateError) {
+                  console.error('DB update failed after successful PARKED FCM send. Re-notification possible.', updateError);
+                  return false;
+              }
+  
+              console.log("DB updated: parkedNotification set to TRUE.");
+              return true;
+          } else {
+              console.log("No active FCM tokens for parked notification. DB flag remains false.");
+              return false;
+          }
+
+
         // Send notification and set parkedNotification to true (in DB upon success)
-        await sendParkedNotification(chipId, facilityName, carRow, slotNumber);
-    } else {
-        console.log(`[${chipId}] Park Check completed: Car moved or left facility after end event.`);
-    }
+        // await sendParkedNotification(chipId, facilityName, carRow, slotNumber);
+    
 }
 
 /**
  * Schedules the checkParkedStability function for a later time.
  */
 function scheduleParkCheck(chipId, delay) {
-    console.log(`\n ⏱️ [${chipId}] Scheduled Park Check to run in ${delay / 1000} seconds.`);
+    console.log(`\n  [${chipId}] Scheduled Park Check to run in ${delay / 1000} seconds.`);
     
     setTimeout(() => {
         // The check will run independently after the delay
@@ -603,7 +625,7 @@ async function checkSlotExitNotification(carRow, lat, lon) {
 
     // If car is outside the slot, send notification
     if (!slotCheck.inside) {
-        console.log(`\n 🚨 ALERT: Car ${chipId} has LEFT Slot ${slotNumber}!`);
+        console.log(`\n  ALERT: Car ${chipId} has LEFT Slot ${slotNumber}!`);
         
         const facilityName = await getFacilityName(facilityId);
         
@@ -726,7 +748,7 @@ async function handleFacilityStateUpdate(carRow, lat, lon, isMoving, eventName =
   if (!isEndMovement && previousInside && !currentInside && !notificationSent && !notificationTriggered) {
     
     const alertTarget = carRow.facilityId ? `Facility ${carRow.facilityId}` : 'Facility';
-    console.log(`\n 🚨 ALERT: Car ${chipId} LEFT the ${alertTarget} (Full Facility Exit)!`);
+    console.log(`\n  ALERT: Car ${chipId} LEFT the ${alertTarget} (Full Facility Exit)!`);
 
     if (carRow.facilityId) {
       facilityName = await getFacilityName(carRow.facilityId); // Correctly assigns to initialized variable

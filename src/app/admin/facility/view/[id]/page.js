@@ -208,7 +208,8 @@ export default function ViewFacilityPage() {
 
       // Added &pattern= to the URL
       const apiUrl = `${process.env.NEXT_PUBLIC_AI_BACKEND_URL}/coordinates?p1=${p[0]}&p2=${p[1]}&p3=${p[2]}&p4=${p[3]}&pattern=${pattern}`;
-
+      console.log("api",apiUrl);
+      
       const response = await fetch(apiUrl, {
         method: "GET", // Be explicit
         mode: "cors", // Force CORS mode
@@ -218,13 +219,25 @@ export default function ViewFacilityPage() {
           Accept: "application/json",
         },
       });
+
+      // console.log(response);
+      
       const result = await response.json();
 
-      if (result.status === "success" && result.detected_polygons) {
+      if (result.status === "success" && result.detected_polygons_gps) {
         // 3. Transform to Slot-Based Format
-        const aiPolygons = result.detected_polygons.map((poly, index) => ({
+        // const aiPolygons = result.detected_polygons.map((poly, index) => ({
+        //   slot: index + 1,
+        //   coordinates: poly.map((c) => ({ lat: c[1], lng: c[0] })),
+        // }));
+        const aiPolygons = result.detected_polygons_gps.map((poly, index) => ({
           slot: index + 1,
-          coordinates: poly.map((c) => ({ lat: c[1], lng: c[0] })),
+          // Since your output is [[lat, lng], [lat, lng]...], 
+          // point[0] is Latitude and point[1] is Longitude
+          coordinates: poly.map((point) => ({ 
+            lat: point[0], 
+            lng: point[1] 
+          })),
         }));
 
         // 4. Update state
