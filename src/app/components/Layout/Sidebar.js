@@ -55,31 +55,35 @@ export default function Sidebar({ collapsed, isLogoutModalOpen }) {
       <section
         id="sidebar"
         className={`${
-          collapsed ? "w-[80px]" : "w-[220px]"
-        } min-h-[100vh] bg-white z-[2000] transition-all duration-300 ease-in-out overflow-x-hidden flex flex-col ${
+          collapsed ? "w-[80px]" : "w-full"
+        } sticky top-0 h-screen min-h-[100vh] bg-black z-[2000] transition-all duration-300 ease-in-out overflow-x-hidden flex flex-col ${
           isAnyLogoutModalOpen ? "pointer-events-none blur-sm opacity-60" : ""
         }`}
       >
         {/* Brand */}
         <div className="flex-shrink-0">
-          <Link
+          
+         <div className="" >
+         <Link
             href="#"
             className={`flex items-center ${
-              collapsed ? "justify-center" : "gap-2 pl-8"
-            } text-2xl font-bold text-[#003F65] h-14 px-4 ${collapsed ?"mt-1" :"mt-5"}`}
+              collapsed ? "justify-center" : "gap-2 LogoPadding pt-6"
+            } text-2xl font-bold text-black h-14 px-4 ${collapsed ?"mt-1" :"mt-5"}`}
           >
+            
             <Image
-              src="/dashboard_ion.png"
+              src="/nissan.png"
               alt="GPS Dashboard"
-              width={collapsed ? 60 : 140}
+              width={collapsed ? 60 : 90}
               height={32}
               unoptimized
               priority
             />
           </Link>
+         </div>
 
           {/* Top Menu */}
-          <ul className="mt-12 space-y-2">
+          <ul className="mt-12 space-y-2 text-white">
             {links.map((link) => {
               const isActive =
                 pathname === link.href || pathname.startsWith(link.href + "/");
@@ -96,8 +100,8 @@ export default function Sidebar({ collapsed, isLogoutModalOpen }) {
                       collapsed ? "justify-center" : "gap-3 px-4"
                     } text-[16px] font-medium rounded-full py-2 whitespace-nowrap ${
                       isActive
-                        ? "text-[#003F65]"
-                        : "text-[#333333] hover:text-[#003F65]"
+                        ? "text-black"
+                        : "text-white hover:text-white"
                     }`}
                   >
                     <span>{link.icon}</span>
@@ -110,7 +114,7 @@ export default function Sidebar({ collapsed, isLogoutModalOpen }) {
         </div>
 
         {/* Bottom Menu */}
-        <ul className="space-y-2 mb-4 mt-auto">
+        {/* <ul className="space-y-2 mb-4 mt-auto">
           <li>
             <button
               onClick={() => setShowLogoutConfirm(true)}
@@ -122,7 +126,7 @@ export default function Sidebar({ collapsed, isLogoutModalOpen }) {
               {!collapsed && <span className="font-bold">Logout</span>}
             </button>
           </li>
-        </ul>
+        </ul> */}
       </section>
 
       {/* Logout Confirmation Modal - Outside sidebar to prevent re-render issues */}

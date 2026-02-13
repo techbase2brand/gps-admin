@@ -1,17 +1,21 @@
 "use client";
-
 import Navbar from "../../components/Layout/Navbar";
 import Sidebar from "../../components/Layout/Sidebar";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FiEdit } from "react-icons/fi";
 import { MdDeleteOutline } from "react-icons/md";
 import useStaffForm from "../../hooks/useStaffForm";
+import client from "../../api/client.js"
 
 function page() {
   const {
     staffData,
+    totalCount,
+    currentPage,
+    setCurrentPage,
+    itemsPerPage,
     addStaff,
     editStaff,
     deleteStaff,
@@ -32,6 +36,15 @@ function page() {
     "Settings",
   ];
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+
+  const [data, setData] = useState({
+    "title": "",
+    "confirm": "",
+    "reject": ""
+  })
+
+  const [newDeleteRequest, setNewDeleteRequest] = useState({})
   const [staffToDelete, setStaffToDelete] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
@@ -39,6 +52,32 @@ function page() {
   const [dateSortOrder, setDateSortOrder] = useState("desc"); // newest first by default
   const [sortBy, setSortBy] = useState("name"); // "name", "date", "email", "contact", "status"
   const [statusFilter, setStatusFilter] = useState("all");
+  const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    const channel = client
+      .channel('staff-table-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'staff',
+        },
+        (payload) => {
+          // console.log("Database changed!", payload);
+          let val=Math.random()
+          setCurrentPage(prev => val)
+          // console.log("setCurrentPage working ",staffData)
+          
+        }
+      )
+      .subscribe();
+
+    return () => {
+      client.removeChannel(channel);
+    };
+  }, [currentPage]);
 
   // Filter by status
   const filteredStaffData = staffData.filter((staff) => {
@@ -95,25 +134,30 @@ function page() {
     }
   };
 
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
+
   const handleResetFilters = () => {
     setSearchQuery("");
     setStatusFilter("all");
     setSortBy("name");
     setNameSortOrder("asc");
   };
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    password:"",
+    password: "",
     contact: "",
     joiningDate: "",
     role: "",
     permissions: [],
   });
+
   const [collapsed, setCollapsed] = useState(false);
   const [isNavbarLogoutModalOpen, setIsNavbarLogoutModalOpen] = useState(false);
 
   const toggleSidebar = () => setCollapsed(!collapsed);
+
   const openModal = (staff = null) => {
     setEditingStaff(staff);
     if (staff) {
@@ -170,9 +214,10 @@ function page() {
     }
   };
 
-  const confirmDelete = (id) => {
+  const confirmDelete = (id, data = {}) => {
     setStaffToDelete(id);
     setShowDeleteModal(true);
+    setData(data);
   };
 
   const handleDelete = () => {
@@ -180,9 +225,50 @@ function page() {
     setShowDeleteModal(false);
     setStaffToDelete(null);
   };
-  const handleSubmit = (e) => {
+
+
+
+  const handleSmtp = async () => {
+    // console.log("clicked smtp",formData);
+    if (editingStaff) {
+      // console.log("Editing mode: Skipping SMTP notification");
+      return;
+    }
+    if (formData.password) {
+      let postData = {
+        email: formData.email,
+        username: formData.name,
+        password: formData.password
+      }
+
+      const response = await fetch("/api/smtp",
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(postData),
+        })
+    }
+  }
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.name?.trim()) newErrors.name = "Name is required";
+    if (!formData.email?.trim()) newErrors.email = "Email is required";
+    if (!editingStaff && !formData.password) newErrors.password = "Password is required";
+    if (!formData.contact) newErrors.contact = "Contact number is required";
+    if (!formData.joiningDate) newErrors.joiningDate = "Joining date is required";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => { // 1. Added 'async'
     e.preventDefault();
-    
+
+    if (!validateForm()) return;
+
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
@@ -192,311 +278,311 @@ function page() {
 
     const finalData = {
       ...formData,
-      role: null,  // Send null for now
-      permissions: null  // Send null for now
+      role: null,
+      permissions: null
     };
-    if (editingStaff) {
-      editStaff(editingStaff.id, finalData);
-    } else {
-      addStaff(finalData);
+
+    try {
+      if (editingStaff) {
+        // Wait for the edit to finish
+        await editStaff(editingStaff.id, finalData);
+        toast.success("Staff updated!");
+      } else {
+        // 2. Await the result from addStaff
+        const result = await addStaff(finalData);
+
+        // 3. ONLY if the database save worked, trigger the email
+        if (result && result.success) {
+          console.log("DB Success! Now sending SMTP...");
+          await handleSmtp(); // This is where we trigger the email
+          toast.success("Staff added and email sent!");
+        } else {
+          // If addStaff returned success: false (like duplicate email)
+          toast.error(result?.message || "Could not add staff");
+          return; // Stop here! Don't close the modal.
+        }
+      }
+
+      // 4. Only close the modal if everything worked
+      closeModal();
+
+    } catch (error) {
+      console.error("Submit Error:", error);
+      toast.error("Something went wrong. Check console.");
     }
-    closeModal();
   };
 
   return (
-    <div className="flex bg-[#fff] min-h-screen">
-      <Sidebar collapsed={collapsed} isLogoutModalOpen={isNavbarLogoutModalOpen} />
-      <div className="flex flex-col flex-1 min-h-screen bg-[#fff]">
-        <Navbar
-          title={"Staff"}
-          collapsed={collapsed}
-          toggleSidebar={toggleSidebar}
-          onLogoutModalChange={setIsNavbarLogoutModalOpen}
-        />
-        <div
-          className={`flex-1 p-4 bg-[#F8F8F8] rounded-2xl ${
-            collapsed ? "w-[95vw]" : "w-[86vw]"
-          } min-h-[calc(100vh-80px)]`}
-        >
-            <div className="container mx-auto p-4">
-              <ToastContainer />
+    <div className="flex bg-[#fff] min-h-screen ">
 
-              {/* Search, Role Filter, Add Staff, Reset */}
-              <div className="mb-4 flex justify-between items-center mt-10 mb-10">
-                <div className="flex space-x-3 items-center">
-                  <input
-                    type="text"
-                    placeholder="Search by name or email..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-80 px-4 py-2 border border-gray-300 rounded-lg text-[#333333] placeholder-[#666666] focus:outline-none focus:border-[#003F65]"
-                  />
-                  <div className="relative w-40 mr-4">
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      className="w-full px-4 py-2 pr-8 border border-gray-300 rounded-lg text-[#333333] focus:outline-none focus:border-[#003F65] appearance-none bg-white"
-                    >
-                      <option value="all">All Status</option>
-                      <option value="Active">Active</option>
-                      <option value="Inactive">Inactive</option>
-                    </select>
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                      <svg className="w-4 h-4 text-[#666666]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </div>
-                  {(searchQuery || statusFilter !== "all" || sortBy !== "name" || nameSortOrder !== "asc") && (
-                    <button
-                      onClick={handleResetFilters}
-                      className="px-4 py-2 border border-[#666666] text-[#333333] rounded-lg hover:bg-[#F8F8F8] transition-colors"
-                    >
-                      Reset
-                    </button>
-                  )}
-                </div>
-                
-                <div>
-                  <button
-                    onClick={() => openModal()}
-                    className="px-6 py-2 bg-[#003F65] text-white rounded-full shadow-md hover:bg-[#003F65] transition-colors"
+      <Sidebar collapsed={collapsed} isLogoutModalOpen={isNavbarLogoutModalOpen} />
+
+      <div className="flex flex-col flex-1 min-h-screen bg-[#fff]">
+        <Navbar title={"Staff"} collapsed={collapsed} toggleSidebar={toggleSidebar} onLogoutModalChange={setIsNavbarLogoutModalOpen} />
+
+        <div
+          className={`flex-1 p-4 bg-[#F8F8F8]  gradient ${collapsed ? "w-[95vw]" : "w-[87vw]"
+            } min-h-[calc(100vh-80px)]`}
+        >
+          <div className="">
+
+            <ToastContainer />
+
+            {/* Search, Role Filter, Add Staff, Reset */}
+            <div className="mb-4 flex justify-between items-center mt-10 mb-10">
+
+              <div className="flex space-x-3 items-center">
+                <input
+                  type="text"
+                  placeholder="Search by name or email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-80 px-4 py-2 border border-gray-300  bg-white rounded-lg text-[#333333] placeholder-[#666666] focus:outline-none focus:border-black"
+                />
+
+                <div className="relative w-40 mr-4">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full px-4 py-2 pr-8 border border-gray-300 rounded-lg text-[#333333] focus:outline-none focus:border-black appearance-none bg-white"
                   >
-                    + Add Staff
-                  </button>
+                    <option value="all">All Status</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                    <svg className="w-4 h-4 text-[#666666]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
+
+                {(searchQuery || statusFilter !== "all" || sortBy !== "name" || nameSortOrder !== "asc") && (
+                  <button
+                    onClick={handleResetFilters}
+                    className="px-4 py-2 border border-[#666666] text-[#333333] rounded-lg hover:bg-[#F8F8F8] transition-colors"
+                  >
+                    Reset
+                  </button>
+                )}
               </div>
 
-              {/* Side Modal */}
-              {isOpen && (
-                <div className="fixed inset-0 flex justify-end bg-black/50 z-999999">
-                  <div className="bg-white w-full max-w-md h-full overflow-y-auto shadow p-6 relative transition-transform translate-x-0">
-                    <button
-                      onClick={closeModal}
-                      className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
-                    >
-                      ✕
-                    </button>
+              <div>
+                <button
+                  onClick={() => openModal()}
+                  className="px-6 py-2 bg-black text-white rounded-full shadow-md hover:bg-black transition-colors"
+                >
+                  Add Staff
+                </button>
+              </div>
 
-                    <h2 className="text-xl text-[#333333] font-semibold mb-4">
-                      {editingStaff ? "Edit" : "Add"} Staff
-                    </h2>
+            </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Side Modal */}
+            {isOpen && (
+              <div className="fixed inset-0 flex justify-end bg-black/50 z-999999" onClick={() => closeModal()}>
+                <div className="bg-white w-full max-w-md h-full overflow-y-auto shadow p-6 relative transition-transform translate-x-0" onClick={(e) => e.stopPropagation()}>
+
+                  <button
+                    onClick={closeModal}
+                    className="absolute top-5 right-8 text-gray-600 hover:text-gray-800"
+                  >
+                    ✕
+                  </button>
+
+                  <h2 className="text-xl text-[#333333] font-semibold mb-4">
+                    {editingStaff ? "Edit" : "Add"} Staff
+                  </h2>
+
+                  <form onSubmit={handleSubmit} className="space-y-4">
+
+                    <div>
                       <input
                         name="name"
-                        placeholder="Name"
+                        placeholder="Name *"
                         value={formData.name}
                         onChange={handleChange}
                         className="w-full border px-3 py-2 rounded text-[#333333] placeholder-[#666666]-400"
-                        required
-                      />
 
+                      />
+                      {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+                    </div>
+
+                    <div>
                       <input
                         name="email"
                         type="email"
-                        placeholder="Email"
+                        placeholder="Email *"
                         value={formData.email}
                         onChange={handleChange}
                         className="w-full border px-3 py-2 rounded text-[#333333] placeholder-[#666666]-400"
-                        required
-                      />
 
-                      {/* {!editingStaff && ( */}
+                      />
+                      {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                    </div>
+
+                    <div>
+                      {!editingStaff && (
                         <input
                           name="password"
                           type="password"
-                          placeholder="Password"
+                          placeholder="Password *"
                           value={formData.password}
                           onChange={handleChange}
                           className="w-full border px-3 py-2 rounded text-[#333333] placeholder-[#666666]-400"
-                          required
-                        />
-                      {/* )} */}
 
+                        />
+                      )}
+                      {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+                    </div>
+
+                    <div>
                       <input
                         name="contact"
-                        placeholder="Contact Number"
+                        type="number"
+                        placeholder="Contact Number *"
                         value={formData.contact}
                         onChange={handleChange}
                         className="w-full border px-3 py-2 rounded text-[#333333] placeholder-[#666666]-400"
-                        required
-                      />
 
+                      />
+                      {errors.contact && <p className="text-red-500 text-sm mt-1">{errors.contact}</p>}
+                    </div>
+
+                    <div>
                       <input
                         name="joiningDate"
                         type="date"
+                        placeholder="Date *"
                         value={formData.joiningDate}
                         onChange={handleChange}
+                        onClick={(e) => e.target.showPicker()}
                         className="w-full border px-3 py-2 rounded text-[#333333] placeholder-[#666666]-400"
-                        required
+
                       />
+                      {errors.joiningDate && <p className="text-red-500 text-sm mt-1">{errors.joiningDate}</p>}
+                    </div>
 
-                      {/* Role Select - Commented for now */}
-                      {/* <select
-                        name="role"
-                        value={formData.role}
-                        onChange={handleChange}
-                        className="w-full border px-3 py-2 rounded text-[#333333]"
-                        required
+                    <div className="fixed bottom-0 left-0 w-full max-w-md bg-white p-4 border-t flex justify-between gap-4">
+                      <button
+                        type="button"
+                        onClick={closeModal}
+                        className="bg-[#666666] text-white px-4 py-2 w-[50%] rounded hover:bg-[#666666]"
                       >
-                        <option value="">Select Role</option>
-                        <option value="Admin">Admin</option>
-                        <option value="Staff">Staff</option>
-                      </select> */}
-
-                      {/* Permissions - Commented for now */}
-                      {/* <div>
-                        <p className="font-bold mb-1 text-[#333333]">Permissions</p>
-                        <div className="flex flex-col gap-2">
-                          <label className="flex items-center gap-2 text-[#333333]">
-                            <input
-                              type="checkbox"
-                              checked={
-                                formData.permissions.length ===
-                                allPermissions.length
-                              }
-                              onChange={() => handlePermissionChange("All")}
-                            />
-                            <p> Select All</p>
-                          </label>
-                          {allPermissions?.map((perm) => (
-                            <label
-                              key={perm}
-                              className="flex items-center gap-2 text-[#333333]"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={formData.permissions.includes(perm)}
-                                onChange={() => handlePermissionChange(perm)}
-                              />
-                              <p> {perm} </p>
-                            </label>
-                          ))}
-                        </div>
-                      </div> */}
-
-                      {/* <button
+                        Cancel
+                      </button>
+                      <button
                         type="submit"
-                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                        // onClick={handleSmtp}
+                        className="bg-black text-white px-4 py-2 w-[50%] rounded hover:bg-black"
                       >
-                        {editingStaff ? "Update" : "Save"}
-                      </button> */}
-                      <div className="fixed bottom-0 left-0 w-full max-w-md bg-white p-4 border-t flex justify-between gap-4">
-                        <button
-                          type="button"
-                          onClick={closeModal}
-                          className="bg-[#666666] text-white px-4 py-2 w-[50%] rounded hover:bg-[#666666]"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          className="bg-[#003F65] text-white px-4 py-2 w-[50%] rounded hover:bg-[#003F65]"
-                        >
-                          {editingStaff ? "Update" : "Submit"}
-                        </button>
-                      </div>
-                    </form>
-                  </div>
+                        {editingStaff ? "Update" : "Submit"}
+                      </button>
+                    </div>
+                  </form>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Staff Table */}
-              <table className="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
-                <thead>
-                  <tr className="text-left border-b bg-gray-300">
-                    <th 
-                      className="p-2 text-[#333333] cursor-pointer hover:bg-[#F8F8F8] transition-colors"
-                      onClick={toggleNameSort}
-                    >
-                      <div className="flex items-center gap-2">
-                        NAME
-                        {sortBy === "name" && (
-                          <span className="text-sm">
-                            {nameSortOrder === "asc" ? "↑" : "↓"}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                    <th 
-                      className="p-2 text-[#333333] cursor-pointer hover:bg-[#F8F8F8] transition-colors select-none"
-                      onClick={() => handleColumnSort("email")}
-                    >
-                      <div className="flex items-center gap-2">
-                        EMAIL
-                        {sortBy === "email" && (
-                          <span className="text-[#003F65]">
-                            {nameSortOrder === "asc" ? "↑" : "↓"}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                    <th 
-                      className="p-2 text-[#333333] cursor-pointer hover:bg-[#F8F8F8] transition-colors select-none"
-                      onClick={() => handleColumnSort("contact")}
-                    >
-                      <div className="flex items-center gap-2">
-                        CONTACT
-                        {sortBy === "contact" && (
-                          <span className="text-[#003F65]">
-                            {nameSortOrder === "asc" ? "↑" : "↓"}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                    <th 
-                      className="p-2 text-[#333333] cursor-pointer hover:bg-[#F8F8F8] transition-colors"
-                      onClick={toggleDateSort}
-                    >
-                      <div className="flex items-center gap-2">
-                        JOINING DATE
-                        {sortBy === "date" && (
-                          <span className="text-sm">
-                            {dateSortOrder === "asc" ? "↑" : "↓"}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                    {/* <th className="p-2 text-[#333333]">ROLE</th> */}
-                    <th 
-                      className="p-2 text-[#333333] cursor-pointer hover:bg-[#F8F8F8] transition-colors select-none"
-                      onClick={() => handleColumnSort("status")}
-                    >
-                      <div className="flex items-center gap-2">
-                        STATUS
-                        {sortBy === "status" && (
-                          <span className="text-[#003F65]">
-                            {nameSortOrder === "asc" ? "↑" : "↓"}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                    {/* <th className="p-2 text-[#333333]">PUBLISHED</th> */}
-                    <th className="p-2 text-[#333333]">ACTIONS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedStaffData?.map((staff) => (
-                    <tr key={staff.id} className="border-b border-gray-300">
-                      <td className="p-2 text-[#333333]">{staff.name}</td>
-                      <td className="p-2 text-[#333333]">{staff.email}</td>
-                      <td className="p-2 text-[#333333]">{staff.contact}</td>
-                      <td className="p-2 text-[#333333]">{staff.joiningDate}</td>
-                      {/* <td className="p-2 text-[#333333]">{staff.role}</td> */}
-                      <td className="p-2 text-[#333333]">
-                        <button
-                          // onClick={() => togglePublished(staff.id)}
-                          className={`px-4 py-1 rounded-full ${
-                            staff.status === "Active"
-                              ? "bg-green-100 text-green-500"
-                              : "bg-red-100 text-red-500"
+            {/* Staff Table */}
+            <table className="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
+
+              <thead>
+                <tr className="text-left border-b bg-black">
+                  <th
+                    className="p-2  cursor-pointer transition-colors"
+                    onClick={toggleNameSort}
+                  >
+                    <div className="flex items-center gap-2 text-white">
+                      NAME
+                      {sortBy === "name" && (
+                        <span className="text-sm">
+                          {nameSortOrder === "asc" ? "↑" : "↓"}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    className="p-2 cursor-pointer transition-colors select-none text-white"
+                    onClick={() => handleColumnSort("email")}
+                  >
+                    <div className="flex items-center gap-2">
+                      EMAIL
+                      {sortBy === "email" && (
+                        <span className="text-black">
+                          {nameSortOrder === "asc" ? "↑" : "↓"}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    className="p-2 text-[#333333] cursor-pointer transition-colors select-none text-white"
+                    onClick={() => handleColumnSort("contact")}
+                  >
+                    <div className="flex items-center gap-2">
+                      CONTACT
+                      {sortBy === "contact" && (
+                        <span className="text-black">
+                          {nameSortOrder === "asc" ? "↑" : "↓"}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    className="p-2 cursor-pointer transition-colors text-white"
+                    onClick={toggleDateSort}
+                  >
+                    <div className="flex items-center gap-2">
+                      JOINING DATE
+                      {sortBy === "date" && (
+                        <span className="text-sm">
+                          {dateSortOrder === "asc" ? "↑" : "↓"}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  {/* <th className="p-2 text-[#333333]">ROLE</th> */}
+                  <th
+                    className="p-2 cursor-pointer transition-colors select-none"
+                    onClick={() => handleColumnSort("status")}
+                  >
+                    <div className="flex items-center gap-2 text-white">
+                      STATUS
+                      {sortBy === "status" && (
+                        <span className="text-black">
+                          {nameSortOrder === "asc" ? "↑" : "↓"}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  {/* <th className="p-2 text-[#333333]">PUBLISHED</th> */}
+                  <th className="p-2 text-white">ACTIONS</th>
+                </tr>
+              </thead>
+
+              <tbody>
+
+                {sortedStaffData?.map((staff) => (
+                  <tr key={staff.id} className="border-b border-gray-300">
+                    <td className="p-2 text-[#333333]">{staff.name}</td>
+                    <td className="p-2 text-[#333333]">{staff.email}</td>
+                    <td className="p-2 text-[#333333]">{staff.contact}</td>
+                    <td className="p-2 text-[#333333]">{staff.joiningDate}</td>
+                    {/* <td className="p-2 text-[#333333]">{staff.role}</td> */}
+                    <td className="p-2 text-[#333333]">
+
+                      <button
+                        // onClick={() => togglePublished(staff.id)}
+                        className={`px-4 py-1 rounded-full ${staff.status === "Active"
+                          ? "bg-green-100 text-green-500"
+                          : "bg-red-100 text-red-500"
                           }`}
-                        >
-                          {staff.status}
-                        </button>
-                      </td>
-                      {/* <td className="p-2">
+                      >
+                        {staff.deleteAccount ? "Delete Request" : staff.status}
+                      </button>
+
+                    </td>
+                    {/* <td className="p-2">
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input
                             type="checkbox"
@@ -514,53 +600,101 @@ function page() {
                           ></span>
                         </label>
                       </td> */}
-                      <td className="p-2">
+                    <td className="p-2">
+                      {/* delete request */}
+                      {/* {staff.deleteAccount && <button
+                        className="ml-4 text-red-500"
+                        onClick={() => confirmDelete(staff.id, {
+                          "title": "confirm the user request for delete",
+                          "confirm": "Yes",
+                          "reject": "No"
+                        })}
+                      >
+                        <MdDeleteOutline size={20} className="text-Red-500" />
+                      </button>} */}
+
+                      <button
+                        className="ml-4 text-red-500"
+                        onClick={() => openModal(staff)}
+                      >
+                        {" "}
+                        <FiEdit size={16} className="text-green-500" />
+                      </button>
+                      <button
+                        className="ml-4 text-red-500"
+                        onClick={() => confirmDelete(staff.id)}
+                      >
+                        <MdDeleteOutline size={20} className="text-Red-500" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+
+
+
+                {/* Delete Confirmation Modal */}
+                {showDeleteModal && (
+                  <div className="fixed inset-0 bg-black/50  flex justify-center items-center z-50">
+                    <div className="bg-white p-6 rounded shadow-md w-full max-w-sm">
+                      <h3 className="text-lg text-[#333333] font-semibold mb-4">
+                        {data.title ?? "Confirm Delete"}
+                      </h3>
+                      <p className="mb-6 text-[#333333]">
+                        Are you sure you want to delete this staff member?
+                      </p>
+                      <div className="flex justify-end gap-4">
                         <button
-                          className="ml-4 text-red-500"
-                          onClick={() => openModal(staff)}
+                          onClick={() => {
+                            setShowDeleteModal(false)
+                            setData({})
+                          }}
+                          className="px-4 py-2 border border-lg rounded"
                         >
-                          {" "}
-                          <FiEdit size={16} className="text-green-500" />
+                          {data.reject ?? "Cancel"}
                         </button>
                         <button
-                          className="ml-4 text-red-500"
-                          onClick={() => confirmDelete(staff.id)}
+                          onClick={handleDelete}
+                          className="px-4 py-2 bg-red-500 text-white rounded"
                         >
-                          <MdDeleteOutline size={20} className="text-Red-500" />
+                          {data.confirm ?? "Delete"}
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {/* Delete Confirmation Modal */}
-                  {showDeleteModal && (
-                    <div className="fixed inset-0 bg-black/50  flex justify-center items-center z-50">
-                      <div className="bg-white p-6 rounded shadow-md w-full max-w-sm">
-                        <p className="mb-6 text-[#333333]">
-                          Are you sure you want to delete this staff member?
-                        </p>
-                        <div className="flex justify-end gap-4">
-                          <button
-                            onClick={() => setShowDeleteModal(false)}
-                            className="px-4 py-2 bg-green-500 rounded"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={handleDelete}
-                            className="px-4 py-2 bg-red-500 text-white rounded"
-                          >
-                            Delete
-                          </button>
-                        </div>
                       </div>
                     </div>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  </div>
+                )}
+              </tbody>
+            </table>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (<div className="flex justify-between items-center p-4 bg-white border border-gray-300 rounded-b-lg">
+              <p className="text-black text-sm">
+                { }
+                Page {currentPage} of {totalPages}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(prev => prev - 1)}
+                  className="px-4 py-2 border rounded text-black disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(prev => prev + 1)}
+                  className="px-4 py-2 border rounded text-black disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+            </div>)}
+
           </div>
+
         </div>
+
       </div>
+    </div>
   );
 }
 

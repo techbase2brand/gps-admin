@@ -1,22 +1,30 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import client from "../api/client"; // adjust path as per your project
+import client from "../api/client"; 
 
 export default function useCRUD(storageKey) {
+
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1); 
+  const itemsPerPage = 10;
 
-  const fetchAll = async () => {
+  const fetchAll = async (page = 1, limit = 10) => {
     try {
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
       setLoading(true);
-      const { data, error } = await client
+      const { data, error,count } = await client
         .from(storageKey)
-        .select("*")
-        .order("id", { ascending: true });
+        .select("*",{count:'exact'})
+        .order("id", { ascending: true })
+        .range(from,to);
 
       if (error) throw error;
       setData(data);
+      setTotalCount(count || 0)
     } catch (err) {
       console.error("Fetch all error:", err.message);
     } finally {
@@ -27,7 +35,7 @@ export default function useCRUD(storageKey) {
   const addItem = async (item) => {
     try {
       const newItem = {
-        id: Date.now(), // bigint id as per your table schema
+        id: Date.now(), 
         name: item.name || "",
         number: item.number || "",
         city: item.city || "",
@@ -118,8 +126,8 @@ export default function useCRUD(storageKey) {
   };
 
   useEffect(() => {
-    fetchAll();
-  }, [storageKey]);
+    fetchAll(currentPage);
+  }, [storageKey,currentPage]);
 
-  return { data, loading, addItem, updateItem, deleteItem };
+  return { data, loading, addItem, updateItem, deleteItem,currentPage,setCurrentPage,itemsPerPage,totalCount };
 }

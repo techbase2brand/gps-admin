@@ -47,6 +47,7 @@ export default function Navbar({ title, toggleSidebar, collapsed, onLogoutModalC
 
   return (
     <nav className="sticky top-0 left-0 z-[1000] bg-white flex items-center px-6 h-14 gap-6">
+
       {collapsed ? (
         <LuPanelLeftOpen
           size={20}
@@ -60,7 +61,8 @@ export default function Navbar({ title, toggleSidebar, collapsed, onLogoutModalC
           onClick={toggleSidebar}
         />
       )}
-      <span className="text-[#333333] font-bold hover:text-[#003F65]">{title}</span>
+      
+      <span className="text-[#333333] font-bold hover:text-black">{title}</span>
 
       {/* Search */}
       <div className="relative ml-auto max-w-md w-full">
@@ -83,96 +85,79 @@ export default function Navbar({ title, toggleSidebar, collapsed, onLogoutModalC
           />
           <button
             type="submit"
-            className="bg-[#003F65] text-white p-2 rounded-full"
+            className="bg-black text-white p-2 rounded-full"
           >
             <FiSearch size={18} />
           </button>
         </form>
 
-        {/* Search Modal */}
         {showSearchModal && (
-          <div
-            className="absolute left-0 mt-2 mr-10 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden"
-            style={{
-              width: "33vw",
-              maxHeight: "60vh",
-              zIndex: 999999,
-            }}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-[#F8F8F8]">
-              <h3 className="text-lg font-bold text-[#333333]">
-                Search Results
-              </h3>
-              <button
-                onClick={() => setShowSearchModal(false)}
-                className="text-[#666666] hover:text-[#333333] transition-colors p-1 rounded hover:bg-white"
-                title="Close"
-              >
-                ✕
-              </button>
-            </div>
+          <>
+            {/* Backdrop for outside clicks */}
+            <div
+              className="fixed inset-0 z-[999998]"
+              onClick={() => setShowSearchModal(false)}
+            />
 
-            {/* Results */}
-            <div className="overflow-y-auto" style={{ maxHeight: "calc(60vh - 60px)" }}>
-              {results.length === 0 ? (
-                <div className="p-6 text-center">
-                  <p className="text-[#666666]">No results found.</p>
-                </div>
-              ) : (
-                <ul className="divide-y divide-gray-200">
-                  {results?.map((item) => (
-                    <li
-                      key={`${item.type}-${item.id}`}
-                      className="px-4 py-4 text-[#333333] cursor-pointer hover:bg-[#F8F8F8] transition-colors border-b border-gray-100 last:border-b-0"
-                      onClick={() => {
-                        setShowSearchModal(false);
-                        setQuery("");
-                        if (item.type === "Facility") {
-                          router.push(`/admin/facility/view/${item.id}`);
-                        } else if (item.type === "Car") {
-                          router.push(`/admin/cars/view/${item.id}`);
-                        } else if (item.type === "Staff") {
-                          router.push(`/admin/teams`);
-                        }
-                      }}
-                    >
-                      {item.type === "Car" ? (
-                        <div className="flex flex-col gap-3">
-                          <div className="flex items-start gap-4">
-                            <div className="flex-1 border-r border-gray-200 pr-4">
-                              <div className="text-xs font-semibold text-[#666666] mb-1.5 uppercase tracking-wide">VIN</div>
-                              <div className="text-sm font-semibold text-[#333333] break-all">{item.vin}</div>
-                            </div>
-                            {item.chip && (
-                              <div className="flex-1 pl-4">
-                                <div className="text-xs font-semibold text-[#666666] mb-1.5 uppercase tracking-wide">Chip</div>
-                                <div className="text-sm font-semibold text-[#333333] break-all">{item.chip}</div>
-                              </div>
-                            )}
-                          </div>
+            {/* Search Modal - Changed left-0 to right-0 */}
+            <div
+              className="absolute right-0 mt-2 bg-white border border-gray-100 rounded-lg shadow-2xl overflow-hidden"
+              style={{
+                width: "400px", // Fixed width is safer than vw for dropdowns
+                maxHeight: "60vh",
+                zIndex: 999999,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b border-gray-50 bg-white">
+                <h3 className="text-sm font-bold text-gray-900">Search Results</h3>
+                <button onClick={() => setShowSearchModal(false)} className="text-gray-400 hover:text-gray-600">
+                  ✕
+                </button>
+              </div>
+
+              {/* Results List */}
+              <div className="overflow-y-auto" style={{ maxHeight: "calc(60vh - 56px)" }}>
+                {results.length === 0 ? (
+                  <div className="p-8 text-center text-gray-400 text-sm">
+                    No results found
+                  </div>
+                ) : (
+                  <ul className="flex flex-col">
+                    {results?.map((item) => (
+                      <li
+                        key={`${item.type}-${item.id}`}
+                        className="px-5 py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50 cursor-pointer transition-all"
+                        onClick={() => {
+                          setShowSearchModal(false);
+                          setQuery("");
+                          if (item.type === "Facility") {
+                            router.push(`/admin/facility/view/${item.id}`);
+                          } else if (item.type === "Car") {
+                            router.push(`/admin/cars/view/${item.id}`);
+                          } else if (item.type === "Staff") {
+                            router.push(`/admin/teams`);
+                          }
+                        }}
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-blue-600 uppercase mb-0.5">{item.type}</span>
+                          <span className="text-sm font-medium text-gray-800">{item.name || item.vin}</span>
                         </div>
-                      ) : (
-                        <div className="flex flex-col gap-1.5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-[#003F65] bg-[#F8F8F8] px-2 py-0.5 rounded">
-                              {item.type}
-                            </span>
-                          </div>
-                          <span className="text-sm text-[#333333]">{item.name || item.vin || item.email}</span>
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
-          </div>
+          </>
         )}
+
       </div>
 
-      {/* <FiBell size={20} className="hover:animate-bounce text-[#003F65]" /> */}
-      
+      {/* <FiBell size={20} className="hover:animate-bounce text-black" /> */}
+
       {/* Logout Button */}
       <button
         onClick={() => setShowLogoutConfirm(true)}
@@ -180,46 +165,46 @@ export default function Navbar({ title, toggleSidebar, collapsed, onLogoutModalC
         title="Logout"
       >
         <FiLogOut size={16} />
-        <span className="text-sm font-medium">Logout</span>
+        {/* <span className="text-sm font-medium">Logout</span> */}
       </button>
-      
-      <Image
-        src="/dashboard_ion.png"
+
+      {/* <Image
+        src="/nissan.png"
         alt="Profile"
         width={36}
         height={36}
         className="rounded-full object-cover"
         unoptimized
-      />
+      /> */}
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[99999] animate-fadeIn"
           onClick={() => setShowLogoutConfirm(false)}
           style={{ width: '100vw', height: '100vh' }}
         >
-          <div 
-            className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 transform transition-all animate-fadeIn"
+          <div
+            className="bg-white text-black rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 transform transition-all animate-fadeIn"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Icon */}
             <div className="flex justify-center mb-3">
-              <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center">
+              <div className="w-14 h-14 bg-black rounded-full  flex items-center justify-center">
                 <FiLogOut size={28} className="text-[#FF0000]" />
               </div>
             </div>
-            
+
             {/* Title */}
-            <h2 className="text-xl font-bold text-[#333333] mb-2 text-center">
+            <h2 className="text-xl font-bold text-black mb-2 text-center">
               Logout Confirmation
             </h2>
-            
+
             {/* Message */}
-            <p className="text-[#666666] mb-6 text-center text-sm">
+            <p className="text-black mb-6 text-center text-sm">
               Are you sure you want to logout?
             </p>
-            
+
             {/* Buttons */}
             <div className="flex justify-center gap-3">
               <button

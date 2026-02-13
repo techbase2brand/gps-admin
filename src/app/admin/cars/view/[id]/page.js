@@ -45,7 +45,7 @@ export default function ViewCarPage() {
   });
   const { initializeMqtt, disconnect, loading: mqttLoading, error: mqttError, mqttConnected } = useFetchVehicleLocation();
   const polygonOptions = {
-    fillColor: "transparent", // or rgba with opacity if needed
+    fillColor: "transparent", 
     fillOpacity: 0.1,
     strokeColor: "#FF5E62",
     strokeOpacity: 1,
@@ -89,10 +89,10 @@ export default function ViewCarPage() {
     const hasCoords = Boolean(car?.latitude && car?.longitude);
 
     if (!hasCoords && car?.chip) {
-      console.log('📍 [ViewCar] No coords found, initializing MQTT for chip:', car.chip);
+      console.log('[ViewCar] No coords found, initializing MQTT for chip:', car.chip);
 
       const onLocationUpdate = (location) => {
-        console.log('📍 [ViewCar] Location update received:', location);
+        console.log('[ViewCar] Location update received:', location);
         setCar((prev) => ({
           ...prev,
           latitude: location.latitude,
@@ -152,7 +152,7 @@ export default function ViewCarPage() {
   if (!isLoaded || !car) return (
     <div className="flex items-center justify-center min-h-screen w-full">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#003F65] mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
         <p className="text-[#333333] text-lg">Loading...</p>
       </div>
     </div>
@@ -161,7 +161,9 @@ export default function ViewCarPage() {
   return (
     <main>
       <div className="flex bg-[#f7f8fb]">
+        <div>
         <Sidebar />
+        </div>
         <div className="flex-1 p-4 bg-[#F8F8F8]">
           <h1 className="text-2xl font-bold mb-4 text-black">
             Vehicle Details - {car.vin}
@@ -277,7 +279,7 @@ export default function ViewCarPage() {
                     </button>
                     <button
                       onClick={handleSubmitAssignChip}
-                      className="px-4 py-2 rounded bg-[#003F65] text-white hover:opacity-90"
+                      className="px-4 py-2 rounded bg-black text-white hover:opacity-90"
                     >
                       Assign
                     </button>

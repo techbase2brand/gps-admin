@@ -24,7 +24,7 @@ export default function FacilityAddEditPage() {
   if (id !== "add" && !facility) return (
     <div className="flex items-center justify-center min-h-screen w-full">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#003F65] mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
         <p className="text-[#333333] text-lg">Loading...</p>
       </div>
     </div>

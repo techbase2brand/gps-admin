@@ -13,14 +13,15 @@ export default function FacilityForm({
 }) {
   const router = useRouter();
   const { data: existingFacilities } = useCRUD("facility");
+  
   const [form, setForm] = useState({
-    name: "" || defaultValues?.name,
-    number: "" || defaultValues?.number,
-    city: "" || defaultValues?.city,
-    address: "" || defaultValues?.address,
-    lat: "" || defaultValues?.lat,
-    long: "" || defaultValues?.long,
-    parkingSlots: "" || defaultValues?.parkingSlots,
+    name: defaultValues?.name || "",
+    number: defaultValues?.number || "",
+    city: defaultValues?.city || "",
+    address: defaultValues?.address || "",
+    lat: defaultValues?.lat || "",
+    long: defaultValues?.long || "",
+    parkingSlots: defaultValues?.parkingSlots || "",
   });
 
   const [errors, setErrors] = useState({});
@@ -190,64 +191,71 @@ export default function FacilityForm({
         onSubmit={handleSubmit}
         className="bg-white  rounded  w-96 space-y-4"
       >
+
         <div>
           <input
             name="name"
-            placeholder="Facility Name"
+            placeholder="Facility Name *"
             className={`border p-2 w-full text-black ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
             value={form.name}
             onChange={handleChange}
-            required
+            
           />
           {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
         </div>
+
         <div>
           <input
             name="number"
-            placeholder="Facility Number"
+            type="number"
+            placeholder="Facility Number *"
             className={`border p-2 w-full text-black ${errors.number ? 'border-red-500' : 'border-gray-300'}`}
             value={form.number}
             onChange={handleChange}
-            required
+            
           />
           {errors.number && <p className="text-red-500 text-sm mt-1">{errors.number}</p>}
         </div>
-        <div>
-          <input
-            name="city"
-            placeholder="City"
-            className={`border p-2 w-full text-black ${errors.city ? 'border-red-500' : 'border-gray-300'}`}
-            value={form.city}
-            onChange={handleChange}
-            required
-          />
-          {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
-        </div>
+
         <div>
           <input
             name="address"
-            placeholder="Facility Address"
+            placeholder="Facility Address *"
             className={`border p-2 w-full text-black ${errors.address ? 'border-red-500' : 'border-gray-300'}`}
             value={form.address}
             onChange={handleChange}
-            required
+            
           />
           {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
         </div>
+
+        <div>
+          <input
+            name="city"
+            placeholder="City *"
+            className={`border p-2 w-full text-black ${errors.city ? 'border-red-500' : 'border-gray-300'}`}
+            value={form.city}
+            onChange={handleChange}
+            
+          />
+          {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
+        </div>
+
         <div>
           <input
             name="parkingSlots"
             type="number"
-            placeholder="Number of Parking Slots"
+            placeholder="Number of Parking Slots *"
             className={`border p-2 w-full text-black ${errors.parkingSlots ? 'border-red-500' : 'border-gray-300'}`}
             value={form.parkingSlots}
             onChange={handleChange}
             min="1"
             max="1000"
-            required
+            
           />
           {errors.parkingSlots && <p className="text-red-500 text-sm mt-1">{errors.parkingSlots}</p>}
         </div>
+     
         {/* Error message */}
         {errors.submit && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
@@ -262,7 +270,7 @@ export default function FacilityForm({
               type="button"
               onClick={handleEditPolygon}
               disabled={isSavingForPolygon || isSubmitting}
-              className={`w-full bg-[#003F65] text-white px-4 py-2 rounded flex items-center justify-center gap-2 hover:bg-[#003F65] transition-colors ${
+              className={`w-full bg-black text-white px-4 py-2 rounded flex items-center justify-center gap-2 hover:bg-black transition-colors ${
                 isSavingForPolygon || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
@@ -286,7 +294,7 @@ export default function FacilityForm({
             className={`px-4 py-2 w-[50%] rounded text-white ${
               isSubmitting 
                 ? 'bg-gray-400 cursor-not-allowed' 
-                : 'bg-[#003F65] hover:bg-[#003F65]'
+                : 'bg-black hover:bg-black'
             }`}
             disabled={isSubmitting}
           >
