@@ -12,28 +12,26 @@ export default function CarForm({
   closeModal,
   existingCars = [],
 }) {
+
   const router = useRouter();
   const isEdit = defaultValues !== "add";
 
   const [car, setCar] = useState({
-    vin: "" || defaultValues?.vin,
-    chip: "" || defaultValues?.chip,
-    slotNo: "" || defaultValues?.slotNo,
-    trackerNo: "" || defaultValues?.trackerNo,
-    facilityId: "" || defaultValues?.facilityId,
-    make: "" || defaultValues?.make,
-    model: "" || defaultValues?.model,
-    color: "" || defaultValues?.color,
+    vin: defaultValues?.vin || "",
+    chip:  defaultValues?.chip || "",
+    slotNo: defaultValues?.slotNo || "",
+    trackerNo: defaultValues?.trackerNo || "",
+    facilityId:  defaultValues?.facilityId || "",
+    make:  defaultValues?.make || "",
+    model:  defaultValues?.model || "",
+    color:  defaultValues?.color || "",
   });
   
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  console.log("carss", car, defaultValues);
-  console.log("existingCars for duplicate check:", existingCars);
   const { data: facilities } = useCRUD("facility");
-  // const { addItem, updateItem, fetchAll } = useCarsCRUD("/api/cars");
-
+  
   const handleChange = (name, value) => {
     setCar({ ...car, [name]: value });
     
@@ -128,7 +126,7 @@ export default function CarForm({
 
     // Facility validation and slots check
     if (!car.facilityId) {
-      newErrors.facilityId = "Facility selection is required";
+      newErrors.facilityId = "Facility section is required";
     } else {
       // Check available slots in selected facility
       const selectedFacility = facilities?.find(f => f.id.toString() === car.facilityId.toString());
@@ -144,10 +142,10 @@ export default function CarForm({
         const totalSlots = parseInt(selectedFacility.parkingSlots);
         const availableSlots = totalSlots - carsInFacility;
 
-        console.log('Facility:', selectedFacility.name);
-        console.log('Total Slots:', totalSlots);
-        console.log('Cars in Facility:', carsInFacility);
-        console.log('Available Slots:', availableSlots);
+        // console.log('Facility:', selectedFacility.name);
+        // console.log('Total Slots:', totalSlots);
+        // console.log('Cars in Facility:', carsInFacility);
+        // console.log('Available Slots:', availableSlots);
 
         // If adding new car (not editing) and no slots available
         if (!isEdit && availableSlots <= 0) {
@@ -178,7 +176,7 @@ export default function CarForm({
       }
       closeModal();
     } catch (error) {
-      console.error("Error submitting form:", error);
+      // console.error("Error submitting form:", error);
       setErrors({ submit: "Failed to save car. Please try again." });
     } finally {
       setIsSubmitting(false);
@@ -188,14 +186,15 @@ export default function CarForm({
   return (
     <div className="flex">
       <form onSubmit={handleSubmit} className="bg-white rounded w-96 space-y-4">
+
         <div>
           <input
             type="text"
-            placeholder="VIN"
+            placeholder="VIN *"
             className={`border p-2 w-full text-black ${errors.vin ? 'border-red-500' : 'border-gray-300'}`}
             value={car.vin}
             onChange={(e) => handleChange('vin', e.target.value)}
-            required
+            
           />
           {errors.vin && <p className="text-red-500 text-sm mt-1">{errors.vin}</p>}
         </div>
@@ -203,23 +202,23 @@ export default function CarForm({
         <div>
           <input
             type="text"
-            placeholder="Chip"
+            placeholder="Chip *"
             className={`border p-2 w-full text-black ${errors.chip ? 'border-red-500' : 'border-gray-300'}`}
             value={car.chip}
             onChange={(e) => handleChange('chip', e.target.value)}
-            required
+            
           />
           {errors.chip && <p className="text-red-500 text-sm mt-1">{errors.chip}</p>}
         </div>
         
         <div>
           <input
-            type="text"
-            placeholder="Slot Number"
+            type="number"
+            placeholder="Slot Number *"
             className={`border p-2 w-full text-black ${errors.slotNo ? 'border-red-500' : 'border-gray-300'}`}
             value={car.slotNo}
             onChange={(e) => handleChange('slotNo', e.target.value)}
-            required
+            
           />
           {errors.slotNo && <p className="text-red-500 text-sm mt-1">{errors.slotNo}</p>}
         </div>
@@ -227,11 +226,11 @@ export default function CarForm({
         <div>
           <input
             type="text"
-            placeholder="Make"
+            placeholder="Make *"
             className={`border p-2 w-full text-black ${errors.make ? 'border-red-500' : 'border-gray-300'}`}
             value={car.make}
             onChange={(e) => handleChange('make', e.target.value)}
-            required
+            
           />
           {errors.make && <p className="text-red-500 text-sm mt-1">{errors.make}</p>}
         </div>
@@ -239,11 +238,11 @@ export default function CarForm({
         <div>
           <input
             type="text"
-            placeholder="Model"
+            placeholder="Model *"
             className={`border p-2 w-full text-black ${errors.model ? 'border-red-500' : 'border-gray-300'}`}
             value={car.model}
             onChange={(e) => handleChange('model', e.target.value)}
-            required
+            
           />
           {errors.model && <p className="text-red-500 text-sm mt-1">{errors.model}</p>}
         </div>
@@ -251,11 +250,11 @@ export default function CarForm({
         <div>
           <input
             type="text"
-            placeholder="Color"
+            placeholder="Color *"
             className={`border p-2 w-full text-black ${errors.color ? 'border-red-500' : 'border-gray-300'}`}
             value={car.color}
             onChange={(e) => handleChange('color', e.target.value)}
-            required
+            
           />
           {errors.color && <p className="text-red-500 text-sm mt-1">{errors.color}</p>}
         </div>
@@ -268,9 +267,9 @@ export default function CarForm({
               const selectedFacility = facilities?.find(f => f.id.toString() === e.target.value);
               handleChange('facilityId', selectedFacility?.id || '');
             }}
-            required
+            
           >
-            <option value="">Select Facility</option>
+            <option value="">Select Facility *</option>
             {facilities?.map((f) => (
               <option key={f.id} value={f.id}>
                 {f.name}
@@ -301,7 +300,7 @@ export default function CarForm({
             className={`px-4 py-2 w-[50%] rounded text-white ${
               isSubmitting 
                 ? 'bg-gray-400 cursor-not-allowed' 
-                : 'bg-[#003F65] hover:bg-[#003F65]'
+                : 'bg-black hover:bg-black'
             }`}
             disabled={isSubmitting}
           >

@@ -6,16 +6,14 @@ import admin from "./firebase-admin.js";
 
 // Configuration for MQTT and Supabase
 const MQTT_CONFIG = {
-  host: "ws://sensecap-openstream.seeed.cc:8083/mqtt",
-  username: "org-449810146246400",
-  password: "9B1C6913197A4C56B5EC31F1CEBAECF9E7C7235B015B456DB0EC577BD7C167F3", // Updated Password
-  protocolVersion: 4,
+  host: process.env.MQTT_CONFIG_host,
+  username:process.env.MQTT_CONFIG_username ,
+  password: process.env.MQTT_CONFIG_MQTT_CONFIG, 
+  protocolVersion: process.env.MQTT_CONFIG_protocolVersion,
 };
 
-// NOTE: Using a public ANON key here for simplicity, but a backend worker
-// should ideally use a service role key with restricted policies.
-const SUPABASE_URL = "https://vhjetkdfxqbogbegboic.supabase.co";
-const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZoamV0a2RmeHFib2diZWdib2ljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1ODU4MzgsImV4cCI6MjA3NjE2MTgzOH0.r4GY5UgwRjhicFnnmcRxBySjN7PMJKhImSDHwxqKcyg'; // Updated Key
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   console.error("FATAL: Supabase URL or Service Key not configured.");
@@ -29,21 +27,14 @@ const latestChipData = {}; // State to track latest GPS values from MQTT topics
 let facilityPolygonsCache = []; // Cache of all facility polygons from the DB
 
 // DURATION FOR PARKED STABILITY CHECK
-// Using 3600 ms (3.6 seconds) for testing as per user request
-const PARK_CHECK_DELAY_MS = 3600; 
+const PARK_CHECK_DELAY_MS = process.env.PARK_CHECK_DELAY_MS; 
 
-// =========================================================================
-// DATABASE UTILITIES
-// =========================================================================
-
-/**
- * Fetches all Facility Polygons from the database and caches them.
- */
+//  Fetches all Facility Polygons from the database and caches them.
 async function getFacilityPolygons() {
   try {
     const { data, error } = await supabase
       .from('facility_polygons')
-      .select('id, facility_id, slot_number, coordinates') // ADDED 'id' FIELD FOR CACHE MATCHING
+      .select('id, facility_id, slot_number, coordinates') 
 
     if (error) {
       console.error("ERROR fetching facility polygons:", error.message);
@@ -58,9 +49,7 @@ async function getFacilityPolygons() {
   }
 }
 
-/**
- * Fetches the human-readable facility name from its ID.
- */
+//  Fetches the human-readable facility name from its ID.
 async function getFacilityName(facilityId) {
   if (!facilityId) return 'Unknown Facility';
 
@@ -82,13 +71,8 @@ async function getFacilityName(facilityId) {
   }
 }
 
-// =========================================================================
-// GEOSPATIAL UTILITIES
-// =========================================================================
+// Closes a polygon ring by adding the first coordinate to the end if necessary.
 
-/**
- * Closes a polygon ring by adding the first coordinate to the end if necessary.
- */
 function closePolygon(coords) {
   if (!coords || coords.length < 3) return coords;
 
@@ -108,6 +92,7 @@ function closePolygon(coords) {
  * Used for checking exit from a SPECIFIC assigned slot.
  * @returns {Array<{slot_number: number, coords: Array<[number, number]>, id: number, facility_id: number}>} Array containing 0 or 1 processed polygon objects.
  */
+
 function getPolygonsBySlotId(cpSlotId) {
   if (!cpSlotId) return [];
   
@@ -158,9 +143,7 @@ function getPolygonsByFacilityId(facilityId) {
 }
 
 
-/**
- * Checks if a given point is inside a specific slot polygon.
- */
+// Checks if a given point is inside a specific slot polygon.
 function checkCarInsideSpecificSlot(currentLat, currentLng, slotPolygon, slotNumber, facilityId) {
   currentLat = parseFloat(currentLat);
   currentLng = parseFloat(currentLng);
@@ -170,7 +153,7 @@ function checkCarInsideSpecificSlot(currentLat, currentLng, slotPolygon, slotNum
     return { inside: false, slotNumber: null };
   }
 
-  // Turf.js requires [longitude, latitude]
+  // Turf requires [longitude, latitude]
   const carPoint = point([currentLng, currentLat]);
 
   try {
@@ -250,13 +233,7 @@ function checkCarInsideFacility(currentLat, currentLng, facilityPolygons, facili
   return { inside: false, facilityIdCheck: null, slotNumber: null, cpSlotId: null };
 }
 
-// =========================================================================
-// NOTIFICATION & STABILITY CHECK UTILITIES
-// =========================================================================
-
-/**
- * Sends FCM notification for car exit/left facility.
- */
+//Sends FCM notification for car exit/left facility.
 async function sendNotification(chipId, facilityName, carData, slotNumber) {
   
   const { count, error: lockError } = await supabase
@@ -383,10 +360,7 @@ async function sendNotification(chipId, facilityName, carData, slotNumber) {
   }
 }
 
-
-/**
- * Sends a notification specifically for a confirmed parked car and updates the parkedNotification flag.
- */
+// Sends a notification specifically for a confirmed parked car and updates the parkedNotification flag.
 async function sendParkedNotification(chipId, facilityName, carData, slotNumber) {
     try {
         const title = "Car Parked Confirmation";
@@ -486,11 +460,7 @@ async function sendParkedNotification(chipId, facilityName, carData, slotNumber)
     }
 }
 
-
-/**
- * Checks if the car's current location is stable and still inside the facility 
- * one hour after the End Movement event.
- */
+// Checks if the car's current location is stable and still inside the facility 
 async function checkParkedStability(chipId) {
     console.log(`\n--- [${chipId}] Running Scheduled Park Stability Check ---`);
     
@@ -548,7 +518,7 @@ async function checkParkedStability(chipId) {
                 .update({
                     parkedNotification: true
                 })
-                .eq("id", carData.id);
+                .eq("id", carRow.id);
 
                 if (updateError) {
                   console.error('DB update failed after successful PARKED FCM send. Re-notification possible.', updateError);
@@ -568,9 +538,7 @@ async function checkParkedStability(chipId) {
     
 }
 
-/**
- * Schedules the checkParkedStability function for a later time.
- */
+// Schedules the checkParkedStability function for a later time.
 function scheduleParkCheck(chipId, delay) {
     console.log(`\n  [${chipId}] Scheduled Park Check to run in ${delay / 1000} seconds.`);
     
@@ -582,10 +550,7 @@ function scheduleParkCheck(chipId, delay) {
     }, delay);
 }
 
-/**
- * Checks if car with slot ID has moved outside that specific slot and sends notification.
- * This is a separate check that does NOT require previousIsInsideFacility.
- */
+//Checks if car with slot ID has moved outside that specific slot and sends notification.
 async function checkSlotExitNotification(carRow, lat, lon) {
     const chipId = carRow.chip;
     const cpSlot = carRow.cpSlot;
@@ -597,7 +562,7 @@ async function checkSlotExitNotification(carRow, lat, lon) {
         if (cpSlot === null || cpSlot === undefined) {
              console.log(`[${chipId}] Slot Exit Check skipped: cpSlot is null/undefined.`);
         } else if (carRow.notification_sent_check === true) {
-             console.log(`[${chipId}] Slot Exit Check skipped: Notification already sent (notification_sent_check=true).`);
+             console.log(`[${chipId}] Slot Exit Check skipped: Car Slot left Notification already sent (notification_sent_check=true).`);
         }
 
         return false; // No slot assigned, or already notified, skip
@@ -655,18 +620,13 @@ async function checkSlotExitNotification(carRow, lat, lon) {
     }
 }
 
-/**
- * Centralized function to handle the core facility check and DB update logic.
- */
+//Centralized function to handle the core facility check and DB update logic.
 async function handleFacilityStateUpdate(carRow, lat, lon, isMoving, eventName = 'Location Update') {
   const chipId = carRow.chip;
   const facilityIdCheck = carRow.facilityId;
-
   let facilityName = await supabase.from('facility').select('name').eq("id",facilityIdCheck).single();
-
   console.log(`\n--- [${chipId}] Processing Location Update: ${eventName} ---`);
-  // LOG DB FETCHED Cpslot value for verification
-  console.log(`   DB State: cpSlot=${carRow.cpSlot}, is_moving=${carRow.is_moving}, PrevInside=${carRow.previousIsInsideFacility},currentInside=${carRow.is_inside_facility} NotifSent=${carRow.notification_sent_check}`);
+  console.log(`   DB State: cpSlot=${carRow.cpSlot}, is_moving=${carRow.is_moving}, PrevInside=${carRow.previousIsInsideFacility},currentInside=${carRow.is_inside_facility} NotifSent=${carRow.notification_sent_check},parkedNotification=${carRow.parkedNotification}`);
 
 
   // Ensure isMoving is explicitly boolean
@@ -764,7 +724,7 @@ async function handleFacilityStateUpdate(carRow, lat, lon, isMoving, eventName =
     // FIX: Ensure last_location_update is set to the current time for non-EndMovement events
     last_location_update: new Date().toISOString(), 
     eventName: eventName,
-    is_moving: isMoving,
+    is_moving: isEndMovement ? false : isMoving,
     is_inside_facility: currentInside,
     carParkedFacilityId: detectedFacilityId,
     previousIsInsideFacility: carRow.is_inside_facility, 
@@ -778,7 +738,7 @@ async function handleFacilityStateUpdate(carRow, lat, lon, isMoving, eventName =
     
     // notification_sent_check: If notification was triggered by checkSlotExitNotification, it's already TRUE in DB.
     // If not triggered, we maintain the current DB state (carRow.notification_sent_check).
-    notification_sent_check: carRow.notification_sent_check || notificationTriggered
+    notification_sent_check: isEndMovement ? false : carRow.notification_sent_check || notificationTriggered
   };
   
   // 8. Special handling for END MOVING event: Reset flags AND save parked coordinates/slot
@@ -799,7 +759,7 @@ async function handleFacilityStateUpdate(carRow, lat, lon, isMoving, eventName =
     
     updateObj.cpSlot = detectedCpSlotId; // Use the newly detected slot ID for parking
 
-    console.log(`[${chipId}] END MOVEMENT -> is_moving = FALSE. Flags reset. Parked location saved. Parked Lng: ${lon}, Parked Lat: ${lat}. Timestamp: ${updateObj.carParkedTime}`);
+    console.log(`[${chipId}] END MOVEMENT -> is_moving = ${updateObj.is_moving}. Flags reset. Parked location saved. Parked Lng: ${lon}, Parked Lat: ${lat}. Timestamp: ${updateObj.carParkedTime}`);
 
     // Schedule the stability check (PARK_CHECK_DELAY_MS is 3.6s for testing)
     if (detectedCpSlotId && currentInside) {
@@ -822,14 +782,7 @@ async function handleFacilityStateUpdate(carRow, lat, lon, isMoving, eventName =
   }
 }
 
-// =========================================================================
-// GPS UPDATE PROCESSING FUNCTION (Triggers Check)
-// =========================================================================
-
-/**
- * Fetches car data, determines the final coordinates (MQTT cache or DB), 
- * triggers the geofence check, and cleans up the MQTT cache.
- */
+//  Fetches car data, determines the final coordinates (MQTT cache or DB), triggers the geofence check, and cleans up the MQTT cache.
 async function processLocationCheck(chipId, eventName, isMovingFromEvent) {
     // 1. Fetch current car data from database
     const { data: carRow, error: fetchErr } = await supabase
@@ -877,13 +830,7 @@ async function processLocationCheck(chipId, eventName, isMovingFromEvent) {
     }
 }
 
-// =========================================================================
-// MAIN MQTT WORKER
-// =========================================================================
-
-/**
- * Main MQTT Worker Function to connect and listen to topics.
- */
+//  MAIN MQTT WORKER
 async function startMqttWorker() {
 
   // 1. Load facility polygons at startup
@@ -891,12 +838,6 @@ async function startMqttWorker() {
   if (facilityPolygonsCache.length === 0) {
     console.warn("Facility checking will be limited until polygons are loaded.");
   }
-  // LOG FIX: Log cache content for verification
-  console.log("++facilityPolygonsCache loaded with:",facilityPolygonsCache.length, "entries.");
-
-
-  console.log("Periodic position check is DISABLED. Checks rely only on MQTT events (4197, 4198, 5003).");
-  console.log(`Park stability check delay set to ${PARK_CHECK_DELAY_MS / 1000} seconds.`);
 
   // Connect to MQTT
   const client = mqtt.connect(MQTT_CONFIG.host, {

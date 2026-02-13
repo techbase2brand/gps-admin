@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   FaUser,
@@ -11,6 +11,11 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Lottie from "lottie-react";
 import loadingAnimation from "./assets/loader.json";
+// import md5 from 'blueimp-md5';
+// import './websocket api/jquery.js'
+// import './websocket api/localsense_websocket_api.js'
+// import './websocket api/reconnecting-websocket.js'
+// import './websocket api/md5.min.js'
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,9 +25,85 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Static login credentials
-  const STATIC_EMAIL = "gpsadmin@gmail.com";
-  const STATIC_PASSWORD = "12345678";
+  // useEffect(() => {
+  //   const loadScripts = async () => {
+  //     const addScript = (src) => {
+  //       return new Promise((resolve, reject) => {
+  //         const script = document.createElement('script');
+  //         // Next.js automatically looks in the 'public' folder for paths starting with '/'
+  //         script.src = src;
+  //         script.async = false;
+  //         script.onload = () => {
+  //           console.log(`Loaded: ${src}`);
+  //           resolve();
+  //         };
+  //         script.onerror = (err) => reject(err);
+  //         document.body.appendChild(script);
+  //       });
+  //     };
+
+  //     try {
+  //       // Ensure these filenames match exactly what is in your public/websocket_api folder
+  //       await addScript('/websocket_api/jquery.js');
+  //       await addScript('/websocket_api/md5.min.js');
+  //       await addScript('/websocket_api/reconnecting-websocket.js');
+  //       await addScript('/websocket_api/localsense_websocket_api.js');
+
+  //       const WEBSOCKET_API = window.LOCALSENSE?.WEBSOCKET_API;
+  //       if (WEBSOCKET_API) {
+  //         // Use window.md5 as the bridge
+  //         window.md5 = window.md5 || (typeof md5 !== 'undefined' ? md5 : null);
+
+  //         WEBSOCKET_API.SetAccount("brand2", "Aa123456", "abcdefghijklmnopqrstuvwxyz20191107salt");
+
+  //         // CHANGE THIS: Use your actual 47.236.94.129  server IP instead of 127.0.0.1 if it's on the cloud 127.0.0.1 
+
+
+  //         setTimeout(() => {
+
+  //           WEBSOCKET_API.RequireBasicInfo("47.236.94.129:48300");
+
+  //           WEBSOCKET_API.onRecvTagPos = (data) => {
+  //             console.log("Tag Data Received:", data);
+  //           };
+  //         },1000)
+  //       }
+  //     } catch (err) {
+  //       console.error("Script loading failed. Check if files exist in public/websocket_api/", err);
+  //     }
+  //   };
+
+  //   loadScripts();
+  // }, []);
+
+
+  // useEffect(() => {
+  //   // Ensure we are on the client
+  //   if (typeof window !== 'undefined' && window.WEBSOCKET_API) {
+      
+  //     window.md5 = window.md5 || (typeof md5 !== 'undefined' ? md5 : null);
+  //     WEBSOCKET_API.SetAccount("base2", "Aa123456", "abcdefghijklmnopqrstuvwxyz20191107salt");
+  
+  //     // Increase the timeout or better yet, check for connection status
+  //     const initSocket = setTimeout(() => {
+  //       try {
+  //         // Only call if the underlying socket is ready
+  //         WEBSOCKET_API.RequireBasicInfo("47.236.94.129:48300");
+          
+  //         WEBSOCKET_API.onRecvTagPos = (data) => {
+  //           console.log("Tag Data Received:", data);
+  //         };
+  //       } catch (err) {
+  //         console.error("Socket not ready yet:", err);
+  //       }
+  //     }, 2000); // Increased to 2s to be safe
+  
+  //     return () => clearTimeout(initSocket);
+  //   }
+  // }, []);
+  
+  const STATIC_EMAIL = process.env.NEXT_PUBLIC_STATIC_EMAIL;
+  const STATIC_PASSWORD = process.env.NEXT_PUBLIC_STATIC_PASSWORD;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -67,27 +148,30 @@ export default function LoginPage() {
       <motion.div
         animate={{ x: isLogin ? "100%" : "0%" }}
         transition={{ duration: 1 }}
-        className="flex w-1/2 flex-col items-center justify-center bg-[#003F65] text-white z-99999 p-8 relative overflow-hidden"
+        className="flex w-1/2 flex-col items-center justify-center bg-black text-white z-99999 p-8 relative overflow-hidden"
       >
         {/* Decorative Background Elements */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32"></div>
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full -ml-24 -mb-24"></div>
-        
+
         <div className="relative z-10 flex flex-col items-center justify-center h-full w-full px-8">
           {/* Icon */}
+
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: "spring" }}
             className="mb-5"
           >
-            <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/20">
-              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
+            <Image
+              src="/nissan.png"
+              alt="GPS Dashboard"
+              width={160}
+              height={35}
+              unoptimized
+              priority
+            />
           </motion.div>
-
           {/* Title */}
           <motion.h1
             key={isLogin ? "Hello!" : "Welcome back!"}
@@ -98,7 +182,7 @@ export default function LoginPage() {
           >
             Welcome back!
           </motion.h1>
-          
+
           {/* Description */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -148,7 +232,7 @@ export default function LoginPage() {
           Sign in
         </motion.h1> */}
 
-        <div className="flex space-x-6 text-2xl mb-6">
+        {/* <div className="flex space-x-6 text-2xl mb-6">
           <Image
             src="/dashboard_ion.png"
             alt="GPS Dashboard"
@@ -157,7 +241,16 @@ export default function LoginPage() {
             unoptimized
             priority
           />
+        </div> */}
+        <div className="flex space-x-6 text-2xl mb-6">
+          <div className="w-20 h-20 bg-black/10 rounded-full flex items-center justify-center backdrop-blur-sm border border-black/20">
+            <svg className="w-10 h-10 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+
         </div>
+
 
         <p className="text-sm text-center mb-6">
           Enter your admin credentials to access the dashboard.
@@ -202,7 +295,7 @@ export default function LoginPage() {
         <button
           type="submit"
           onClick={handleSubmit}
-          className="mt-8 bg-[#003F65] text-white rounded-full px-8 py-3 uppercase text-bold text-sm"
+          className="mt-8 bg-black text-white rounded-full px-8 py-3 uppercase text-bold text-sm"
         >
           {loading ? (
             <Lottie

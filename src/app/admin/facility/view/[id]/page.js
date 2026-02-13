@@ -389,7 +389,7 @@ export default function ViewFacilityPage() {
     return (
       <div className="flex items-center justify-center min-h-screen w-full">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#003F65] mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
           <p className="text-[#333333] text-lg">Loading...</p>
         </div>
       </div>
@@ -481,14 +481,16 @@ export default function ViewFacilityPage() {
       )}
 
       <div className="flex bg-[#F8F8F8]">
+        <div>
         <Sidebar />
+        </div>
         <div className="flex-1 p-4 bg-[#F8F8F8]">
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-bold text-black">{facility.name}</h1>
+            <h1 className="text-2xl font-bold text-black">Facility View --  {facility.name}</h1>
             <div className="flex items-center gap-3">
               {hasUnsavedPolygons && (
                 <span className="text-xs px-3 py-1 bg-yellow-100 text-yellow-700 rounded border border-yellow-300">
-                  ⚠️ Unsaved polygons
+                 Unsaved polygons
                 </span>
               )}
               {saveMessage && (
@@ -516,13 +518,13 @@ export default function ViewFacilityPage() {
                 {isSaving
                   ? "Saving..."
                   : hasUnsavedPolygons
-                  ? "Save Changes ⚠️"
+                  ? "Save Changes"
                   : "Saved"}
               </button>
               <button
                 onClick={() => handleAiClick("row")} // Added arrow function
                 className={`px-4 py-2 rounded font-medium text-white transition-all ${
-                  isAiDrawing ? "bg-red-600 animate-pulse" : "bg-purple-600"
+                  isAiDrawing ? "bg-black animate-pulse" : "bg-black"
                 }`}
               >
                 {isAiDrawing ? "Stop" : "AI Grouping"}
@@ -530,37 +532,20 @@ export default function ViewFacilityPage() {
 
               <button
                 onClick={() => handleDelete("one")}
-                className="px-4 py-2 rounded font-medium text-white transition-all bg-orange-500 hover:bg-orange-600"
+                className="px-4 py-2 rounded font-medium text-white transition-all bg-red-600"
               >
                 Delete Previous
               </button>
 
-              {/* <button
-                onClick={() => handleDelete("all")}
-                className="px-4 py-2 rounded font-medium text-white transition-all bg-red-600 hover:bg-red-700"
-              >
-                Delete All
-              </button> */}
-
-              {/* Vertical Button */}
-              <button
-                onClick={() => handleAiClick("vertical")} // Added arrow function
-                className={`px-4 py-2 rounded font-medium text-white transition-all ${
-                  isAiDrawingVertical
-                    ? "bg-red-600 animate-pulse"
-                    : "bg-purple-600"
-                }`}
-              >
-                {isAiDrawingVertical ? "Stop" : "AI vertical"}
-              </button>
+      
 
 
               <button
                 onClick={() => handleRouteClick()} // Added arrow function
                 className={`px-4 py-2 rounded font-medium text-white transition-all ${
                   isRoute
-                    ? "bg-red-600 animate-pulse"
-                    : "bg-purple-600"
+                    ? "bg-black animate-pulse"
+                    : "bg-black"
                 }`}
               >
                 {isRoute ? "Stop" : "Route"}
@@ -583,7 +568,7 @@ export default function ViewFacilityPage() {
               <div className="flex items-center justify-center h-full">
                 <div className="flex items-center justify-center h-full w-full">
                   <div className="text-center">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#003F65] mx-auto mb-3"></div>
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-black mx-auto mb-3"></div>
                     <p className="text-[#333333]">Loading map...</p>
                   </div>
                 </div>

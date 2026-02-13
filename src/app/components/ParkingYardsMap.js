@@ -29,7 +29,7 @@ export default function ParkingYardsMap() {
   return (
     <div style={{ height: "100vh", width: "100%" }}>
       <GoogleMapReact
-        bootstrapURLKeys={{ key: "AIzaSyBXNyT9zcGdvhAUCUEYTm6e_qPw26AOPgI" }}
+        bootstrapURLKeys={{ key: process.env.GoogleMapReact_bootstrapURLKeys }}
         defaultCenter={defaultProps.center}
         defaultZoom={defaultProps.zoom}
       >

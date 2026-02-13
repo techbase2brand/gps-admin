@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import client from "../api/client"; 
+import client from "../api/client";
 import bcrypt from "bcryptjs";
 
 export default function useStaffForm() {
@@ -8,28 +8,33 @@ export default function useStaffForm() {
   const [staffData, setStaffData] = useState([]);
   const [filterRole, setFilterRole] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1); // Page state stays here
+  const itemsPerPage = 10;
 
   // Fetch all staff from Supabase
-  const fetchAllStaff = async () => {
-    const { data, error } = await client
+  const fetchAllStaff = async (page = 1, limit = 10) => {
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data, error, count } = await client
       .from("staff")
-      .select("*")
-      .order("id", { ascending: true });
-
-
-      
+      .select("*", { count: 'exact' }) // Get total row count
+      .order("id", { ascending: true })
+      .range(from, to);
 
     if (error) {
       console.error("Fetch staff error:", error.message);
     } else {
       setStaffList(data);
       setStaffData(data);
+      setTotalCount(count || 0);
     }
   };
 
   useEffect(() => {
-    fetchAllStaff();
-  }, []);
+    fetchAllStaff(currentPage);
+  }, [currentPage]);
 
   // Auto-filter on search or role change
   useEffect(() => {
@@ -37,66 +42,85 @@ export default function useStaffForm() {
       const matchesSearch =
         staff.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
         staff.name.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const matchesRole = 
-        filterRole === "" || 
-        filterRole === "all" || 
+
+      const matchesRole =
+        filterRole === "" ||
+        filterRole === "all" ||
         staff.role.toLowerCase() === filterRole.toLowerCase();
 
       return matchesSearch && matchesRole;
     });
     setStaffData(filteredData);
   }, [searchQuery, filterRole, staffList]);
-const addStaff = async (staff) => {
-  try {
-    // Hash password before saving
-    const hashedPassword = await bcrypt.hash(staff.password, 10);
+  
+  
+  const addStaff = async (staff) => {
+    try {
+      const { data: userExist, error: fetchError } = await client
+        .from("staff")
+        .select("email")
+        .eq('email', staff.email)
+        .maybeSingle();
+  
+      if (userExist) {
+        console.warn("User already exists with this email");
+        return { success: false, message: "Email already exists" };
+      }
+  
+      const hashedPassword = await bcrypt.hash(staff.password, 10);
+  
+      const newStaff = {
+        id: Date.now(),
+        ...staff,
+        password: hashedPassword,
+        status: "Active",
+        published: true,
+      };
+  
+      const { data, error } = await client
+        .from("staff")
+        .insert([newStaff])
+        .select();
+  
+      if (error) {
+        console.error("Add staff error:", error.message);
+        // Return false so the modal stays open for the user to fix errors
+        return { success: false, message: error.message }; 
+      } else {
+        // Use the actual data from the DB (data[0]) instead of local newStaff for accuracy
+        setStaffList((prev) => [...prev, data[0]]);
+        setStaffData((prev) => [...prev, data[0]]);
+        
+        // THIS IS THE KEY: You must return success true to close the modal
+        return { success: true }; 
+      }
+    } catch (err) {
+      console.error("Hashing error:", err.message);
+      return { success: false, message: "System error occurred" };
+    }
+  };
 
-    const newStaff = {
-      id: Date.now(),
-      ...staff,
-      password: hashedPassword, // store hashed password
-      status: "Active",
-      published: true,
-    };
+  const editStaff = async (id, updatedStaff) => {
+    // Remove password field if exists, as edit does not update password here
+    const { password, ...staffWithoutPassword } = updatedStaff;
 
     const { data, error } = await client
       .from("staff")
-      .insert([newStaff])
+      .update(staffWithoutPassword)
+      .eq("id", id)
       .select();
 
     if (error) {
-      console.error("Add staff error:", error.message);
+      console.error("Edit staff error:", error.message);
     } else {
-      setStaffList((prev) => [...prev, newStaff]);
-      setStaffData((prev) => [...prev, newStaff]);
+      setStaffList((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, ...staffWithoutPassword } : s))
+      );
+      setStaffData((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, ...staffWithoutPassword } : s))
+      );
     }
-  } catch (err) {
-    console.error("Hashing error:", err.message);
-  }
-};
-
-const editStaff = async (id, updatedStaff) => {
-  // Remove password field if exists, as edit does not update password here
-  const { password, ...staffWithoutPassword } = updatedStaff;
-
-  const { data, error } = await client
-    .from("staff")
-    .update(staffWithoutPassword)
-    .eq("id", id)
-    .select();
-
-  if (error) {
-    console.error("Edit staff error:", error.message);
-  } else {
-    setStaffList((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...staffWithoutPassword } : s))
-    );
-    setStaffData((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...staffWithoutPassword } : s))
-    );
-  }
-};
+  };
 
   // const addStaff = async (staff) => {
   //   const newStaff = {
@@ -216,5 +240,9 @@ const editStaff = async (id, updatedStaff) => {
     setSearchQuery,
     handleFilter,
     handleReset,
+    totalCount,
+    setCurrentPage,
+    currentPage,
+    itemsPerPage
   };
 }

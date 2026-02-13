@@ -20,7 +20,5 @@ export default async function getData() {
     console.log("car data is:", carData);
   }
 
-
-  
   return { data, carData };
 }

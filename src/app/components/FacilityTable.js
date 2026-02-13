@@ -9,6 +9,8 @@ import useCRUD from "../hooks/useCRUD";
 import useCarsCRUD from "../hooks/useCarsCRUD";
 import FacilityForm from "./FacilityForm";
 
+
+
 export default function FacilityTable({
   data,
   addItem,
@@ -16,8 +18,12 @@ export default function FacilityTable({
   deleteFacility,
   searchQuery,
   loading,
+  currentPage, setCurrentPage, totalCount, itemsPerPage,
+  from
+
 }) {
-  const router = useRouter();
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
+   const router = useRouter();
   const { carData, deleteItem: deleteCar } = useCarsCRUD("cars");
   const [deleteId, setDeleteId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -27,6 +33,7 @@ export default function FacilityTable({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [facilityToDelete, setFacilityToDelete] = useState(null);
   const [sortConfig, setSortConfig] = useState({ column: null, direction: 'asc' });
+  // const { data, currentPage, setCurrentPage, totalCount, itemsPerPage } = useCRUD();
 
   const openAddModal = () => {
     setEditingFacility(null);
@@ -120,7 +127,7 @@ export default function FacilityTable({
   const handleDeleteFacility = async (facilityId) => {
     const facility = data?.find(f => f.id === facilityId);
     const vehiclesInFacility = getVehiclesInFacility(facilityId);
-    
+
     if (vehiclesInFacility.length > 0) {
       // Show custom confirmation modal with vehicle details
       setFacilityToDelete({ facility, vehicles: vehiclesInFacility });
@@ -142,7 +149,7 @@ export default function FacilityTable({
       // Then delete the facility
       await deleteFacility(facilityToDelete.facility.id);
     }
-    
+
     setShowDeleteConfirm(false);
     setFacilityToDelete(null);
     setDeleteId(null);
@@ -158,20 +165,20 @@ export default function FacilityTable({
   return (
     <div>
       {/* Search Bar and Filters */}
-      <div className="mb-4 flex justify-between items-center mt-10 mb-10">
+      {!from && <div className="mb-4 flex justify-between items-center mt-10 mb-10">
         <div className="flex space-x-3 items-center">
           <input
             type="text"
             placeholder="Search facilities..."
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
-            className="w-80 px-4 py-2 border border-gray-300 rounded-lg text-[#333333] placeholder-[#666666] focus:outline-none focus:border-[#003F65]"
+            className="w-80 px-4 py-2 bg-white border border-gray-300 rounded-lg text-[#333333] placeholder-[#666666] focus:outline-none focus:border-black"
           />
           <div className="relative w-40 mr-4">
             <select
               value={cityFilter}
               onChange={(e) => setCityFilter(e.target.value)}
-              className="w-full px-4 py-2 pr-8 border border-gray-300 rounded-lg text-[#333333] focus:outline-none focus:border-[#003F65] appearance-none bg-white"
+              className="w-full px-4 py-2 pr-8 border border-gray-300 rounded-lg text-[#333333] focus:outline-none focus:border-black appearance-none bg-white"
             >
               <option value="all">All Cities</option>
               {uniqueCities.map((city, idx) => (
@@ -193,89 +200,96 @@ export default function FacilityTable({
             </button>
           )}
         </div>
-        
+
         <div>
           <button
             onClick={openAddModal}
-            className="px-6 py-2 bg-[#003F65] text-white rounded-full shadow-md hover:bg-[#003F65] transition-colors"
+            className="px-6 py-2 bg-black text-white rounded-full shadow-md"
           >
-            + Add Facility
+            Add Facility
           </button>
         </div>
-      </div>
+      </div>}
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 flex justify-end bg-black/50 z-999999">
-          <div className="bg-white w-full max-w-md h-full overflow-y-auto shadow p-6 relative transition-transform translate-x-0">
-            <button
-              onClick={closeModal}
-              className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
-            >
-              ✕
-            </button>
-            <h2 className="text-xl text-black font-semibold mb-4">
-              {editingFacility ? "Edit Facility" : "Add Facility"}
-            </h2>
+        <div className="fixed inset-0 flex justify-end bg-black/50 z-999999" onClick={closeModal}>
+          <div className="bg-white w-full max-w-md h-full overflow-y-auto shadow p-6 relative transition-transform translate-x-0" onClick={(e)=>e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+
+              <h2 className="text-xl text-black font-semibold ">
+                {editingFacility ? "Edit Facility" : "Add Facility"}
+              </h2>
+              <button
+                onClick={closeModal}
+                className=" text-gray-600 hover:text-gray-800"
+              >
+                ✕
+              </button>
+            </div>
+
             <FacilityForm
               defaultValues={editingFacility || "add"}
               addItem={addItem}
               updateItem={updateItem}
-              
+
               closeModal={closeModal}
             />
           </div>
         </div>
       )}
+
       <table className="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
-        <thead>
-          <tr className="text-left border-b bg-gray-300">
-            <th 
-              className="px-4 text-start py-2 text-[#333333] cursor-pointer hover:bg-gray-200 select-none"
+
+        <thead className="">
+          <tr className="text-left border-b bg-black">
+            <th
+              className="px-4 text-start py-2 text-white cursor-pointer  select-none rounded-tl-lg"
               onClick={() => handleSort('name')}
             >
               <div className="flex items-center gap-2">
                 Name
                 {sortConfig.column === 'name' && (
-                  <span className="text-[#003F65]">
+                  <span className="text-black">
                     {sortConfig.direction === 'asc' ? '↑' : '↓'}
                   </span>
                 )}
               </div>
             </th>
-            <th 
-              className="px-4 text-start py-2 text-[#333333] cursor-pointer hover:bg-gray-200 select-none"
+            <th
+              className="px-4 text-start py-2 text-white cursor-pointer select-none"
               onClick={() => handleSort('number')}
             >
               <div className="flex items-center gap-2">
                 Number
                 {sortConfig.column === 'number' && (
-                  <span className="text-[#003F65]">
+                  <span className="text-black">
                     {sortConfig.direction === 'asc' ? '↑' : '↓'}
                   </span>
                 )}
               </div>
             </th>
-            <th className="px-4 text-start py-2 text-[#333333]">
+            <th className="px-4 text-start py-2 text-white">
               City
             </th>
-            <th className="px-4 text-start py-2 text-[#333333]">Address</th>
-            <th 
-              className="px-4 text-start py-2 text-[#333333] cursor-pointer hover:bg-gray-200 select-none"
+            <th className="px-4 text-start py-2 text-white">Address</th>
+            <th
+              className="px-4 text-start py-2 text-white cursor-pointer select-none"
               onClick={() => handleSort('parkingSlots')}
             >
               <div className="flex items-center gap-2">
                 Parking Slots
                 {sortConfig.column === 'parkingSlots' && (
-                  <span className="text-[#003F65]">
+                  <span className="text-black">
                     {sortConfig.direction === 'asc' ? '↑' : '↓'}
                   </span>
                 )}
               </div>
             </th>
-            <th className="px-4 text-start py-2 text-[#333333]">Actions</th>
+            <th className="px-4 text-start py-2 text-white rounded-tr-lg">Actions</th>
           </tr>
         </thead>
+
         <tbody>
           {sortedData?.map((facility) => (
             <tr key={facility?.id} className="border-b border-gray-300">
@@ -322,8 +336,35 @@ export default function FacilityTable({
             </tr>
           ))}
         </tbody>
+
       </table>
-      
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-between items-center p-4 bg-white border border-gray-300 rounded-b-lg">
+          <p className="text-black text-sm">
+            { }
+            Page {currentPage} of {totalPages}
+          </p>
+          <div className="flex gap-2">
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => prev - 1)}
+              className="px-4 py-2 border rounded text-black disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => prev + 1)}
+              className="px-4 py-2 border rounded text-black disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      ) }
+
       {sortedData?.length === 0 && (
         <div className="text-center py-10">
           <p className="text-[#666666] text-lg">No facilities found</p>
@@ -334,11 +375,14 @@ export default function FacilityTable({
       {deleteId && !showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50  flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded shadow-md w-full max-w-sm">
+          <h3 className="text-lg text-[#333333] font-semibold mb-4">
+                          Confirm Delete
+                        </h3>
             <p className="mb-6 text-black">Are you sure you want to delete this facility?</p>
             <div className="flex justify-end gap-4">
               <button
                 onClick={() => setDeleteId(null)}
-                className="px-4 py-2 bg-gray-500 text-white rounded"
+                className="px-4 py-2 border border-lg rounded"
               >
                 Cancel
               </button>
@@ -365,10 +409,10 @@ export default function FacilityTable({
                 <strong>Facility:</strong> {facilityToDelete.facility.name}
               </p>
               <p className="text-red-600 mb-4">
-                <strong>Warning:</strong> This facility contains {facilityToDelete.vehicles.length} vehicle(s). 
+                <strong>Warning:</strong> This facility contains {facilityToDelete.vehicles.length} vehicle(s).
                 Deleting the facility will also delete all vehicles in it.
               </p>
-              
+
               {/* Show vehicle list */}
               <div className="max-h-40 overflow-y-auto border rounded p-2 mb-4">
                 <p className="text-sm font-semibold text-black mb-2">Vehicles to be deleted:</p>
@@ -379,7 +423,7 @@ export default function FacilityTable({
                 ))}
               </div>
             </div>
-            
+
             <div className="flex justify-end gap-4">
               <button
                 onClick={cancelDelete}

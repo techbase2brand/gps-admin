@@ -83,7 +83,7 @@ export default function FacilityMapModal({
             <div className="flex items-center justify-center h-full">
               <div className="flex items-center justify-center h-full w-full">
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#003F65] mx-auto mb-3"></div>
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-black mx-auto mb-3"></div>
                   <p className="text-[#333333]">Loading map...</p>
                 </div>
               </div>
@@ -121,7 +121,7 @@ export default function FacilityMapModal({
             )}
             <button
               onClick={handleSave}
-              className="px-6 py-2 bg-[#003F65] text-white rounded hover:bg-[#003F65]"
+              className="px-6 py-2 bg-black text-white rounded hover:bg-black"
             >
               {polygons.length > 0 ? "Save Polygons" : "Continue Without Polygons"}
             </button>

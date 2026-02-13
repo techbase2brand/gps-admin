@@ -8,6 +8,7 @@ import useReportsIssuesCRUD from "../hooks/useReportsIssuesCRUD";
 const TABLE_NAME = "report_issues";
 
 export default function ReportsIssuesTable({ searchQuery }) {
+ 
   const {
     data,
     deleteItem,
@@ -139,13 +140,14 @@ export default function ReportsIssuesTable({ searchQuery }) {
   // Debug: Log data to console
   useEffect(() => {
     if (!loading) {
-      console.log("Reports & Issues Data:", data);
-      console.log("Data count:", data?.length);
-      console.log("Table name being used:", TABLE_NAME);
-      console.log("Filtered data count:", filteredData?.length);
+      // console.log("Reports & Issues Data:", data);
+      // console.log("Data count:", data?.length);
+      // console.log("Table name being used:", TABLE_NAME);
+      // console.log("Filtered data count:", filteredData?.length);
       if (data?.length === 0) {
-        console.warn("No data found. Please check if table name is correct:", TABLE_NAME);
-        console.warn("Common table names: 'reports_issues', 'reports_and_issues', 'reports', 'issues'");
+        // console.warn("No data found. ");
+        // console.warn("No data found. Please check if table name is correct:", TABLE_NAME);
+        // console.warn("Common table names: 'reports_issues', 'reports_and_issues', 'reports', 'issues'");
       }
     }
   }, [data, loading, filteredData]);
@@ -154,7 +156,7 @@ export default function ReportsIssuesTable({ searchQuery }) {
     return (
       <div className="flex items-center justify-center min-h-[400px] w-full">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#003F65] mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
           <p className="text-[#333333] text-lg">Loading reports and issues...</p>
         </div>
       </div>
@@ -162,17 +164,21 @@ export default function ReportsIssuesTable({ searchQuery }) {
   }
 
   return (
+
     <div>
+
       {/* Search Bar and Filters */}
       <div className="mb-4 flex justify-between items-center mt-10 mb-10">
+
         <div className="flex space-x-3 items-center">
           <input
             type="text"
             placeholder="Search issues..."
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
-            className="w-80 px-4 py-2 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:border-[#003F65]"
+            className="w-80 px-4 py-2 border border-gray-300  bg-white rounded-lg text-black placeholder-gray-500 focus:outline-none focus:border-black"
           />
+
           {localSearch && (
             <button
               onClick={handleReset}
@@ -181,25 +187,30 @@ export default function ReportsIssuesTable({ searchQuery }) {
               Reset
             </button>
           )}
+
         </div>
+
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto">
+
         <table className="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
+         
           <thead>
-            <tr className="text-left border-b bg-gray-300">
-              <th className="text-start px-4 py-2 text-black">ID</th>
-              <th className="text-start px-4 py-2 text-black">User Name</th>
-              <th className="text-start px-4 py-2 text-black">User Email</th>
-              <th className="text-start px-4 py-2 text-black">Issue Title</th>
-              <th className="text-start px-4 py-2 text-black">Category</th>
-              <th className="text-start px-4 py-2 text-black">Status</th>
-              <th className="text-start px-4 py-2 text-black">Priority</th>
-              <th className="text-start px-4 py-2 text-black">Created At</th>
-              <th className="text-start px-4 py-2 text-black">Actions</th>
+            <tr className="text-left border-b bg-black">
+              <th className="text-start px-4 py-2 text-white">ID</th>
+              <th className="text-start px-4 py-2 text-white">User Name</th>
+              <th className="text-start px-4 py-2 text-white">User Email</th>
+              <th className="text-start px-4 py-2 text-white">Issue Title</th>
+              <th className="text-start px-4 py-2 text-white">Category</th>
+              <th className="text-start px-4 py-2 text-white">Status</th>
+              <th className="text-start px-4 py-2 text-white">Priority</th>
+              <th className="text-start px-4 py-2 text-white">Created At</th>
+              <th className="text-start px-4 py-2 text-white">Actions</th>
             </tr>
           </thead>
+         
           <tbody>
             {filteredData?.length > 0 ? (
               filteredData.map((issue) => (
@@ -272,7 +283,9 @@ export default function ReportsIssuesTable({ searchQuery }) {
               </tr>
             )}
           </tbody>
+
         </table>
+
       </div>
 
       {/* View Modal */}
@@ -389,7 +402,7 @@ export default function ReportsIssuesTable({ searchQuery }) {
                   value={adminNotes}
                   onChange={(e) => setAdminNotes(e.target.value)}
                   rows="6"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-[#003F65]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-black"
                   placeholder="Add admin notes here..."
                 />
               </div>
@@ -402,7 +415,7 @@ export default function ReportsIssuesTable({ searchQuery }) {
                   onChange={(e) =>
                     setEditingIssue({ ...editingIssue, status: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-[#003F65]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-black"
                 >
                   <option value="Open">Open</option>
                   <option value="Pending">Pending</option>
@@ -424,7 +437,7 @@ export default function ReportsIssuesTable({ searchQuery }) {
               </button>
               <button
                 onClick={handleSaveEdit}
-                className="px-4 py-2 bg-[#003F65] text-white rounded hover:bg-[#003F65]"
+                className="px-4 py-2 bg-black text-white rounded hover:bg-black"
               >
                 Save Changes
               </button>
@@ -462,7 +475,9 @@ export default function ReportsIssuesTable({ searchQuery }) {
           </div>
         </div>
       )}
+
     </div>
+
   );
 }
 

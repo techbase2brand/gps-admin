@@ -617,21 +617,22 @@ export default function FacilityMapWithDrawing({
 
   return (
     <div className="relative w-full h-full">
-      {showControls && (
+      {showControls}
+      {/* {showControls && (
         <div className="absolute bottom-4 right-4 z-[1000] bg-white p-3 rounded-lg shadow-lg flex flex-col gap-2">
-          {allowMultiple && allPolygons.length > 0 && (
+          {/* {allowMultiple && allPolygons.length > 0 && (
             <div className="text-xs text-gray-600 mb-1">
               {allPolygons.length} polygon{allPolygons.length > 1 ? 's' : ''} drawn
             </div>
-          )}
-          <div className="flex gap-2 flex-wrap">
-            <button
+          )} */}
+          {/* <div className="flex gap-2 flex-wrap"> */}
+            {/* <button
               onClick={handleExportJSON}
               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={allowMultiple ? allPolygons.length === 0 : !polygonCoordinates}
             >
               Export JSON
-            </button>
+            </button> */}
             {/* GeoJSON export button hidden for now */}
             {/* <button
               onClick={handleExportGeoJSON}
@@ -640,9 +641,13 @@ export default function FacilityMapWithDrawing({
             >
               Export GeoJSON
             </button> */}
-          </div>
-        </div>
-      )}
+          {/* </div> */}
+        {/* </div> */}
+
+
+
+
+      {/* )} */} 
 
       <MapContainer
         center={mapCenter}

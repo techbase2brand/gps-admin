@@ -20,7 +20,7 @@ function MapEvents({ onMapClick, onMouseMove, isDrawing }) {
   useMapEvents({
     click(e) {
       if (!isDrawing) {
-        console.log("Map clicked: Adding new node at", e.latlng);
+        // console.log("Map clicked: Adding new node at", e.latlng);
         onMapClick(e.latlng);
       }
     },
@@ -31,7 +31,7 @@ function MapEvents({ onMapClick, onMouseMove, isDrawing }) {
   return null;
 }
 
-export default function RouteMapComponent() {
+export default function RouteMapComponent({ center }) {
   const params = useParams();
   const facilityId = params.id;
   const [nodes, setNodes] = useState([]);
@@ -68,15 +68,15 @@ export default function RouteMapComponent() {
         },
         { onConflict: "facility_id" }
       ); // Updates if facility already has a route
-      console.log("graph_data", graph_data);
+      // console.log("graph_data", graph_data);
       if (error) throw error;
       if (!error) {
         setLastSavedData(JSON.stringify({ nodes, links })); // Lock the button again
-        alert("Saved!");
+        alert("Saved");
       }
     } catch (err) {
-      console.error("Error saving route:", err.message);
-      alert("Failed to save: " + err.message);
+      // console.error("Error saving route:", err.message);
+      alert("Failed to save");
     } finally {
       setIsSaving(false);
     }
@@ -103,7 +103,7 @@ export default function RouteMapComponent() {
           setLastSavedData(JSON.stringify(data.graph_data));
         }
       } catch (err) {
-        console.error("Error fetching route:", err.message);
+        console.error("Error");
       } finally {
         setIsLoading(false);
       }
@@ -171,10 +171,10 @@ export default function RouteMapComponent() {
           [sourceNode.lat, sourceNode.lng],
           [targetNode.lat, targetNode.lng]
         );
-        console.log(
-          `%c Success: Edge created! Distance: ${dist.toFixed(2)}m`,
-          "color: #00ff00"
-        );
+        // console.log(
+        //   `%c Success: Edge created! Distance: ${dist.toFixed(2)}m`,
+        //   "color: #00ff00"
+        // );
         setLinks((prev) => [
           ...prev,
           { source: drawingFromId, target: targetId, weight: dist },
@@ -219,10 +219,10 @@ export default function RouteMapComponent() {
     );
   }
   return (
-    <div className="flex flex-col h-screen bg-slate-900 text-white overflow-hidden font-sans">
-      <div className="p-4 bg-slate-800 flex justify-between items-center border-b border-cyan-500 z-[1000] shadow-xl">
-        <h1 className="text-xl font-bold text-cyan-400 tracking-tight">
-          PRO SATELLITE GRAPH TOOL
+    <div className="flex flex-col h-screen overflow-hidden font-sans">
+      <div className="p-4 flex justify-between items-center border-b z-[1000] shadow-xl">
+        <h1 className="text-xl font-bold tracking-tight">
+          Route Create
         </h1>
         <div className="flex gap-2">
           <button
@@ -238,13 +238,13 @@ export default function RouteMapComponent() {
           </button>
           <button
             onClick={() => setNodes(nodes.slice(0, -1))}
-            className="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded font-bold transition"
+            className="px-4 py-2 bg-black text-white rounded font-bold transition"
           >
             Undo Node
           </button>
           <button
             onClick={() => setLinks(links.slice(0, -1))}
-            className="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded font-bold transition"
+            className="px-4 py-2 bg-black text-white rounded font-bold transition"
           >
             Undo Edge
           </button>
@@ -253,7 +253,7 @@ export default function RouteMapComponent() {
               setNodes([]);
               setLinks([]);
             }}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded font-bold transition"
+            className="px-4 py-2 bg-black rounded text-white font-bold transition"
           >
             Clear All
           </button>
@@ -263,7 +263,7 @@ export default function RouteMapComponent() {
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-[3] relative">
           <MapContainer
-            center={[35.966944, -86.493056]}
+            center={[center.lat, center.lng]}
             zoom={18}
             className="h-full w-full"
           >
@@ -346,7 +346,7 @@ export default function RouteMapComponent() {
         </div>
 
         {/* Matrix Sidebar */}
-        <div className="flex-1 p-6 bg-black overflow-y-auto border-l border-slate-800 font-mono text-xs shadow-inner">
+      {/*} <div className="flex-1 p-6 bg-black overflow-y-auto border-l border-slate-800 font-mono text-xs shadow-inner">
           <h2 className="text-cyan-400 mb-6 border-b border-slate-800 pb-2 uppercase tracking-tighter font-black">
             Adjacency Matrix (Binary)
           </h2>
@@ -362,7 +362,7 @@ export default function RouteMapComponent() {
               </div>
             ))
           )}
-        </div>
+        </div>*/}
       </div>
 
       <style jsx global>{`

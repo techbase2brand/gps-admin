@@ -148,3 +148,12 @@ html, body {
 .animate-fadeIn {
   animation: fadeIn 0.2s ease-out;
 }
+
+.LogoPadding {
+  padding-left: 3rem; 
+}
+
+.gradient{
+  background: #020024;
+  background: linear-gradient(11deg,rgb(104, 100, 182) 0%, rgb(196, 196, 243) 6%, rgba(233, 243, 245, 1) 95%);
+}

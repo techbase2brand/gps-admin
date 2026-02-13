@@ -1,42 +1,71 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import client from "../api/client"; // adjust path as per your project
 
-export default function useCarsCRUD(storageKey) {
+export default function useCarsCRUD(storageKey, filters = {}) {
   const [carData, setcarData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
     try {
       setLoading(true);
-      const { data, error } = await client
+      const from = (currentPage - 1) * itemsPerPage;
+      const to = from + itemsPerPage - 1;
+
+      // Start Query
+      let query = client
         .from(storageKey)
-        .select("*")
-        .order("id", { ascending: true });
+        .select("*", { count: 'exact' });
+
+      // Apply Filters directly to Supabase Query
+      if (filters.search) {
+        query = query.or(`vin.ilike.%${filters.search}%,chip.ilike.%${filters.search}%,trackerNo.ilike.%${filters.search}%`);
+      }
+      if (filters.status && filters.status !== "all") {
+        query = query.eq("status", filters.status);
+      }
+      if (filters.facility && filters.facility !== "all") {
+        query = query.eq("facilityId", filters.facility);
+      }
+
+      const { data, error, count } = await query
+        .order("id", { ascending: true })
+        .range(from, to);
 
       if (error) throw error;
-      
-      // Fix status for all cars based on chip (for existing data)
-      const fixedData = data?.map(car => {
-        const correctStatus = car.chip && car.chip.trim() ? "Assigned" : "Unassigned";
-        return { ...car, status: correctStatus };
-      });
-      
-      setcarData(fixedData);
+
+      setTotalCount(count || 0);
+
+      const fixedData = data?.map(car => ({
+        ...car,
+        status: car.chip && car.chip.trim() ? "Assigned" : "Unassigned"
+      }));
+
+      setcarData(fixedData || []);
     } catch (err) {
-      console.error("Fetch all error:", err.message);
+      console.error("Fetch error:", err.message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [storageKey, currentPage, filters.search, filters.status, filters.facility]);
+
+  // Fetch data on page or filter change
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
+
+
 
   const addItem = async (item) => {
     try {
       // Status depends on chip: if chip exists → Assigned, else → Unassigned
       const status = item.chip && item.chip.trim() ? "Assigned" : "Unassigned";
-      
+
       const newItem = {
         id: Date.now(), // keep same id logic
         ...item,
@@ -62,7 +91,7 @@ export default function useCarsCRUD(storageKey) {
       // Status depends on chip: if chip exists → Assigned, else → Unassigned
       const status = item.chip && item.chip.trim() ? "Assigned" : "Unassigned";
       const updatedItem = { ...item, status };
-      
+
       const { data, error } = await client
         .from(storageKey)
         .update(updatedItem)
@@ -70,6 +99,7 @@ export default function useCarsCRUD(storageKey) {
         .select();
 
       if (error) throw error;
+      await fetchAll();
 
       setcarData((prev) =>
         prev.map((d) => (d.id === item.id ? { ...d, ...updatedItem } : d))
@@ -114,7 +144,7 @@ export default function useCarsCRUD(storageKey) {
         .eq("id", id);
 
       if (error) throw error;
-
+      await fetchAll();
       setcarData((prev) => prev.filter((d) => d.id !== id));
       return { message: "Deleted", id };
     } catch (err) {
@@ -123,10 +153,14 @@ export default function useCarsCRUD(storageKey) {
   };
 
   useEffect(() => {
-    fetchAll();
-  }, [storageKey]);
+    fetchAll(currentPage);
+  }, [storageKey, currentPage]);
 
   return {
+    currentPage,
+    setCurrentPage,
+    itemsPerPage,
+    totalCount,
     carData,
     loading,
     addItem,

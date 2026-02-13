@@ -17,14 +17,14 @@ export default function Cars() {
       <Sidebar collapsed={collapsed} isLogoutModalOpen={isNavbarLogoutModalOpen} />
       <div className="flex flex-col flex-1 min-h-screen bg-[#fff]">
         <Navbar
-          title={"Vin List"}
+          title={"VIN List"}
           collapsed={collapsed}
           toggleSidebar={toggleSidebar}
           onLogoutModalChange={setIsNavbarLogoutModalOpen}
         />
         <div
-          className={`flex-1 p-4 bg-[#F8F8F8] rounded-2xl ${
-            collapsed ? "w-[95vw]" : "w-[86vw]"
+          className={`flex-1 p-4 gradient bg-[#F8F8F8] ${
+            collapsed ? "w-[95vw]" : "w-[87vw]"
           } min-h-[calc(100vh-80px)]`}
         >
           <CarsTable searchQuery={searchQuery} />

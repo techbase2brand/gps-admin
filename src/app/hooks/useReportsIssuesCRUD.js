@@ -21,7 +21,7 @@ export default function useReportsIssuesCRUD(storageKey) {
         throw error;
       }
       
-      console.log(`Fetched ${data?.length || 0} records from ${storageKey}`);
+      // console.log(`Fetched ${data?.length || 0} records from ${storageKey}`);
       setData(data || []);
     } catch (err) {
       console.error("Fetch all error:", err.message);

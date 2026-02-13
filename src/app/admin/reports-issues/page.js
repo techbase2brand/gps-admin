@@ -22,8 +22,8 @@ export default function ReportsIssues() {
           onLogoutModalChange={setIsNavbarLogoutModalOpen}
         />
         <div
-          className={`p-4 bg-[#F8F8F8] rounded-2xl ${
-            collapsed ? "w-[95vw]" : "w-[86vw]"
+          className={`p-4 bg-[#F8F8F8] gradient ${
+            collapsed ? "w-[95vw]" : "w-[87vw]"
           } min-h-[calc(100vh-80px)]`}
         >
           <ReportsIssuesTable searchQuery={searchQuery} />

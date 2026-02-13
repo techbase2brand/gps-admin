@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 
 import useCRUD from "../../../../hooks/useCRUD";
 import Sidebar from "../../../../components/Layout/Sidebar";
-// Routing Map Component nu load karo
+// Routing Map Component 
 const RouteMapComponent = dynamic(
   () => import("../../../../components/RouteMapComponent"),
   { ssr: false }
@@ -33,20 +33,22 @@ export default function CreateRoutePage() {
       const json = await response.json();
       if (json.results[0]) {
         const location = json.results[0].geometry.location;
+        console.log("location",location);
+        
         setCoordinates({ lat: location.lat, lng: location.lng });
       }
     } catch (error) { console.error("Geocode error:", error); }
   };
-
+  // console.log("coordinates",coordinates);
   if (!facility) return <div className="p-10 text-center">Loading Facility Data...</div>;
 
   return (
     <main className="flex bg-[#F8F8F8]">
       <Sidebar />
       <div className="flex-1 p-4 bg-[#F8F8F8]">
-        <div className="flex justify-between items-center mb-4">
+        {/* <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold text-black">{facility.name} - Route Mapping</h1>
-        </div>
+        </div> */}
         
         <div style={{ height: "80vh", width: "100%" }}>
           {coordinates.lat !== 0 && (

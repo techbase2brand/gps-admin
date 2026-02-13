@@ -14,7 +14,7 @@ export default function AuthWrapper({ children }) {
       const userEmail = localStorage.getItem("userEmail");
       
       // Static credentials check
-      const STATIC_EMAIL = "gpsadmin@gmail.com";
+      const STATIC_EMAIL = process.env.NEXT_PUBLIC_STATIC_EMAIL;
       
       if (isLoggedIn === "true" && userEmail === STATIC_EMAIL) {
         setIsAuthenticated(true);
