@@ -317,11 +317,11 @@ function page() {
 
       <Sidebar collapsed={collapsed} isLogoutModalOpen={isNavbarLogoutModalOpen} />
 
-      <div className="flex flex-col flex-1 min-h-screen bg-[#fff]">
+      <div className="flex flex-col flex-1 min-h-screen bg-[#fff] w-[84%]">
         <Navbar title={"Staff"} collapsed={collapsed} toggleSidebar={toggleSidebar} onLogoutModalChange={setIsNavbarLogoutModalOpen} />
 
         <div
-          className={`flex-1 p-4 bg-[#F8F8F8]  gradient ${collapsed ? "w-[95vw]" : "w-[87vw]"
+          className={`flex-1 p-4 bg-[#F8F8F8]  gradient ${collapsed ? "w-[95vw]" : "w-full"
             } min-h-[calc(100vh-80px)]`}
         >
           <div className="">

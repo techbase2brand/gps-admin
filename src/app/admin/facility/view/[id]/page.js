@@ -484,8 +484,8 @@ export default function ViewFacilityPage() {
         <div>
         <Sidebar />
         </div>
-        <div className="flex-1 p-4 bg-[#F8F8F8]">
-          <div className="flex justify-between items-center mb-4">
+        <div className="flex-1 px-4 bg-[#F8F8F8]">
+          <div className="flex justify-between items-center py-4">
             <h1 className="text-2xl font-bold text-black">Facility View --  {facility.name}</h1>
             <div className="flex items-center gap-3">
               {hasUnsavedPolygons && (
@@ -553,7 +553,7 @@ export default function ViewFacilityPage() {
 
             </div>
           </div>
-          <div style={{ height: "80vh", width: "100%" }}>
+          <div className="h-[calc(100vh-80px)]" style={{width: "100%" }}>
             {coordinates.lat && coordinates.lng ? (
               <FacilityMapWithDrawing
                 center={coordinates}

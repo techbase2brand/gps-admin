@@ -91,7 +91,6 @@
             pos_out_type = v;
         }
 
-
         this_obj.ClearBuffer = function () {
             g_is_tag_off = {};
             g_posdata = {};

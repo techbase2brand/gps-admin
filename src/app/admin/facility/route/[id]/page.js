@@ -44,13 +44,16 @@ export default function CreateRoutePage() {
 
   return (
     <main className="flex bg-[#F8F8F8]">
-      <Sidebar />
-      <div className="flex-1 p-4 bg-[#F8F8F8]">
+      <div>
+
+      <Sidebar /> 
+      </div>
+      <div className="flex-1 p-4 bg-[#F8F8F8] h-[87%]!">
         {/* <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold text-black">{facility.name} - Route Mapping</h1>
         </div> */}
         
-        <div style={{ height: "80vh", width: "100%" }}>
+        <div className=" " style={{ height: "100%", width: "100%" }}>
           {coordinates.lat !== 0 && (
             <RouteMapComponent center={coordinates} facilityId={id} />
           )}

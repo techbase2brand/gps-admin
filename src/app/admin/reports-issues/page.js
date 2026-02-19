@@ -14,7 +14,7 @@ export default function ReportsIssues() {
   return (
     <div className="flex bg-[#fff] min-h-screen">
       <Sidebar collapsed={collapsed} isLogoutModalOpen={isNavbarLogoutModalOpen} />
-      <div className="flex flex-col flex-1 min-h-screen bg-[#fff]">
+      <div className="flex flex-col flex-1 min-h-screen bg-[#fff] w-[80%]">
         <Navbar
           title={"Reports and Issues"}
           collapsed={collapsed}
@@ -23,8 +23,8 @@ export default function ReportsIssues() {
         />
         <div
           className={`p-4 bg-[#F8F8F8] gradient ${
-            collapsed ? "w-[95vw]" : "w-[87vw]"
-          } min-h-[calc(100vh-80px)]`}
+            collapsed ? "w-[95vw]" : "w-full"
+          } min-h-[calc(100vh-56px)]`}
         >
           <ReportsIssuesTable searchQuery={searchQuery} />
         </div>

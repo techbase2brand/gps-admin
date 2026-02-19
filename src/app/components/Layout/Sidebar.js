@@ -55,8 +55,8 @@ export default function Sidebar({ collapsed, isLogoutModalOpen }) {
       <section
         id="sidebar"
         className={`${
-          collapsed ? "w-[80px]" : "w-full"
-        } sticky top-0 h-screen min-h-[100vh] bg-black z-[2000] transition-all duration-300 ease-in-out overflow-x-hidden flex flex-col ${
+          collapsed ? "w-[80px]" : "w-[16%]  min-w-[267px]"
+        }  sticky top-0 h-screen min-h-[100vh] bg-black z-[2000]   overflow-x-hidden flex flex-col ${
           isAnyLogoutModalOpen ? "pointer-events-none blur-sm opacity-60" : ""
         }`}
       >
@@ -76,8 +76,8 @@ export default function Sidebar({ collapsed, isLogoutModalOpen }) {
               alt="GPS Dashboard"
               width={collapsed ? 60 : 90}
               height={32}
-              unoptimized
-              priority
+              // unoptimized
+              // priority
             />
           </Link>
          </div>

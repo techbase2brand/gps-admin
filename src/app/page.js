@@ -7,10 +7,12 @@ import {
   FaEnvelope,
   FaLock,
 } from "react-icons/fa";
+import client from "./api/client.js"
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Lottie from "lottie-react";
 import loadingAnimation from "./assets/loader.json";
+import { ApiError } from "next/dist/server/api-utils";
 // import md5 from 'blueimp-md5';
 // import './websocket api/jquery.js'
 // import './websocket api/localsense_websocket_api.js'
@@ -26,82 +28,220 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   // useEffect(() => {
-  //   const loadScripts = async () => {
+  //   const loadScriptsAndConnect = async () => {
   //     const addScript = (src) => {
   //       return new Promise((resolve, reject) => {
   //         const script = document.createElement('script');
-  //         // Next.js automatically looks in the 'public' folder for paths starting with '/'
   //         script.src = src;
-  //         script.async = false;
+  //         script.async = false; // Maintain order
   //         script.onload = () => {
-  //           console.log(`Loaded: ${src}`);
+  //           console.log(`✅ Loaded: ${src}`);
   //           resolve();
   //         };
-  //         script.onerror = (err) => reject(err);
+  //         script.onerror = (err) => {
+  //           console.error(`❌ Failed to load script: ${src}`);
+  //           reject(err);
+  //         };
   //         document.body.appendChild(script);
   //       });
   //     };
 
   //     try {
-  //       // Ensure these filenames match exactly what is in your public/websocket_api folder
+  //       // 1. Load dependencies in strict order
   //       await addScript('/websocket_api/jquery.js');
   //       await addScript('/websocket_api/md5.min.js');
   //       await addScript('/websocket_api/reconnecting-websocket.js');
   //       await addScript('/websocket_api/localsense_websocket_api.js');
 
+  //       // 2. Access the API from the window object
   //       const WEBSOCKET_API = window.LOCALSENSE?.WEBSOCKET_API;
-  //       if (WEBSOCKET_API) {
-  //         // Use window.md5 as the bridge
-  //         window.md5 = window.md5 || (typeof md5 !== 'undefined' ? md5 : null);
 
-  //         WEBSOCKET_API.SetAccount("brand2", "Aa123456", "abcdefghijklmnopqrstuvwxyz20191107salt");
-
-  //         // CHANGE THIS: Use your actual 47.236.94.129  server IP instead of 127.0.0.1 if it's on the cloud 127.0.0.1 
-
-
-  //         setTimeout(() => {
-
-  //           WEBSOCKET_API.RequireBasicInfo("47.236.94.129:48300");
-
-  //           WEBSOCKET_API.onRecvTagPos = (data) => {
-  //             console.log("Tag Data Received:", data);
-  //           };
-  //         },1000)
+  //       if (!WEBSOCKET_API) {
+  //         console.error("❌ DEBUG: WEBSOCKET_API not found. Check public/websocket_api folder.");
+  //         return;
   //       }
+
+  //       console.log("DEBUG: API detected. Configuring account...");
+
+  //       // Ensure md5 is bridged for the API
+  //       window.md5 = window.md5 || (typeof md5 !== 'undefined' ? md5 : null);
+
+  //       // 3. Set Account Credentials
+  //       WEBSOCKET_API.SetAccount("base2", "Aa123456", "abcdefghijklmnopqrstuvwxyz20191107salt");
+
+  //       // 4. THE CONNECTION HANDLER (This prevents the 'null' send error)
+  //       WEBSOCKET_API.onConnect = () => {
+  //         console.log("🚀 SUCCESS: WebSocket Handshake Complete. Socket is OPEN.");
+
+  //         try {
+  //           console.log("DEBUG: Calling RequireBasicInfo for 47.236.94.129:48300");
+  //           // Only call this AFTER onConnect triggers
+  //           WEBSOCKET_API.RequireBasicInfo("47.236.94.129:48300");
+  //         } catch (err) {
+  //           console.error(" ERROR: RequireBasicInfo failed:", err);
+  //         }
+  //       };
+
+  //       // 5. Data and Error Listeners
+  //       WEBSOCKET_API.onRecvTagPos = (data) => {
+  //         console.log("📡 NEW TAG DATA:", data);
+  //       };
+
+  //       WEBSOCKET_API.onError = (err) => {
+  //         console.error(" WEBSOCKET ERROR EVENT:", err);
+  //       };
+
+  //       WEBSOCKET_API.onClose = () => {
+  //         console.warn(" WebSocket Closed. reconnecting-websocket.js will attempt retry...");
+  //       };
+
   //     } catch (err) {
-  //       console.error("Script loading failed. Check if files exist in public/websocket_api/", err);
+  //       console.error(" CRITICAL: initialization failed:", err);
   //     }
   //   };
 
-  //   loadScripts();
+  //   loadScriptsAndConnect();
+
+  //   // Cleanup to avoid ghost connections on hot-reload
+  //   return () => {
+  //     const api = window.LOCALSENSE?.WEBSOCKET_API;
+  //     if (api && typeof api.close === 'function') {
+  //       console.log("Cleaning up WebSocket...");
+  //       api.close();
+  //     }
+  //   };
   // }, []);
 
 
-  // useEffect(() => {
-  //   // Ensure we are on the client
-  //   if (typeof window !== 'undefined' && window.WEBSOCKET_API) {
-      
-  //     window.md5 = window.md5 || (typeof md5 !== 'undefined' ? md5 : null);
-  //     WEBSOCKET_API.SetAccount("base2", "Aa123456", "abcdefghijklmnopqrstuvwxyz20191107salt");
-  
-  //     // Increase the timeout or better yet, check for connection status
-  //     const initSocket = setTimeout(() => {
-  //       try {
-  //         // Only call if the underlying socket is ready
-  //         WEBSOCKET_API.RequireBasicInfo("47.236.94.129:48300");
-          
-  //         WEBSOCKET_API.onRecvTagPos = (data) => {
-  //           console.log("Tag Data Received:", data);
-  //         };
-  //       } catch (err) {
-  //         console.error("Socket not ready yet:", err);
-  //       }
-  //     }, 2000); // Increased to 2s to be safe
-  
-  //     return () => clearTimeout(initSocket);
-  //   }
-  // }, []);
-  
+  const addScript = (src) => {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = src;
+      script.async = false; // important for ordered loading
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error(`Failed to load ${src}`));
+      document.body.appendChild(script);
+    });
+  };
+
+  useEffect(() => {
+
+    if (typeof window === "undefined") {
+      console.log("Not running in browser");
+      return;
+    }
+
+    let frameId;
+
+    const loadScriptsAndInit = async () => {
+      try {
+        console.log(" Loading websocket scripts...");
+
+        await addScript('/websocket_api/jquery.js');
+        console.log(" jquery loaded");
+
+        await addScript('/websocket_api/md5.min.js');
+        console.log(" md5 loaded");
+
+        await addScript('/websocket_api/reconnecting-websocket.js');
+        console.log(" reconnecting-websocket loaded");
+
+        await addScript('/websocket_api/localsense_websocket_api.js');
+        console.log(" localsense_websocket_api loaded");
+
+        // Correct object reference
+        const API = window.LOCALSENSE?.WEBSOCKET_API;
+
+
+        if (!API) {
+          console.error(" WEBSOCKET_API not found inside window.LOCALSENSE");
+          console.log("window object:", window);
+          return;
+        }
+
+        console.log(" WEBSOCKET_API found ");
+
+        initializeSocket(API);
+
+      } catch (err) {
+        console.error(" Script loading failed:", err);
+      }
+    };
+
+    let tagUpdateBuffer = new Map();
+    let syncInterval;
+    const initializeSocket = (API) => {
+      API.SetAccount("base2", "Aa123456", "abcdefghijklmnopqrstuvwxyz20191107salt");
+      API.setPosOutType(API.PosOutMode["2"]); // GPS Mode
+      API.RequireBasicInfo("47.236.94.129:48300");
+
+      // 3. DATA LISTENER: Only collects data, does NOT start timers
+      // API.Send2WS_RssTagClicked("1000005515");
+
+      setTimeout(() => {
+        console.log("Subscribing to Tag: 1000005515");
+        API.Send2WS_RssTagClicked("1000005515");
+        console.log("Done Tag: 1000005515");
+      }, 1000);
+
+      API.onRecvTagPos = function(data) {
+        console.log("Data:", data);
+    };
+
+
+      // API.onRecvTagPos = (data) => {
+      //   Object.keys(data).forEach(tagId => {
+      //     const pos = data[tagId];
+      //     const hexId = Number(pos.id).toString(16);
+
+      //     // This Map automatically keeps only the LATEST position for each tag
+      //     tagUpdateBuffer.set(hexId, {
+      //       tag_id: hexId,
+      //       x: pos.x,
+      //       y: pos.y,
+      //       last_seen: new Date().toISOString()
+      //     });
+      //   });
+
+      // };
+
+
+      console.log("Starting Sync Timer...");
+      syncInterval = setInterval(async () => {
+        if (tagUpdateBuffer.size === 0) return;
+        console.log("values", tagUpdateBuffer);
+
+
+        const dataToSave = Array.from(tagUpdateBuffer.values());
+        console.log("Datato save", dataToSave);
+
+
+
+        tagUpdateBuffer.clear();
+
+        console.log(`[BATCH SYNC] Sending ${dataToSave.length} tags to Supabase`);
+
+        // Perform your Supabase upsert here
+        const { data: tagData, error: tagError } = await client.from('tag').upsert(dataToSave, { onConflict: 'tag_id' });
+
+        if (tagError) {
+          console.log("Data base error", tagError.message);
+        }
+        if (tagData) {
+          console.log("Data saved");
+        }
+      }, 10000);
+    };
+
+    loadScriptsAndInit();
+
+    return () => {
+      if (syncInterval) clearInterval(syncInterval);
+      const API = window.LOCALSENSE?.WEBSOCKET_API;
+      if (API) API.onRecvTagPos = null;
+    };
+  }, []);
+
   const STATIC_EMAIL = process.env.NEXT_PUBLIC_STATIC_EMAIL;
   const STATIC_PASSWORD = process.env.NEXT_PUBLIC_STATIC_PASSWORD;
 

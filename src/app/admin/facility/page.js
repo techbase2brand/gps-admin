@@ -21,7 +21,7 @@ export default function Home() {
   return (
     <div className="flex bg-[#fff] min-h-screen">
       <Sidebar collapsed={collapsed} isLogoutModalOpen={isNavbarLogoutModalOpen} />
-      <div className="flex flex-col flex-1 min-h-screen bg-[#fff]">
+      <div className="flex flex-col flex-1 min-h-screen bg-[#fff] w-[84%]">
         <Navbar
           title={" Facility Management"}
           collapsed={collapsed}
@@ -30,7 +30,7 @@ export default function Home() {
         />
         <div
           className={`flex-1 p-4 gradient bg-[#F8F8F8]  ${
-            collapsed ? "w-[95vw]" : "w-[87vw]"
+            collapsed ? "w-[95vw]" : "w-full"
           } min-h-[calc(100vh-80px)]`}
         >
           {loading ? (

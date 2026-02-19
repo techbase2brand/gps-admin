@@ -220,31 +220,31 @@ export default function RouteMapComponent({ center }) {
   }
   return (
     <div className="flex flex-col h-screen overflow-hidden font-sans">
-      <div className="p-4 flex justify-between items-center border-b z-[1000] shadow-xl">
-        <h1 className="text-xl font-bold tracking-tight">
+      <div className="mb-4 flex justify-between items-center z-[1000] ">
+        <h1 className="text-2xl font-bold tracking-tight">
           Route Create
         </h1>
         <div className="flex gap-2">
           <button
             onClick={saveRouteData}
             disabled={isSaving || !hasChanges} // Disable if no changes
-            className={`px-4 py-2 rounded font-bold transition ${
+            className={`px-4 py-2 rounded font-medium transition ${
               !hasChanges
-                ? "bg-slate-600 cursor-not-allowed"
-                : "bg-green-600 hover:bg-green-700"
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-green-400 hover:bg-green-700"
             }`}
           >
             {isSaving ? "Saving..." : "Save Route"}
           </button>
           <button
             onClick={() => setNodes(nodes.slice(0, -1))}
-            className="px-4 py-2 bg-black text-white rounded font-bold transition"
+            className="px-4 py-2 bg-black text-white rounded font-medium transition"
           >
             Undo Node
           </button>
           <button
             onClick={() => setLinks(links.slice(0, -1))}
-            className="px-4 py-2 bg-black text-white rounded font-bold transition"
+            className="px-4 py-2 bg-black text-white rounded font-medium transition"
           >
             Undo Edge
           </button>
@@ -253,7 +253,7 @@ export default function RouteMapComponent({ center }) {
               setNodes([]);
               setLinks([]);
             }}
-            className="px-4 py-2 bg-black rounded text-white font-bold transition"
+            className="px-4 py-2 bg-black rounded text-white font-medium transition"
           >
             Clear All
           </button>

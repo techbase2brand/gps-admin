@@ -269,11 +269,11 @@ export default function Home() {
 
       <Sidebar collapsed={collapsed} isLogoutModalOpen={isNavbarLogoutModalOpen} />
 
-      <div className="flex flex-col flex-1 min-h-screen bg-[#fff]">
+      <div className="flex flex-col flex-1 min-h-screen bg-[#fff] w-[84%]">
 
         <Navbar title={"Dashboard"} collapsed={collapsed} toggleSidebar={toggleSidebar} onLogoutModalChange={setIsNavbarLogoutModalOpen} />
 
-        <div className={`flex-1 p-4 gradient  ${collapsed ? "w-[95vw]" : "w-[87vw]"} min-h-[calc(100vh-80px)] overflow-y-auto `}>
+        <div className={`flex-1 p-4 gradient  ${collapsed ? "w-[95vw]" : "w-full"} min-h-[calc(100vh-80px)] overflow-y-auto `}>
 
           <div className="flex justify-end gap-3 p-6">
 
