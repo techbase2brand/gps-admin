@@ -67,7 +67,7 @@ if (API) {
     let tagUpdateBuffer = new Map();
     let lastUpdateTracker = new Map();
     let lastLogTime = 0;
-    const THROTTLE_TIME = 20000;
+    const THROTTLE_TIME = 40000;
 
     /**
      * Data Reception Handler

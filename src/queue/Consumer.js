@@ -25,6 +25,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 const worker = new Worker('myFirstQueue', async (job) => {
     try {
+        const start = Date.now();
         const dataArray = job.data;
 
         if (!Array.isArray(dataArray)) {
@@ -35,27 +36,33 @@ const worker = new Worker('myFirstQueue', async (job) => {
 
         const updatePromises = dataArray.map(async (tag) => {
             const { chip, longitude, latitude, last_location_update } = tag;
-        
+
             const { error } = await supabase
                 .from('cars')
-                .update({ 
-                    longitude, 
-                    latitude, 
-                    last_location_update 
+                .update({
+                    longitude,
+                    latitude,
+                    last_location_update
                 })
                 .eq("chip", chip);
-        
+
             if (error) {
                 console.error(` Failed for ${chip}:`, error.message);
             } else {
                 console.log(` Data saved for chip: ${chip}`);
             }
         });
-        
+
         await Promise.all(updatePromises);
-        return { status: 'success' };
+        const duration = Date.now() - start;
+        console.log(` Batch of ${job.data.length} took ${duration}ms`);
+
+        return { status: 'success', duration };
     } catch (err) {
         throw new Error(`Worker failed: ${err.message}`);
     }
 
-}, { connection: connectionOptions });
+}, {
+    connection: connectionOptions,
+    concurrency: 5
+});
