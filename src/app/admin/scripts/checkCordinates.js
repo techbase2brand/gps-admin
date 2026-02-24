@@ -6,7 +6,7 @@ export function checkCordinate(facilityId){
         
     }
     const data=supabase.select("coordinates").eq("facility_id",facilityId)
-    console.log(`data of the ${facilityId} coordinates are ${data}`);
+    // console.log(`data of the ${facilityId} coordinates are ${data}`);
     if (isNaN(data)){
         return dataObj={
         check:0
