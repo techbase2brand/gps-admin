@@ -137,12 +137,11 @@ export default function RouteMapComponent({ center }) {
   // --- START DRAWING ---
   const startDrawing = (e, id) => {
     L.DomEvent.stopPropagation(e);
-    // Get the map instance from the event
-    const map = e.target._map;
-    map.dragging.disable();
-    map.touchZoom.disable();
-    map.doubleClickZoom.disable();
-
+    console.log(
+      `%c Drawing started from Node: ${id}`,
+      "color: #00f2ff; font-weight: bold"
+    );
+    e.target._map.dragging.disable();
     setDrawingFromId(id);
     setIsBlockingClick(true);
   };
@@ -154,13 +153,8 @@ export default function RouteMapComponent({ center }) {
       `%c Attempting connection to Node: ${targetId}`,
       "color: #ffff00; font-weight: bold"
     );
-    const map = e.target._map;
 
-    if (map) {
-      map.dragging.enable();
-      map.touchZoom.enable();
-      map.doubleClickZoom.enable();
-    }
+    if (e.target._map) e.target._map.dragging.enable();
 
     if (drawingFromId !== null && drawingFromId !== targetId) {
       const sourceNode = nodes.find((n) => n.id === drawingFromId);
@@ -234,10 +228,11 @@ export default function RouteMapComponent({ center }) {
           <button
             onClick={saveRouteData}
             disabled={isSaving || !hasChanges} // Disable if no changes
-            className={`px-4 py-2 rounded font-medium transition ${!hasChanges
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-green-400 hover:bg-green-700"
-              }`}
+            className={`px-4 py-2 rounded font-medium transition ${
+              !hasChanges
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-green-400 hover:bg-green-700"
+            }`}
           >
             {isSaving ? "Saving..." : "Save Route"}
           </button>
@@ -327,14 +322,8 @@ export default function RouteMapComponent({ center }) {
                 center={[node.lat, node.lng]}
                 radius={12}
                 eventHandlers={{
-                  mousedown: (e) => {
-                    L.DomEvent.stopPropagation(e); // Stop map from thinking we are dragging the map
-                    startDrawing(e, node.id);
-                  },
-                  mouseup: (e) => {
-                    L.DomEvent.stopPropagation(e); // Stop map from receiving the click
-                    finishDrawing(e, node.id);
-                  },
+                  mousedown: (e) => startDrawing(e, node.id),
+                  mouseup: (e) => finishDrawing(e, node.id),
                 }}
                 pathOptions={{
                   fillColor: "#00f2ff",
@@ -357,7 +346,7 @@ export default function RouteMapComponent({ center }) {
         </div>
 
         {/* Matrix Sidebar */}
-        {/*} <div className="flex-1 p-6 bg-black overflow-y-auto border-l border-slate-800 font-mono text-xs shadow-inner">
+      {/*} <div className="flex-1 p-6 bg-black overflow-y-auto border-l border-slate-800 font-mono text-xs shadow-inner">
           <h2 className="text-cyan-400 mb-6 border-b border-slate-800 pb-2 uppercase tracking-tighter font-black">
             Adjacency Matrix (Binary)
           </h2>
