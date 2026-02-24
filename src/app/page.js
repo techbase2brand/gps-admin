@@ -29,95 +29,14 @@ export default function LoginPage() {
   const [logedin, setLogedin] = useState(false);
 
   useEffect(() => {
-    const storedLogedin = localStorage.getItem("isLoggedIn") === "true";
+    let data = localStorage.getItem("isLoggedIn")
+
+
+    const storedLogedin = localStorage.getItem("isLoggedIn") == "true";
+
+
     setLogedin(storedLogedin);
   }, [])
-
-
-  // useEffect(() => {
-  //   const loadScriptsAndConnect = async () => {
-  //     const addScript = (src) => {
-  //       return new Promise((resolve, reject) => {
-  //         const script = document.createElement('script');
-  //         script.src = src;
-  //         script.async = false; // Maintain order
-  //         script.onload = () => {
-  //           console.log(`✅ Loaded: ${src}`);
-  //           resolve();
-  //         };
-  //         script.onerror = (err) => {
-  //           console.error(`❌ Failed to load script: ${src}`);
-  //           reject(err);
-  //         };
-  //         document.body.appendChild(script);
-  //       });
-  //     };
-
-  //     try {
-  //       // 1. Load dependencies in strict order
-  //       await addScript('/websocket_api/jquery.js');
-  //       await addScript('/websocket_api/md5.min.js');
-  //       await addScript('/websocket_api/reconnecting-websocket.js');
-  //       await addScript('/websocket_api/localsense_websocket_api.js');
-
-  //       // 2. Access the API from the window object
-  //       const WEBSOCKET_API = window.LOCALSENSE?.WEBSOCKET_API;
-
-  //       if (!WEBSOCKET_API) {
-  //         console.error("❌ DEBUG: WEBSOCKET_API not found. Check public/websocket_api folder.");
-  //         return;
-  //       }
-
-  //       console.log("DEBUG: API detected. Configuring account...");
-
-  //       // Ensure md5 is bridged for the API
-  //       window.md5 = window.md5 || (typeof md5 !== 'undefined' ? md5 : null);
-
-  //       // 3. Set Account Credentials
-  //       WEBSOCKET_API.SetAccount("base2", "Aa123456", "abcdefghijklmnopqrstuvwxyz20191107salt");
-
-  //       // 4. THE CONNECTION HANDLER (This prevents the 'null' send error)
-  //       WEBSOCKET_API.onConnect = () => {
-  //         console.log("🚀 SUCCESS: WebSocket Handshake Complete. Socket is OPEN.");
-
-  //         try {
-  //           console.log("DEBUG: Calling RequireBasicInfo for 47.236.94.129:48300");
-  //           // Only call this AFTER onConnect triggers
-  //           WEBSOCKET_API.RequireBasicInfo("47.236.94.129:48300");
-  //         } catch (err) {
-  //           console.error(" ERROR: RequireBasicInfo failed:", err);
-  //         }
-  //       };
-
-  //       // 5. Data and Error Listeners
-  //       WEBSOCKET_API.onRecvTagPos = (data) => {
-  //         console.log("📡 NEW TAG DATA:", data);
-  //       };
-
-  //       WEBSOCKET_API.onError = (err) => {
-  //         console.error(" WEBSOCKET ERROR EVENT:", err);
-  //       };
-
-  //       WEBSOCKET_API.onClose = () => {
-  //         console.warn(" WebSocket Closed. reconnecting-websocket.js will attempt retry...");
-  //       };
-
-  //     } catch (err) {
-  //       console.error(" CRITICAL: initialization failed:", err);
-  //     }
-  //   };
-
-  //   loadScriptsAndConnect();
-
-  //   // Cleanup to avoid ghost connections on hot-reload
-  //   return () => {
-  //     const api = window.LOCALSENSE?.WEBSOCKET_API;
-  //     if (api && typeof api.close === 'function') {
-  //       console.log("Cleaning up WebSocket...");
-  //       api.close();
-  //     }
-  //   };
-  // }, []);
 
 
   const addScript = (src) => {
@@ -145,16 +64,16 @@ export default function LoginPage() {
         console.log(" Loading websocket scripts...");
 
         await addScript('/websocket_api/jquery.js');
-        console.log(" jquery loaded");
+        // console.log(" jquery loaded");
 
         await addScript('/websocket_api/md5.min.js');
-        console.log(" md5 loaded");
+        // console.log(" md5 loaded");
 
         await addScript('/websocket_api/reconnecting-websocket.js');
-        console.log(" reconnecting-websocket loaded");
+        // console.log(" reconnecting-websocket loaded");
 
         await addScript('/websocket_api/localsense_websocket_api.js');
-        console.log(" localsense_websocket_api loaded");
+        // console.log(" localsense_websocket_api loaded");
 
         // Correct object reference
         const API = window.LOCALSENSE?.WEBSOCKET_API;
@@ -162,7 +81,7 @@ export default function LoginPage() {
 
         if (!API) {
           console.error(" WEBSOCKET_API not found inside window.LOCALSENSE");
-          console.log("window object:", window);
+          // console.log("window object:", window);
           return;
         }
 
@@ -185,14 +104,9 @@ export default function LoginPage() {
       // 3. DATA LISTENER: Only collects data, does NOT start timers
       // API.Send2WS_RssTagClicked("1000005515");
 
-      setTimeout(() => {
-        console.log("Subscribing to Tag ");
-        API.Send2WS_RssTagClicked("1000005515");
-        console.log("Done Tag");
-      }, 1000);
 
       API.onRecvTagPos = function (data) {
-        console.log("Data:", data);
+        // console.log("Data:", data);
       };
 
 
@@ -284,7 +198,9 @@ export default function LoginPage() {
 
 
   useEffect(() => {
-    if (logedin === "true") {
+    if (logedin == true) {
+      console.log("redirecting..........");
+
 
       router.push("/admin/dashboard");
       setLoading(false)
