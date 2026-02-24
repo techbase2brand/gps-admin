@@ -33,7 +33,7 @@ export default function CreateRoutePage() {
       const json = await response.json();
       if (json.results[0]) {
         const location = json.results[0].geometry.location;
-        console.log("location",location);
+        // console.log("location",location);
         
         setCoordinates({ lat: location.lat, lng: location.lng });
       }
