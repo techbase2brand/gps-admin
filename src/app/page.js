@@ -26,10 +26,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const logedin = localStorage.getItem("isLoggedIn");
+  const [logedin, setLogedin] = useState(false);
 
-  console.log("logedin",typeof(logedin));
-  
+  useEffect(() => {
+    const storedLogedin = localStorage.getItem("isLoggedIn") === "true";
+    setLogedin(storedLogedin);
+  }, [])
+
+
   // useEffect(() => {
   //   const loadScriptsAndConnect = async () => {
   //     const addScript = (src) => {
@@ -280,8 +284,8 @@ export default function LoginPage() {
 
 
   useEffect(() => {
-    if (logedin ==="true" ) {
-      
+    if (logedin === "true") {
+
       router.push("/admin/dashboard");
       setLoading(false)
     }
