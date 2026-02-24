@@ -216,7 +216,7 @@ export default function CarsTable({ searchQuery, assignview, from }) {
             <select
               value={facilityFilter}
               onChange={(e) => setFacilityFilter(e.target.value)}
-              className="w-full px-4 py-2 pr-8 border border-gray-300 rounded-lg text-[#333333] focus:outline-none focus:border-black appearance-none bg-white"
+              className="w-full px-4 py-2 pr-8 border border-gray-300 rounded-lg text-[#333333] focus:outline-none focus:border-black appearance-none bg-white cursor-pointer"
             >
               <option value="all">All Facilities</option>
               {facilities?.map((facility) => (
@@ -246,7 +246,7 @@ export default function CarsTable({ searchQuery, assignview, from }) {
 
           <button
             onClick={openAddModal}
-            className="px-6 py-2 bg-black text-white rounded-full shadow-md hover:bg-black transition-colors"
+            className="px-6 py-2 bg-black text-white rounded-full shadow-md hover:bg-black transition-colors cursor-pointer"
           >
             Add Vehicle
           </button>
@@ -261,7 +261,7 @@ export default function CarsTable({ searchQuery, assignview, from }) {
           <div className="bg-white w-full max-w-md h-full overflow-y-auto shadow p-6 relative transition-transform translate-x-0">
             <button
               onClick={closeModal}
-              className="absolute top-5 right-8 text-gray-600 hover:text-gray-800"
+              className="absolute top-5 right-8 text-gray-600 hover:text-gray-800 cursor-pointer"
             >
               ✕
             </button>
@@ -331,6 +331,7 @@ export default function CarsTable({ searchQuery, assignview, from }) {
 
       {/* Table */}
       <table className="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
+       
         <thead>
           <tr className="text-left border-b bg-black">
             <th className="text-start px-4 py-2 text-white rounded-tl-lg">
@@ -377,6 +378,7 @@ export default function CarsTable({ searchQuery, assignview, from }) {
             <th className="text-start px-4 py-2 text-white rounded-tr-lg">Actions</th>
           </tr>
         </thead>
+
         <tbody>
 
           {sortedData?.map((car) => (
@@ -422,20 +424,20 @@ export default function CarsTable({ searchQuery, assignview, from }) {
                   // onClick={() => router.push(`/admin/cars/${car?.id}`)}
                   className=" px-2 py-2 rounded"
                 >
-                  <IoEyeOutline size={20} className="text-[#333333]" />
+                  <IoEyeOutline size={20} className="text-[#333333] cursor-pointer" />
                 </button>
                 <button
                   onClick={() => openEditModal(car)}
                   // onClick={() => router.push(`/admin/cars/${car?.id}`)}
-                  className="px-2 py-2 rounded"
+                  className="px-2 py-2 rounded "
                 >
-                  <FiEdit size={16} className="text-green-500" />
+                  <FiEdit size={16} className="text-green-500 cursor-pointer" />
                 </button>
                 <button
                   onClick={() => setDeleteId(car.id)}
                   className="px-2 py-2 rounded"
                 >
-                  <MdDeleteOutline size={20} className="text-red-500" />
+                  <MdDeleteOutline size={20} className="text-red-500 cursor-pointer" />
                 </button>
               </td>
             </tr>
@@ -457,14 +459,14 @@ export default function CarsTable({ searchQuery, assignview, from }) {
           <button
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(prev => prev - 1)}
-            className="px-4 py-2 border rounded text-black disabled:opacity-50"
+            className="px-4 py-2 border rounded text-black disabled:opacity-50 cursor-pointer"
           >
             Previous
           </button>
           <button
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(prev => prev + 1)}
-            className="px-4 py-2 border rounded text-black disabled:opacity-50"
+            className="px-4 py-2 border rounded text-black disabled:opacity-50 cursor-pointer"
           >
             Next
           </button>

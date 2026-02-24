@@ -18,7 +18,7 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-    console.error("Supabase credentials missing");
+    console.error(" [consumer] Supabase credentials missing");
     process.exit(1);
 }
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
@@ -29,10 +29,10 @@ const worker = new Worker('myFirstQueue', async (job) => {
         const dataArray = job.data;
 
         if (!Array.isArray(dataArray)) {
-            console.error(" Expected array but received:", typeof dataArray);
+            console.error("[consumer] Expected array but received:", typeof dataArray);
             return;
         }
-        console.log(` Processing batch of ${dataArray.length} updates`);
+        console.log(`[consumer] Processing batch of ${dataArray.length} updates`);
 
         const updatePromises = dataArray.map(async (tag) => {
             const { chip, longitude, latitude, last_location_update } = tag;
@@ -47,19 +47,59 @@ const worker = new Worker('myFirstQueue', async (job) => {
                 .eq("chip", chip);
 
             if (error) {
-                console.error(` Failed for ${chip}:`, error.message);
+                console.error(`[consumer] Failed for ${chip}:`, error.message);
             } else {
-                console.log(` Data saved for chip: ${chip}`);
+                console.log(`[consumer] Data saved for chip: ${chip}`);
             }
         });
 
         await Promise.all(updatePromises);
         const duration = Date.now() - start;
-        console.log(` Batch of ${job.data.length} took ${duration}ms`);
+        console.log(`[consumer] Batch of ${job.data.length} took ${duration}ms`);
 
-        return { status: 'success', duration };
+        return { status: '[consumer] success', duration };
     } catch (err) {
-        throw new Error(`Worker failed: ${err.message}`);
+        throw new Error(` [consumer] Worker failed: ${err.message}`);
+    }
+
+}, {
+    connection: connectionOptions,
+    concurrency: 5
+});
+
+
+const TagUpdateworker = new Worker('updateTagBattery', async (job) => {
+    try {
+        const start = Date.now();
+        const updateTagData = job.data;
+        console.log(updateTagData);
+        
+        const TagId = updateTagData.tagID;
+        const TagBatt = updateTagData.tagCap
+        console.log("updateTagData", TagId, TagBatt);
+
+        const { error } = await supabase
+            .from('cars')
+            .update({
+                "battery_level": TagBatt
+            })
+            .eq("chip", TagId);
+
+        if (error) {
+            console.error(`[consumer] Failed for ${TagId}:`, error.message);
+        } else {
+            console.log(`[consumer] Data saved for chip: ${TagId}`);
+
+        }
+
+        // await Promise.all(updatePromises);
+        const duration = Date.now() - start;
+        console.log(`[TagUpdateworker consumer] Batch  took ${duration}ms`);
+
+        return { status: '[TagUpdateworker consumer] success', duration };
+    }
+    catch (err) {
+        throw new Error(` [consumer] Worker failed: ${err.message}`);
     }
 
 }, {

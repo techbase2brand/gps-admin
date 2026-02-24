@@ -459,19 +459,19 @@ export default function ViewFacilityPage() {
             <div className="flex gap-3 justify-end">
               <button
                 onClick={handleCancelWarning}
-                className="px-6 py-2.5 bg-[#F8F8F8] text-[#333333] rounded-lg hover:bg-[#F8F8F8] transition-colors font-medium shadow-sm"
+                className="px-6 py-2.5 bg-[#F8F8F8] text-[#333333] rounded-lg hover:bg-[#F8F8F8] transition-colors font-medium shadow-sm cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleLeaveWithoutSave}
-                className="px-6 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium shadow-md hover:shadow-lg"
+                className="px-6 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium shadow-md hover:shadow-lg cursor-pointer"
               >
                 Leave without saving
               </button>
               <button
                 onClick={handleSaveAndLeave}
-                className="px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium shadow-md hover:shadow-lg"
+                className="px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium shadow-md hover:shadow-lg cursor-pointer"
               >
                 Save
               </button>
@@ -523,7 +523,7 @@ export default function ViewFacilityPage() {
               </button>
               <button
                 onClick={() => handleAiClick("row")} // Added arrow function
-                className={`px-4 py-2 rounded font-medium text-white transition-all ${
+                className={`px-4 py-2 rounded font-medium text-white transition-all cursor-pointer ${
                   isAiDrawing ? "bg-black animate-pulse" : "bg-black"
                 }`}
               >
@@ -532,7 +532,7 @@ export default function ViewFacilityPage() {
 
               <button
                 onClick={() => handleDelete("one")}
-                className="px-4 py-2 rounded font-medium text-white transition-all bg-red-600"
+                className="px-4 py-2 rounded font-medium text-white transition-all bg-red-600 cursor-pointer"
               >
                 Delete Previous
               </button>
@@ -542,7 +542,7 @@ export default function ViewFacilityPage() {
 
               <button
                 onClick={() => handleRouteClick()} // Added arrow function
-                className={`px-4 py-2 rounded font-medium text-white transition-all ${
+                className={`px-4 py-2 rounded font-medium text-white transition-all cursor-pointer ${
                   isRoute
                     ? "bg-black animate-pulse"
                     : "bg-black"

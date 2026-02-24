@@ -270,7 +270,7 @@ export default function FacilityForm({
               type="button"
               onClick={handleEditPolygon}
               disabled={isSavingForPolygon || isSubmitting}
-              className={`w-full bg-black text-white px-4 py-2 rounded flex items-center justify-center gap-2 hover:bg-black transition-colors ${
+              className={`w-full bg-black text-white px-4 py-2 rounded cursor-pointer flex items-center justify-center gap-2 hover:bg-black transition-colors ${
                 isSavingForPolygon || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
@@ -280,18 +280,18 @@ export default function FacilityForm({
           </div>
         )}
 
-        <div className="fixed bottom-0 left-0 w-full max-w-md bg-white p-4 border-t flex justify-between gap-4">
+        <div className="fixed bottom-0 left-0 w-full max-w-md bg-white p-4 border-t flex justify-between gap-4 ">
           <button
             type="button"
             onClick={closeModal}
-            className="bg-gray-500 text-white px-4 py-2 w-[50%] rounded hover:bg-gray-600"
+            className="bg-gray-500 text-white px-4 py-2 w-[50%] rounded hover:bg-gray-600 cursor-pointer"
             disabled={isSubmitting}
           >
             Cancel
           </button>
           <button
             type="submit"
-            className={`px-4 py-2 w-[50%] rounded text-white ${
+            className={`px-4 py-2 w-[50%] rounded text-white cursor-pointer ${
               isSubmitting 
                 ? 'bg-gray-400 cursor-not-allowed' 
                 : 'bg-black hover:bg-black'

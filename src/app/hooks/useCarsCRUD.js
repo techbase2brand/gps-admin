@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import client from "../api/client"; // adjust path as per your project
 
 export default function useCarsCRUD(storageKey, filters = {}) {
@@ -10,6 +10,11 @@ export default function useCarsCRUD(storageKey, filters = {}) {
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  
+
+
+
 
   const fetchAll = useCallback(async () => {
     try {
@@ -167,5 +172,6 @@ export default function useCarsCRUD(storageKey, filters = {}) {
     updateItem,
     deleteItem,
     updateTrackerAndStatus,
+    
   };
 }

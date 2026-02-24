@@ -290,14 +290,14 @@ export default function CarForm({
           <button
             type="button"
             onClick={closeModal}
-            className="bg-gray-500 text-white px-4 py-2 w-[50%] rounded hover:bg-gray-600"
+            className="bg-gray-500 text-white px-4 py-2 w-[50%] rounded hover:bg-gray-600 cursor-pointer"
             disabled={isSubmitting}
           >
             Cancel
           </button>
           <button
             type="submit"
-            className={`px-4 py-2 w-[50%] rounded text-white ${
+            className={`px-4 py-2 w-[50%] rounded text-white cursor-pointer ${
               isSubmitting 
                 ? 'bg-gray-400 cursor-not-allowed' 
                 : 'bg-black hover:bg-black'

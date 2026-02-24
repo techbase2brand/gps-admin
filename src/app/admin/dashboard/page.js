@@ -2,7 +2,7 @@
 import Sidebar from "../../components/Layout/Sidebar";
 import useCRUD from "../../hooks/useCRUD";
 import DashboardCard from "../../components/DashboardCard";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useCarsCRUD from "../../hooks/useCarsCRUD";
 import { FaCar, FaMicrochip, FaParking, FaMapMarkerAlt, FaBuilding, FaUsers } from "react-icons/fa";
 import { FiSearch } from "react-icons/fi";
@@ -15,6 +15,7 @@ import useStaffForm from "../../hooks/useStaffForm";
 import FacilityTable from "../../components/FacilityTable";
 import CarsTable from "../../components/CarsTable";
 import FacilityForm from "../../components/FacilityForm";
+import client from "../../api/client";
 
 
 export default function Home() {
@@ -35,7 +36,7 @@ export default function Home() {
     useCRUD("facility");
   const router = useRouter();
   const [errors, setErrors] = useState({})
-  const { carData, addItem: addCar, } = useCarsCRUD("cars");
+  const { carData, addItem: addCar, totalCount: carTotal } = useCarsCRUD("cars");
   const { data: staffData } = useCRUD("staff");
   const [collapsed, setCollapsed] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -59,10 +60,41 @@ export default function Home() {
   });
   const [isOpenAddStaff, setIsOpenAddStaff] = useState(false);
   const [isAddFacilityModalOpen, setIsAddFacilityModalOpen] = useState(false);
+  const [assignedCount, setAssignedCount] = useState(0);
+  const [unassignedCount, setUnassignedCount] = useState(0);
 
-  // Debug: Check status counts
-  const assignedCount = carData?.filter((car) => car?.status === "Assigned")?.length || 0;
-  const unassignedCount = carData?.filter((car) => car?.status === "Unassigned")?.length || 0;
+
+  useEffect(() => {
+    const getStats = async () => {
+      // 1. Fetch the actual 'chip' column so we can check it
+      const { data, error } = await client
+        .from("cars")
+        .select("chip");
+
+      if (error) {
+        console.error("Error fetching data:", error);
+        return;
+      }
+
+      // 2. Use 'data' (the result of the fetch) to calculate counts
+      const assigned = data?.filter((car) =>
+        car.chip && car.chip.toString().trim() !== ""
+      ).length || 0;
+
+      const unassigned = data?.filter((car) =>
+        !car.chip || car.chip.toString().trim() === ""
+      ).length || 0;
+
+      // 3. Update the state with the correct variable names
+      setAssignedCount(assigned);
+      setUnassignedCount(unassigned);
+
+      console.log("Assigned:", assigned, "Unassigned:", unassigned);
+    };
+
+    getStats();
+  }, []); // Runs once on mount
+
   const toggleSidebar = () => setCollapsed(!collapsed);
 
 
@@ -279,7 +311,7 @@ export default function Home() {
 
             <ToastContainer />
 
-            <button onClick={() => setShowModal(true)} className="bg- flex items-center justify-center bg-black text-bold text-white px-4 py-2 gap-2 rounded-xl my-4">
+            <button onClick={() => setShowModal(true)} className="bg- flex items-center justify-center bg-black cursor-pointer text-bold text-white px-4 py-2 gap-2 rounded-xl my-4">
               {/* <FaMapMarkerAlt size={19} className="text-White bg-black" /> Track Vehicle */}
 
               {/* <FiSearch size={18} className="text-White bg-black" /> */}
@@ -287,24 +319,24 @@ export default function Home() {
 
             </button>
 
-            <button onClick={() => setShowModalChip(true)} className="bg- flex items-center justify-center bg-black text-bold text-white px-4 py-2 gap-2 rounded-xl my-4">
+            <button onClick={() => setShowModalChip(true)} className="bg- flex items-center justify-center bg-black text-bold text-white px-4 py-2 gap-2 cursor-pointer rounded-xl my-4">
               {/* <FaMapMarkerAlt size={19} className="text-White bg-black" /> Track Vehicle */}
               {/* <FiSearch size={18} className="text-White bg-black" />  */}
               Track Chip
             </button>
 
-            <button onClick={openAddModal} className="bg- flex items-center justify-center bg-black text-bold text-white px-4 py-2 gap-2 rounded-xl my-4">
+            <button onClick={openAddModal} className="bg- flex items-center justify-center bg-black text-bold cursor-pointer text-white px-4 py-2 gap-2 rounded-xl my-4">
               Add Vehicle
             </button>
 
-            <button onClick={() => openAddStaffModal()} className="bg- flex items-center justify-center bg-black text-bold text-white px-4 py-2 gap-2 rounded-xl my-4">
+            <button onClick={() => openAddStaffModal()} className="bg- flex items-center justify-center cursor-pointer bg-black text-bold text-white px-4 py-2 gap-2 rounded-xl my-4">
               Add Staff
             </button>
 
             <div>
               <button
                 onClick={openAddFacilityModal}
-                className="bg- flex items-center justify-center bg-black text-bold text-white px-4 py-2 gap-2 rounded-xl my-4"
+                className="bg- flex items-center justify-center bg-black text-bold text-white px-4 py-2 gap-2 rounded-xl my-4 cursor-pointer"
               >
                 Add Facility
               </button>
@@ -375,7 +407,7 @@ export default function Home() {
                     placeholder="Enter VIN number"
                     className="border border-gray-300 text-black placeholder-black rounded px-4 py-2 w-full mb-4"
                   />
-                  
+
                   <div className="flex justify-end gap-4">
                     <button
                       onClick={() => setShowModal(false)}
@@ -481,7 +513,7 @@ export default function Home() {
                         className="w-full border px-3 py-2 rounded text-[#333333] placeholder-[#666666]-400"
 
                       />
-                      
+
                       {errors.contact && <p className="text-red-500 text-sm mt-1">{errors.contact}</p>}
                     </div>
 
@@ -586,7 +618,7 @@ export default function Home() {
             />
             <DashboardCard
               title="Total Cars"
-              count={carData?.length}
+              count={carTotal}
               iconSrc={<FaCar size={24} className="text-black" />}
               progressColor="bg-black"
             />

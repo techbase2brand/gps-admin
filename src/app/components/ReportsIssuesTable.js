@@ -232,7 +232,7 @@ export default function ReportsIssuesTable({ searchQuery }) {
                     <select
                       value={issue?.status || ""}
                       onChange={(e) => handleStatusChange(issue, e.target.value)}
-                      className={`px-3 py-1 rounded-full text-sm font-medium border-0 ${getStatusColor(issue?.status)}`}
+                      className={`px-3 py-1 rounded-full cursor-pointer text-sm font-medium border-0 ${getStatusColor(issue?.status)}`}
                     >
                       <option value="Open">Open</option>
                       <option value="Pending">Pending</option>
@@ -256,21 +256,21 @@ export default function ReportsIssuesTable({ searchQuery }) {
                       className="px-2 py-2 rounded hover:bg-gray-100"
                       title="View Details"
                     >
-                      <IoEyeOutline size={20} className="text-black" />
+                      <IoEyeOutline size={20} className="text-black cursor-pointer" />
                     </button>
                     <button
                       onClick={() => handleEdit(issue)}
                       className="px-2 py-2 rounded hover:bg-gray-100"
                       title="Edit"
                     >
-                      <FiEdit size={16} className="text-green-500" />
+                      <FiEdit size={16} className="text-green-500 cursor-pointer" />
                     </button>
                     <button
                       onClick={() => setDeleteId(issue.id)}
                       className="px-2 py-2 rounded hover:bg-gray-100"
                       title="Delete"
                     >
-                      <MdDeleteOutline size={20} className="text-red-500" />
+                      <MdDeleteOutline size={20} className="text-red-500 cursor-pointer" />
                     </button>
                   </td>
                 </tr>
@@ -299,7 +299,7 @@ export default function ReportsIssuesTable({ searchQuery }) {
                   setIsViewModalOpen(false);
                   setSelectedIssue(null);
                 }}
-                className="text-gray-600 hover:text-gray-800"
+                className="text-gray-600 hover:text-gray-800 cursor-pointer"
               >
                 ✕
               </button>
@@ -388,7 +388,7 @@ export default function ReportsIssuesTable({ searchQuery }) {
                   setEditingIssue(null);
                   setAdminNotes("");
                 }}
-                className="text-gray-600 hover:text-gray-800"
+                className="text-gray-600 hover:text-gray-800 cursor-pointer"
               >
                 ✕
               </button>
@@ -431,13 +431,13 @@ export default function ReportsIssuesTable({ searchQuery }) {
                   setEditingIssue(null);
                   setAdminNotes("");
                 }}
-                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveEdit}
-                className="px-4 py-2 bg-black text-white rounded hover:bg-black"
+                className="px-4 py-2 bg-black text-white rounded hover:bg-black cursor-pointer"
               >
                 Save Changes
               </button>

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "mqtt:worker": "node src/app/admin/scripts/mqttWorker.js",
-    "worker:ws": "node --import tsx --env-file=.env src/app/admin/scripts/websocketWorker.js"
+    "worker:ws": "node --import tsx --env-file=.env src/app/admin/scripts/websocketWorker.js",
+    "worker":"node src/queue/Consumer.js"
   },
   "dependencies": {
     "@fortawesome/free-brands-svg-icons": "^6.7.2",

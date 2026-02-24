@@ -238,13 +238,13 @@ export default function RouteMapComponent({ center }) {
           </button>
           <button
             onClick={() => setNodes(nodes.slice(0, -1))}
-            className="px-4 py-2 bg-black text-white rounded font-medium transition"
+            className="px-4 py-2 bg-black text-white rounded font-medium transition cursor-pointer"
           >
             Undo Node
           </button>
           <button
             onClick={() => setLinks(links.slice(0, -1))}
-            className="px-4 py-2 bg-black text-white rounded font-medium transition"
+            className="px-4 py-2 bg-black text-white rounded font-medium transition cursor-pointer"
           >
             Undo Edge
           </button>
@@ -253,7 +253,7 @@ export default function RouteMapComponent({ center }) {
               setNodes([]);
               setLinks([]);
             }}
-            className="px-4 py-2 bg-black rounded text-white font-medium transition"
+            className="px-4 py-2 bg-black rounded text-white font-medium transition cursor-pointer"
           >
             Clear All
           </button>

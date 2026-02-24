@@ -26,7 +26,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const logedin = localStorage.getItem("isLoggedIn");
 
+  console.log("logedin",typeof(logedin));
+  
   // useEffect(() => {
   //   const loadScriptsAndConnect = async () => {
   //     const addScript = (src) => {
@@ -179,14 +182,14 @@ export default function LoginPage() {
       // API.Send2WS_RssTagClicked("1000005515");
 
       setTimeout(() => {
-        console.log("Subscribing to Tag: 1000005515");
+        console.log("Subscribing to Tag ");
         API.Send2WS_RssTagClicked("1000005515");
-        console.log("Done Tag: 1000005515");
+        console.log("Done Tag");
       }, 1000);
 
-      API.onRecvTagPos = function(data) {
+      API.onRecvTagPos = function (data) {
         console.log("Data:", data);
-    };
+      };
 
 
       // API.onRecvTagPos = (data) => {
@@ -266,14 +269,26 @@ export default function LoginPage() {
         setTimeout(() => {
           setLoading(false);
           router.push("/admin/dashboard");
-        }, 2000); // 2 seconds delay
-      } else {
+        }, 100); // .5 seconds delay
+      }
+      else {
         setError("Invalid email or password. Please use the correct admin credentials.");
       }
+
     }
   };
 
+
+  useEffect(() => {
+    if (logedin ==="true" ) {
+      
+      router.push("/admin/dashboard");
+      setLoading(false)
+    }
+  }, [logedin])
+
   return (
+
     <div className="relative flex min-h-screen w-full overflow-hidden font-poppins bg-white">
       {/* Particle Background */}
       <div className="absolute inset-0 pointer-events-none z-0">
@@ -449,5 +464,6 @@ export default function LoginPage() {
         </button>
       </motion.form>
     </div>
+
   );
 }

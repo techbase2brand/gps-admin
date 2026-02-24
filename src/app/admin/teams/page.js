@@ -66,10 +66,10 @@ function page() {
         },
         (payload) => {
           // console.log("Database changed!", payload);
-          let val=Math.random()
+          let val = Math.random()
           setCurrentPage(prev => val)
           // console.log("setCurrentPage working ",staffData)
-          
+
         }
       )
       .subscribe();
@@ -81,6 +81,12 @@ function page() {
 
   // Filter by status
   const filteredStaffData = staffData.filter((staff) => {
+    if (statusFilter == "DeleteRequest") {
+      if (staff.deleteAccount) {
+        return staff.deleteAccount;
+      }
+    }
+
     return statusFilter === "all" || staff.status === statusFilter;
   });
 
@@ -260,6 +266,7 @@ function page() {
     if (!formData.contact) newErrors.contact = "Contact number is required";
     if (!formData.joiningDate) newErrors.joiningDate = "Joining date is required";
 
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -299,6 +306,10 @@ function page() {
         } else {
           // If addStaff returned success: false (like duplicate email)
           toast.error(result?.message || "Could not add staff");
+          let newErrors = {};
+          newErrors.email = result?.message
+          setErrors(newErrors)
+
           return; // Stop here! Don't close the modal.
         }
       }
@@ -344,11 +355,13 @@ function page() {
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full px-4 py-2 pr-8 border border-gray-300 rounded-lg text-[#333333] focus:outline-none focus:border-black appearance-none bg-white"
+                    className="w-full px-4 py-2 pr-8 border border-gray-300 rounded-lg text-[#333333] focus:outline-none focus:border-black appearance-none bg-white cursor-pointer"
                   >
                     <option value="all">All Status</option>
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
+                    <option value="DeleteRequest">Delete Request</option>
+
                   </select>
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
                     <svg className="w-4 h-4 text-[#666666]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -370,7 +383,7 @@ function page() {
               <div>
                 <button
                   onClick={() => openModal()}
-                  className="px-6 py-2 bg-black text-white rounded-full shadow-md hover:bg-black transition-colors"
+                  className="px-6 py-2 bg-black text-white rounded-full shadow-md hover:bg-black transition-colors cursor-pointer"
                 >
                   Add Staff
                 </button>
@@ -385,7 +398,7 @@ function page() {
 
                   <button
                     onClick={closeModal}
-                    className="absolute top-5 right-8 text-gray-600 hover:text-gray-800"
+                    className="absolute top-5 right-8 text-gray-600 hover:text-gray-800 cursor-pointer"
                   >
                     ✕
                   </button>
@@ -467,14 +480,14 @@ function page() {
                       <button
                         type="button"
                         onClick={closeModal}
-                        className="bg-[#666666] text-white px-4 py-2 w-[50%] rounded hover:bg-[#666666]"
+                        className="bg-[#666666] text-white px-4 py-2 w-[50%] rounded hover:bg-[#666666] cursor-pointer"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         // onClick={handleSmtp}
-                        className="bg-black text-white px-4 py-2 w-[50%] rounded hover:bg-black"
+                        className="bg-black text-white px-4 py-2 w-[50%] rounded hover:bg-black cursor-pointer"
                       >
                         {editingStaff ? "Update" : "Submit"}
                       </button>
@@ -618,13 +631,13 @@ function page() {
                         onClick={() => openModal(staff)}
                       >
                         {" "}
-                        <FiEdit size={16} className="text-green-500" />
+                        <FiEdit size={16} className="text-green-500 cursor-pointer" />
                       </button>
                       <button
                         className="ml-4 text-red-500"
                         onClick={() => confirmDelete(staff.id)}
                       >
-                        <MdDeleteOutline size={20} className="text-Red-500" />
+                        <MdDeleteOutline size={20} className="text-Red-500 cursor-pointer" />
                       </button>
                     </td>
                   </tr>

@@ -85,9 +85,9 @@ export default function Navbar({ title, toggleSidebar, collapsed, onLogoutModalC
           />
           <button
             type="submit"
-            className="bg-black text-white p-2 rounded-full"
+            className="bg-black text-white p-2 rounded-full "
           >
-            <FiSearch size={18} />
+            <FiSearch size={18} className="cursor-pointer"/>
           </button>
         </form>
 
@@ -112,7 +112,7 @@ export default function Navbar({ title, toggleSidebar, collapsed, onLogoutModalC
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-gray-50 bg-white">
                 <h3 className="text-sm font-bold text-gray-900">Search Results</h3>
-                <button onClick={() => setShowSearchModal(false)} className="text-gray-400 hover:text-gray-600">
+                <button onClick={() => setShowSearchModal(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer">
                   ✕
                 </button>
               </div>
@@ -161,7 +161,7 @@ export default function Navbar({ title, toggleSidebar, collapsed, onLogoutModalC
       {/* Logout Button */}
       <button
         onClick={() => setShowLogoutConfirm(true)}
-        className="flex items-center gap-2 px-3 py-1 text-[#FF0000] hover:bg-red-50 rounded-md transition-colors"
+        className="flex items-center gap-2 px-3 py-1 text-[#FF0000] hover:bg-red-50 rounded-md transition-colors cursor-pointer"
         title="Logout"
       >
         <FiLogOut size={16} />
@@ -209,7 +209,7 @@ export default function Navbar({ title, toggleSidebar, collapsed, onLogoutModalC
             <div className="flex justify-center gap-3">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="px-5 py-2 rounded-lg bg-[#F8F8F8] text-[#333333] hover:bg-gray-200 transition-all duration-200 font-medium border border-gray-200 hover:border-gray-300 min-w-[90px]"
+                className="px-5 py-2 rounded-lg bg-[#F8F8F8] text-[#333333] hover:bg-gray-200 transition-all duration-200 font-medium border border-gray-200 hover:border-gray-300 min-w-[90px] cursor-pointer"
               >
                 Cancel
               </button>
@@ -218,7 +218,7 @@ export default function Navbar({ title, toggleSidebar, collapsed, onLogoutModalC
                   setShowLogoutConfirm(false);
                   handleLogout();
                 }}
-                className="px-5 py-2 rounded-lg bg-[#FF0000] text-white hover:bg-red-600 transition-all duration-200 font-medium shadow-md hover:shadow-lg min-w-[90px]"
+                className="px-5 py-2 rounded-lg bg-[#FF0000] text-white hover:bg-red-600 transition-all duration-200 font-medium shadow-md hover:shadow-lg min-w-[90px] cursor-pointer"
               >
                 Logout
               </button>

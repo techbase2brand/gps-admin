@@ -23,7 +23,7 @@ export default function FacilityTable({
 
 }) {
   const totalPages = Math.ceil(totalCount / itemsPerPage);
-   const router = useRouter();
+  const router = useRouter();
   const { carData, deleteItem: deleteCar } = useCarsCRUD("cars");
   const [deleteId, setDeleteId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -178,11 +178,11 @@ export default function FacilityTable({
             <select
               value={cityFilter}
               onChange={(e) => setCityFilter(e.target.value)}
-              className="w-full px-4 py-2 pr-8 border border-gray-300 rounded-lg text-[#333333] focus:outline-none focus:border-black appearance-none bg-white"
+              className="w-full px-4 py-2 pr-8 border border-gray-300 rounded-lg text-[#333333] focus:outline-none focus:border-black appearance-none bg-white cursor-pointer"
             >
               <option value="all">All Cities</option>
               {uniqueCities.map((city, idx) => (
-                <option key={idx} value={city}>{city}</option>
+                <option  key={idx} value={city}>{city}</option>
               ))}
             </select>
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
@@ -204,7 +204,7 @@ export default function FacilityTable({
         <div>
           <button
             onClick={openAddModal}
-            className="px-6 py-2 bg-black text-white rounded-full shadow-md"
+            className="px-6 py-2 bg-black text-white rounded-full shadow-md cursor-pointer"
           >
             Add Facility
           </button>
@@ -214,7 +214,7 @@ export default function FacilityTable({
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 flex justify-end bg-black/50 z-999999" onClick={closeModal}>
-          <div className="bg-white w-full max-w-md h-full overflow-y-auto shadow p-6 relative transition-transform translate-x-0" onClick={(e)=>e.stopPropagation()}>
+          <div className="bg-white w-full max-w-md h-full overflow-y-auto shadow p-6 relative transition-transform translate-x-0" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
 
               <h2 className="text-xl text-black font-semibold ">
@@ -222,7 +222,7 @@ export default function FacilityTable({
               </h2>
               <button
                 onClick={closeModal}
-                className=" text-gray-600 hover:text-gray-800"
+                className=" text-gray-600 hover:text-gray-800 cursor-pointer"
               >
                 ✕
               </button>
@@ -315,7 +315,7 @@ export default function FacilityTable({
                   }}
                   className=" px-2 py-2 rounded"
                 >
-                  <IoEyeOutline size={20} className="text-[#333333]" />
+                  <IoEyeOutline size={20} className="text-[#333333] cursor-pointer" />
                 </button>
                 <button
                   onClick={() => openEditModal(facility)}
@@ -324,13 +324,13 @@ export default function FacilityTable({
                   // }
                   className=" px-2 py-2 rounded"
                 >
-                  <FiEdit size={16} className="text-green-500" />
+                  <FiEdit size={16} className="text-green-500 cursor-pointer" />
                 </button>
                 <button
                   onClick={() => setDeleteId(facility?.id)}
                   className=" px-2 py-2 rounded"
                 >
-                  <MdDeleteOutline size={20} className="text-red-500" />
+                  <MdDeleteOutline size={20} className="text-red-500 cursor-pointer" />
                 </button>
               </td>
             </tr>
@@ -350,20 +350,20 @@ export default function FacilityTable({
             <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(prev => prev - 1)}
-              className="px-4 py-2 border rounded text-black disabled:opacity-50"
+              className="px-4 py-2 border rounded text-black disabled:opacity-50 cursor-pointer"
             >
               Previous
             </button>
             <button
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(prev => prev + 1)}
-              className="px-4 py-2 border rounded text-black disabled:opacity-50"
+              className="px-4 py-2 border rounded text-black disabled:opacity-50 cursor-pointer"
             >
               Next
             </button>
           </div>
         </div>
-      ) }
+      )}
 
       {sortedData?.length === 0 && (
         <div className="text-center py-10">
@@ -375,20 +375,20 @@ export default function FacilityTable({
       {deleteId && !showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50  flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded shadow-md w-full max-w-sm">
-          <h3 className="text-lg text-[#333333] font-semibold mb-4">
-                          Confirm Delete
-                        </h3>
+            <h3 className="text-lg text-[#333333] font-semibold mb-4">
+              Confirm Delete
+            </h3>
             <p className="mb-6 text-black">Are you sure you want to delete this facility?</p>
             <div className="flex justify-end gap-4">
               <button
                 onClick={() => setDeleteId(null)}
-                className="px-4 py-2 border border-lg rounded"
+                className="px-4 py-2 border border-lg rounded cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleDeleteFacility(deleteId)}
-                className="px-4 py-2 bg-red-500 text-white rounded"
+                className="px-4 py-2 bg-red-500 text-white rounded cursor-pointer"
               >
                 Delete
               </button>
@@ -427,13 +427,13 @@ export default function FacilityTable({
             <div className="flex justify-end gap-4">
               <button
                 onClick={cancelDelete}
-                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDeleteWithVehicles}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer"
               >
                 Yes, Delete All
               </button>

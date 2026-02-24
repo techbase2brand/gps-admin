@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from "@supabase/supabase-js";
-import { addDataInQueue } from '../../../queue/Producer.js';
+import { addDataInQueue, addTagBatteryDataInQueue } from '../../../queue/Producer.js';
 import { TagProcessing } from '../../hooks/useTagProcess.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,6 +14,9 @@ dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const LocalSenseSalt = process.env.LocalSenseSalt;
+const LocalSensePassword = process.env.LocalSensePassword;
+const LocalSenseUser = process.env.LocalSenseUser;
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
     console.error("[CRITICAL] Supabase credentials missing");
@@ -72,7 +75,7 @@ if (API) {
     /**
      * Data Reception Handler
      */
-    API.onRecvTagPos =  function (data) {
+    API.onRecvTagPos = function (data) {
         try {
             if (!data) return;
 
@@ -82,14 +85,14 @@ if (API) {
             dataArray.forEach(async (tagContainer) => {
                 Object.keys(tagContainer).forEach(async (tagId) => {
                     const pos = tagContainer[tagId];
-                    
+
                     if (pos && pos.id) {
                         const hexId = Number(pos.id).toString(16);
                         const lastUpdate = lastUpdateTracker.get(hexId) || 0;
-                        
+
                         // Check throttling logic
                         if (now - lastUpdate >= THROTTLE_TIME) {
-                            
+
                             lastUpdateTracker.set(hexId, now);
 
                             tagUpdateBuffer.set(hexId, {
@@ -99,10 +102,10 @@ if (API) {
                                 last_location_update: new Date().toISOString()
                             });
 
-                            await TagProcessing(supabase,tagUpdateBuffer);
+                            await TagProcessing(supabase, tagUpdateBuffer);
 
                             console.log("Data saved to the TagProcessing ");
-                            
+
 
                         }
                     }
@@ -119,6 +122,27 @@ if (API) {
             console.error("[ERROR] Data processing failure:", error.message);
         }
     };
+
+
+    API.onRecvTagPower = function (data) {
+        // console.log("Data of the tag power is ", );
+        const tags = Object.values(data);
+        for (let i = 0; i < tags.length; i++) {
+            const tagCap = tags[i].cap
+            const tagID = Number(tags[i].tagid).toString(16)
+            console.log(" from tagPower tagID,tagCap", tagID, tagCap);
+            let dataonRecvTagPower = {
+                tagID: tagID, tagCap: tagCap
+            }
+
+            // addTagBatteryDataInQueue(dataonRecvTagPower)
+
+        }
+
+    }
+
+
+
 
     /**
      * Batch Sync to Queue

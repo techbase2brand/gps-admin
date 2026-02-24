@@ -47,26 +47,33 @@ function checkCarInsideFacility(chip, currentLat, currentLng, facilityPolygons, 
     for (let polyObj of facilityPolygons) {
         try {
             const rawCoords = polyObj.coordinates.map(p => [p.lng, p.lat]);
+            // console.log(polyObj.id,"close polygen ", rawCoords);
+
             const closedCoords = closePolygon(rawCoords);
             const turfPolygon = polygon([closedCoords]);
             if (booleanPointInPolygon(carPoint, turfPolygon)) {
-                console.log(`MATCH: Point is inside Slot ${polyObj.id}`);
+                console.log(`MATCH for the chip ${polyObj.id}: Point is inside Slot ${polyObj.id}`);
                 return {
                     chip: chip,
                     inside: true,
-                    slotId: polyObj.id
+                    slotId: polyObj.id,
+                    currentLat: currentLat,
+                    currentLng: currentLng
                 };
             }
-            return {
-                chip: chip,
-                inside: false,
-                slotId: null
-            };
+           
 
         } catch (err) {
             console.error("Geometry Error:", err.message);
         }
     }
+    return {
+        chip: chip,
+        inside: false,
+        slotId: null,
+        currentLat: currentLat,
+        currentLng: currentLng
+    };
 
 }
 
@@ -235,7 +242,7 @@ const TagProcessing = async (supabase, tagUpdateBuffer) => {
     const startTime = Date.now();
     try {
         const tagUpdateBufferKeys = Array.from(tagUpdateBuffer.keys());
-        console.log(`[STEP 1] Starting processing for ${tagUpdateBufferKeys.length} chips:`, tagUpdateBufferKeys);
+        console.log(`[STEP 1] Starting processing ${tagUpdateBuffer} for ${tagUpdateBufferKeys.length} chips:`, tagUpdateBufferKeys);
 
         // 1. Fetch current car states from DB
         const { data: carData, error: carError } = await getData(supabase, {
@@ -258,7 +265,7 @@ const TagProcessing = async (supabase, tagUpdateBuffer) => {
 
             const currentCar = carData.find(c => c.chip == chipId);
             if (!currentCar) {
-                console.log(`[SKIP] Chip ${chipId} not found in 'cars' table.`);
+                console.log(`[SKIP] Chip ${chipId} not found in carData. ${carData}`);
                 continue;
             }
 

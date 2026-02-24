@@ -179,6 +179,7 @@ export default function useStaffForm() {
   const togglePublished = async (id) => {
     const staffToUpdate = staffList.find((s) => s.id === id);
     const newStatus = staffToUpdate.status === "Active" ? "Inactive" : "Active";
+
     const updatedStaff = {
       status: newStatus,
       published: newStatus === "Active",
